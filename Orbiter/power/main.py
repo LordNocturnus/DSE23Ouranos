@@ -7,9 +7,10 @@ import numpy as np
 
 P_0 = 300 # Begin of life power one GPHS-RTG in W
 tau1 = 87.7 # half life fuel in years
+mass_RTG = 55.9 # mass of one GPHS-RTG in kg
+costRTG1 = 145699633.36 # cost of one GPHS-RTG in FY$2022, This is the highest value. It could be around 130 million as well
 missiontime = 20 # in years
 P_req = 500 # total power required for all subsystems in W
-costRTG1 = 145699633.36 # cost of one RTG in FY$2022, This is the highest value. It could be around 130 million as well
 
 # Power at the end of life of one RTG calculations:
 def powerdecay(P_0, tau, t):
@@ -24,9 +25,9 @@ def numberRTG(P_req):
     return M, N
 
 # Calculate mass of RTGs:
-def massRTG():
-    m_RTG = 55.9 * numberRTG(P_req)[1]
-    return m_RTG
+def massRTG(m_RTG):
+    m_RTGs = m_RTG * numberRTG(P_req)[1]
+    return m_RTGs
 
 def costRTG(costRTG1):
     cost_RTG = costRTG1 * numberRTG(P_req)[1]
@@ -38,5 +39,5 @@ if __name__ == "__main__":
     print("Power at end of life of one RTG=", powerdecay(P_0, tau1, missiontime), "W")
     print("number of RTGS unrounded =", numberRTG(P_req)[0])
     print("number of RTGs =", numberRTG(P_req)[1])
-    print("Total mass of RTGs =", massRTG(), "kg")
+    print("Total mass of RTGs =", massRTG(mass_RTG), "kg")
     print("Total cost of RTGs =", costRTG(costRTG1), "$")
