@@ -2,63 +2,49 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 # Variables
-S = 1  # m^2
-rho = 1  # kg/m^3
-C_D = 1
-C_L = 1
-m = 1  # kg
-V_0 = 1  # m/s
-g = 1  # m/s^2
-gamma = 1  # rad
-chi = 1  # rad
-V_x_wind = 1  # m/s
-g_u = 1  # m/s^2
+S = 12  # m^2
+rho = 0.42  # kg/m^3
+C_D = 0.05
+C_L = 0.7
+m = 72  # kg
+V_0 = 23.6  # m/s
+gamma = np.radians(-15)  # rad
+chi = 0  # rad
+V_x_wind = 250  # m/s
+g_u = 8.69  # m/s^2
 
 
 # Functions
 def velocity(t):
-    z = rho * S * C_D / m
-    a = V_0 * (1 + 2 / z)
-    b = 1 / z / V_0
-    c = g_u * np.sin(gamma) / (z * V_0)
-    d = np.exp(-z * V_0 * V_0 * t)
-    k = (g_u * np.sin(gamma) + 2 * V_0 * V_0 * V_0 - V_0) / (2 * V_0 * V_0)
-    V = (a - b + c) * d + k
-    return V
+    z = rho * S * C_D / (2 * m)
+    a = z * V_0 - g_u * np.sin(gamma)
+    b = 2 * z * V_0 * V_0
+    V = a / b * np.exp(-b * t) + (2 * z * V_0 * V_0 * V_0 - a) / b
+    return V  # m/s
 
 
 def range(t):
-    z = rho * S * C_D / m
-    a = np.cos(gamma) * np.cos(chi)
-    b = V_0 * (1 + 2 / z)
-    c = -1 / (z * V_0 * V_0)
-    d = -1 / (z * V_0)
-    e = g_u * np.sin(gamma) / (z * V_0)
-    f = np.exp(-z * V_0 * V_0 * t)
-    g = (g_u * np.sin(gamma) + 2 * V_0 * V_0 * V_0 - V_0) / (2 * V_0 * V_0)
-    x = a * ((b * c + d + e) * f + g * t) + V_x_wind * t
-    return x
+    z = rho * S * C_D / (2 * m)
+    a = z * V_0 - g_u * np.sin(gamma)
+    b = 2 * z * V_0 * V_0
+    x = np.cos(gamma) * np.cos(chi) * (-a / (b * b) * np.exp(-b * t) + (2 * z * V_0 * V_0 * V_0 - a) / b) + V_x_wind * t
+    return x  # m
 
 
 def height(t):
-    z = rho * S * C_D / m
-    a = -np.sin(gamma) / (z * V_0 * V_0)
-    b = V_0 * (1 + 2 / z)
-    c = -1 / (z * V_0)
-    d = g_u * np.sin(gamma) / (z * V_0)
-    e = np.exp(-z * V_0 * V_0 * t)
-    h = a * (b + c + d) * e
-    return h
+    z = rho * S * C_D / (2 * m)
+    a = z * V_0 - g_u * np.sin(gamma)
+    b = 2 * z * V_0 * V_0
+    h = (-a / (b * b) * np.exp(-b * t) + (2 * z * V_0 * V_0 * V_0 - a) / b) * np.sin(gamma)
+    return h  # m
 
 
 t = np.linspace(0, 10, 100)
 
 if __name__ == "__main__":
-    # print("Hello World")
     V = velocity(t)
     x = range(t)
     h = height(t)
-
     plt.plot(t, V, label="Velocity")
     plt.plot(t, x, label="Range")
     plt.plot(t, h, label="Depth")
