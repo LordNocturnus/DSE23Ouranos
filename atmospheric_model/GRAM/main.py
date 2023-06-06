@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import os
 import platform
 import subprocess
@@ -38,6 +39,7 @@ class GRAM(object):
         self.lat = np.zeros_like(self.altitudes)
         self.long = np.zeros_like(self.altitudes)
         self.time = np.arange(0, len(self.altitudes), 1, dtype=float)
+        self.data = None
 
     def compile_config(self):
         """ compiles the necessary data for GRAM into a configuration file that GRAM can read"""
@@ -87,14 +89,6 @@ class GRAM(object):
         txt += f"  MinimumRelativeStepSize  = 0.0\n"
 
         txt += f"  TrajectoryFileName = '{__file__[:-7]}traj_data.txt'\n"
-        """txt += f"TrajectoryFileName = '{__file__[:-7]}traj_data.txt'\n"
-        txt += f"TrajectoryFileName = '{__file__[:-7]}traj_data.txt'\n"
-        txt += f"TrajectoryFileName = '{__file__[:-7]}traj_data.txt'\n"
-        txt += f"TrajectoryFileName = '{__file__[:-7]}traj_data.txt'\n"
-        txt += f"TrajectoryFileName = '{__file__[:-7]}traj_data.txt'\n"
-        txt += f"TrajectoryFileName = '{__file__[:-7]}traj_data.txt'\n"
-        txt += f"TrajectoryFileName = '{__file__[:-7]}traj_data.txt'\n"
-        txt += f"TrajectoryFileName = '{__file__[:-7]}traj_data.txt'\n"""""
 
         if 1 <= self.runs and type(self.runs) == int:
             txt += f"  NumberOfMonteCarloRuns = {self.runs}\n"
@@ -107,6 +101,7 @@ class GRAM(object):
             file.write(txt)
 
     def compile_trajectory(self):
+        """compiles the trajectory data into the required format"""
         if not len(self.altitudes) == len(self.lat) or not len(self.altitudes) == len(self.long) or not \
              len(self.altitudes) == len(self.time):
             raise IndexError("length of the altitude latitude longitude and timestamps for the GRAM trajectory should be the same")
@@ -129,10 +124,27 @@ class GRAM(object):
         out = subprocess.check_output([__file__[:-7]+"GRAM_Suite_1_5/Windows/UranusGRAM.exe", "-file",
                                        __file__[:-7]+"gram_config.txt"])
 
-        print(str(out))
         if not re.search("Files output: ", str(out)):
             print(str(out))
             raise RuntimeError("GRAM failed to run please check input files")
+        self.read_data()
+
+    def read_data(self):
+        self.data = pd.read_csv(__file__[:-7]+"atmos_OUTPUT.csv")
+        #
+        self.data.drop(columns=["LatitudeRadius_km", "AverageMolecularWeight", "LocalSolarTime_hr",
+                               "NSWindPerturbation_ms", "PerturbedEWWind_ms", "PerturbedNSWind_ms",
+                               "EWStandardDeviation_ms", "NSStandardDeviation_ms", "EWWind_ms", "NSWind_ms",
+                               "EWWindPerturbation_ms", "LongitudeOfTheSun", "SubsolarLatitude_deg",
+                               "SubsolarLongitudeE_deg", "SolarZenithAngle_deg", "OneWayLightTime_min",
+                               "OrbitalRadius_AU", "SecondsPerSol", "PressureAtSurface_Pa", "TotalNumberDensity_m3",
+                               "H2nd_m3", "H2mass_pct", "H2mole_pct", "H2amw",
+                               "Hend_m3", "Hemass_pct", "Hemole_pct", "Heamw",
+                               "CH4nd_m3", "CH4mass_pct", "CH4mole_pct", "CH4amw"], inplace=True)
+        self.data.drop(columns=self.data.columns[-1], inplace=True)
+        print(self.data.head())
+        if self.data.isnull().any():
+            raise ValueError("GRAM returned NaN values please investigate")
 
 
 
