@@ -7,12 +7,16 @@ from typing import List, Tuple
 import tudatpy
 from tudatpy.kernel.trajectory_design import transfer_trajectory
 from tudatpy.kernel import constants
-from tudatpy.kernel.numerical_simulation import environment_setup
+from tudatpy.kernel import numerical_simulation
+from tudatpy.kernel.numerical_simulation import environment_setup, propagation_setup
+import tudatpy.kernel.astro as astro
+from tudatpy.kernel.interface import spice
 from tudatpy.util import result2array
 
 #pygmo imports
 import scipy.optimize as opt
 import pygmo as pg
+import os
 
 #func for local testing, ignore
 if __name__ == "__main__":
@@ -20,6 +24,168 @@ if __name__ == "__main__":
 
 
 #start of actual program
+
+#loading ephemeris
+spice.load_standard_kernels()
+print(spice.get_total_count_of_kernels_loaded())
+path = os.path.dirname(__file__)
+spice.load_kernel(path+'/ura111.bsp')
+spice.load_kernel(path+'/Gravity.tpc')
+
+print(spice.get_total_count_of_kernels_loaded())
+
+# Create default body settings for "Uranus"
+bodies_to_create = ["Uranus","Titania"]
+
+# Set simulation start and end epochs
+simulation_start_epoch = 0.0
+simulation_end_epoch = constants.JULIAN_DAY/240
+
+# Create default body settings for bodies_to_create, with "Uranus"/"J2000" as the global frame origin and orientation
+global_frame_origin = "Uranus"
+global_frame_orientation = "J2000"
+body_settings = environment_setup.get_default_body_settings(
+    bodies_to_create, global_frame_origin, global_frame_orientation)
+
+# Create system of bodies 
+bodies = environment_setup.create_system_of_bodies(body_settings)
+central_bodies = ["Uranus"]
+#do encounter
+bodies.create_empty_body("Orbiter")
+bodies.create_empty_body("Capsule")
+
+#bodies_to_propagate = ("Orbiter","Capsule")
+bodies_to_propagate_orbiter = ["Orbiter"]
+bodies_to_propagate_capsule = ["Capsule"]
+
+# Define accelerations acting on objects
+acceleration_settings = dict(
+    Uranus=[propagation_setup.acceleration.point_mass_gravity()]
+    )
+
+
+#acceleration_settings = {"Orbiter": acceleration_settings_orbiter,"Capsule": acceleration_settings_capsule}
+acceleration_settings_orbiter = {"Orbiter": acceleration_settings}
+acceleration_settings_capsule = {"Capsule": acceleration_settings}
+
+# Create acceleration models
+acceleration_models_orbiter = propagation_setup.create_acceleration_models(
+    bodies, acceleration_settings_orbiter, bodies_to_propagate_orbiter, central_bodies
+    )
+
+acceleration_models_capsule = propagation_setup.create_acceleration_models(
+    bodies, acceleration_settings_capsule, bodies_to_propagate_capsule, central_bodies
+    )
+
+# Set initial conditions for the satellite that will be
+# propagated in this simulation. The initial conditions are given in
+# Keplerian elements and later on converted to Cartesian elements
+uranus_gravitational_parameter = bodies.get("Uranus").gravitational_parameter
+initial_state_orbiter = astro.element_conversion.keplerian_to_cartesian_elementwise(
+    gravitational_parameter=uranus_gravitational_parameter,
+    semi_major_axis=-7500.0e3,
+    eccentricity=1.1,
+    inclination=np.deg2rad(85.3),
+    argument_of_periapsis=np.deg2rad(235.7),
+    longitude_of_ascending_node=np.deg2rad(23.4),
+    true_anomaly=np.deg2rad(30),)
+
+initial_state_capsule = astro.element_conversion.keplerian_to_cartesian_elementwise(
+    gravitational_parameter=uranus_gravitational_parameter,
+    semi_major_axis=-7500.0e3,
+    eccentricity=1.1,
+    inclination=np.deg2rad(4.7),
+    argument_of_periapsis=np.deg2rad(235.7),
+    longitude_of_ascending_node=np.deg2rad(23.4),
+    true_anomaly=np.deg2rad(30),)
+
+# Create termination settings
+termination_settings = propagation_setup.propagator.time_termination(simulation_end_epoch)
+
+# Create numerical integrator settings
+fixed_step_size = 10.0
+integrator_settings = propagation_setup.integrator.runge_kutta_4(fixed_step_size)
+
+# Create propagation settings
+propagator_settings_orbiter = propagation_setup.propagator.translational(
+    central_bodies,
+    acceleration_models_orbiter,
+    bodies_to_propagate_orbiter,
+    initial_state_orbiter,
+    simulation_start_epoch,
+    integrator_settings,
+    termination_settings
+)
+
+propagator_settings_capsule = propagation_setup.propagator.translational(
+    central_bodies,
+    acceleration_models_capsule,
+    bodies_to_propagate_capsule,
+    initial_state_capsule,
+    simulation_start_epoch,
+    integrator_settings,
+    termination_settings
+)
+
+# Create simulation object and propagate the dynamics
+dynamics_simulator_orbiter = numerical_simulation.create_dynamics_simulator(
+    bodies, propagator_settings_orbiter
+)
+
+dynamics_simulator_capsule = numerical_simulation.create_dynamics_simulator(
+    bodies, propagator_settings_capsule
+)
+
+# Extract the resulting state history and convert it to an ndarray
+states_orbiter = dynamics_simulator_orbiter.state_history
+states_orbiter_array = result2array(states_orbiter)
+
+states_capsule = dynamics_simulator_capsule.state_history
+states_capsule_array = result2array(states_capsule)
+
+print(
+    f"""
+Single Earth-Orbiting Satellite Example.
+The initial position vector of Orbiter is [km]: \n{
+    states_orbiter[simulation_start_epoch][:3] / 1E3}
+The initial velocity vector of Orbiter is [km/s]: \n{
+    states_orbiter[simulation_start_epoch][3:] / 1E3}
+\nAfter {simulation_end_epoch} seconds the position vector of Orbiter is [km]: \n{
+    states_orbiter[simulation_end_epoch][:3] / 1E3}
+And the velocity vector of the orbiter is [km/s]: \n{
+    states_orbiter[simulation_start_epoch][3:] / 1E3}
+    """
+)
+radiusUranus = 25362000
+
+# Define a 3D figure using pyplot
+fig = plt.figure(figsize=(6,6), dpi=125)
+ax = fig.add_subplot(111, projection='3d')
+ax.set_title(f'Trajectories at Uranian encounter')
+
+# Plot the positional state history
+ax.plot(states_orbiter_array[:, 1], states_orbiter_array[:, 2], states_orbiter_array[:, 3], label=bodies_to_propagate_orbiter[0], linestyle='-.')
+#ax.scatter(0.0, 0.0, 0.0, label="Earth", marker='o', color='blue')
+
+u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
+x = np.cos(u)*np.sin(v)*radiusUranus
+y = np.sin(u)*np.sin(v)*radiusUranus
+z = np.cos(v)*radiusUranus
+ax.plot_wireframe(x, y, z, label="Uranus", color="blue")
+
+ax.plot(states_capsule_array[:, 1], states_capsule_array[:, 2], states_capsule_array[:, 3], label=bodies_to_propagate_capsule[0], linestyle='-.')
+#ax.scatter(0.0, 0.0, 0.0, label="Earth", marker='o', color='red')
+
+# Add the legend and labels, then show the plot
+ax.legend()
+ax.set_xlabel('x [m]')
+ax.set_ylabel('y [m]')
+ax.set_zlabel('z [m]')
+plt.show()
+
+#gravity assist program for inspiration
+
+"""
 
 def convert_trajectory_parameters (transfer_trajectory_object: tudatpy.kernel.trajectory_design.transfer_trajectory.TransferTrajectory,
                                    trajectory_parameters: List[float]
@@ -65,9 +231,9 @@ class TransferTrajectoryProblem:
                  departure_date_up: float, # Upper bound on departure date
                  legs_tof_lb: np.ndarray, # Lower bounds of each leg's time of flight
                  legs_tof_ub: np.ndarray): # Upper bounds of each leg's time of flight
-        """
-        Class constructor.
-        """
+
+#        Class constructor.
+
 
         self.departure_date_lb = departure_date_lb
         self.departure_date_ub = departure_date_ub
@@ -79,9 +245,9 @@ class TransferTrajectoryProblem:
         self.transfer_trajectory_function = lambda: transfer_trajectory_object
 
     def get_bounds(self) -> tuple:
-        """
-        Returns the boundaries of the decision variables.
-        """
+
+#        Returns the boundaries of the decision variables.
+
 
         # Retrieve transfer trajectory object
         transfer_trajectory_obj = self.transfer_trajectory_function()
@@ -105,9 +271,9 @@ class TransferTrajectoryProblem:
         return bounds
 
     def get_number_of_parameters(self):
-        """
-        Returns number of parameters that will be optimized
-        """
+
+#        Returns number of parameters that will be optimized
+
 
         # Retrieve transfer trajectory object
         transfer_trajectory_obj = self.transfer_trajectory_function()
@@ -118,9 +284,9 @@ class TransferTrajectoryProblem:
         return number_of_parameters
 
     def fitness(self, trajectory_parameters: List[float]) -> list:
-        """
-        Returns delta V of the transfer trajectory object with the given set of trajectory parameters
-        """
+
+#        Returns delta V of the transfer trajectory object with the given set of trajectory parameters
+
 
         # Retrieve transfer trajectory object
         transfer_trajectory = self.transfer_trajectory_function()
@@ -146,23 +312,13 @@ class TransferTrajectoryProblem:
 ###########################################################################
 
 # Define the central body
-central_body = "Uranus"
+#central_body = "Uranus"
 
 # Define order of bodies (nodes)
 #transfer_body_order = ['Earth', 'Venus', 'Venus', 'Earth', 'Jupiter', 'Saturn']
 
-transfer_body_order = ['Uranus', 'Titania', 'Uranus']
+#transfer_body_order = ['Uranus', 'Titania', 'Uranus']
 
-#goodones:
-
-#['Earth', 'Venus', 'Earth', 'Jupiter', 'Uranus'] has a required dv of: [7060.16850883] a departure day of 12526.130675071425 and a total travel time of: 9710.38944937887
-#['Earth', 'Earth', 'Earth', 'Jupiter', 'Uranus'] has a required dv of: [7332.36967836] a departure day of 12019.196189655755 and a total travel time of: 7323.509714310182
-#['Earth', 'Mars', 'Venus', 'Earth', 'Uranus'] has a required dv of: [7023.84098471] a departure day of 12273.935792575123 and a total travel time of: 5820.26421347872
-#['Earth', 'Mars', 'Earth', 'Earth', 'Jupiter', 'Uranus'] has a required dv of: [6225.302556] a departure day of 12420.03530212208 and a total travel time of: 
-#10037.512046872167
-#['Earth', 'Mars', 'Earth', 'Mars', 'Jupiter', 'Uranus'] has a required dv of: [6050.89945355] a departure day of 12834.18692697766 and a total travel time of: 10204.25781729673
-#['Earth', 'Mars', 'Jupiter', 'Saturn', 'Earth', 'Uranus'] has a required dv of: [7468.62571599] a departure day of 11954.772487540811 and a total travel time 
-#of: 10318.552197607514
 
 # Define departure orbit
 #departure_semi_major_axis = 6371000 + 185000
@@ -183,7 +339,7 @@ bodies = environment_setup.create_simplified_system_of_bodies()
 transfer_leg_settings, transfer_node_settings = transfer_trajectory.mga_settings_unpowered_unperturbed_legs(
     transfer_body_order,
     departure_orbit=(departure_semi_major_axis, departure_eccentricity),
-    arrival_orbit=(arrival_semi_major_axis, arrival_eccentricity))
+    arrival_orbit=(arrival_semi_major_axis, arrival_eccentricity),minimum_pericenters={'Titania':788400})
 
 # Create the transfer calculation object
 transfer_trajectory_object = transfer_trajectory.create_transfer_trajectory(
@@ -336,3 +492,5 @@ ax.set_ylabel('y wrt Sun [AU]')
 ax.set_aspect('equal')
 ax.legend(bbox_to_anchor=[1, 1])
 plt.show()
+
+"""
