@@ -84,7 +84,7 @@ acceleration_models_capsule = propagation_setup.create_acceleration_models(
 # Keplerian elements and later on converted to Cartesian elements
 uranus_gravitational_parameter = bodies.get("Uranus").gravitational_parameter
 
-initial_state_orbiter = np.array([1e9,1e9,1e9,0,-200,0])
+initial_state_orbiter = np.array([1e9,1e9,1e9,0,-100,0])
 initial_state_capsule = np.array([1e9,1e9,1e9,0,-150,0])
 
 
@@ -92,48 +92,48 @@ print (initial_state_orbiter)
 
 timenotfound = True
 atmosphere_height = 1e4
-simulation_end_epoch = 10*constants.JULIAN_DAY
+simulation_end_epoch = 40*constants.JULIAN_DAY
 
-while timenotfound:
 
-    termination_settings = propagation_setup.propagator.time_termination(simulation_end_epoch)
-    fixed_step_size = 10.0
-    integrator_settings = propagation_setup.integrator.runge_kutta_4(fixed_step_size)
-    propagator_settings_capsule = propagation_setup.propagator.translational(
-        central_bodies,
-        acceleration_models_capsule,
-        bodies_to_propagate_capsule,
-        initial_state_capsule,
-        simulation_start_epoch,
-        integrator_settings,
-        termination_settings
-    )
-    dynamics_simulator_capsule = numerical_simulation.create_dynamics_simulator(
-        bodies, propagator_settings_capsule
-    )
+termination_settings = propagation_setup.propagator.time_termination(simulation_end_epoch)
+fixed_step_size = 10.0
+integrator_settings = propagation_setup.integrator.runge_kutta_4(fixed_step_size)
+propagator_settings_capsule = propagation_setup.propagator.translational(
+    central_bodies,
+    acceleration_models_capsule,
+    bodies_to_propagate_capsule,
+    initial_state_capsule,
+    simulation_start_epoch,
+    integrator_settings,
+    termination_settings
+)
+dynamics_simulator_capsule = numerical_simulation.create_dynamics_simulator(
+    bodies, propagator_settings_capsule
+)
 
-    states_capsule = dynamics_simulator_capsule.state_history
-    states_capsule_array = result2array(states_capsule)
-    radius_capsule = np.sqrt( states_capsule_array[:, 1] ** 2 + states_capsule_array[:, 2] ** 2 + states_capsule_array[:, 3] ** 2 )
-    altitude_capsule = radius_capsule - radiusUranus
-    distance = altitude_capsule[-1] - atmosphere_height
-    if altitude_capsule[-1] - atmosphere_height < 0:
-        timenotfound = False
-        print ('Atmospheric encounter at',simulation_end_epoch/constants.JULIAN_DAY,'Days')
-    elif not altitude_capsule[-1] == min(altitude_capsule):
-        simulation_end_epoch*=0.9
-        print('oops overshot')
-    else:
-        if altitude_capsule[-1] - atmosphere_height < 1e5:
-            simulation_end_epoch += constants.JULIAN_DAY/24
-            print('getting very close...\ndistance is',distance)
-        elif altitude_capsule[-1] - atmosphere_height < 1e6:
-            simulation_end_epoch += constants.JULIAN_DAY/6
-            print('getting closer\ndistance is',distance)
-        else:
-            simulation_end_epoch += constants.JULIAN_DAY
-            print('still far away\ndistance is',distance)
+states_capsule = dynamics_simulator_capsule.state_history
+states_capsule_array = result2array(states_capsule)
+radius_capsule = np.sqrt( states_capsule_array[:, 1] ** 2 + states_capsule_array[:, 2] ** 2 + states_capsule_array[:, 3] ** 2 )
+altitude_capsule = radius_capsule - radiusUranus
+count = 0
+atmospheric_encounter = False
+notfound = True
+while notfound:
+    if altitude_capsule[count] < 0:
+        atmospheric_encounter = count
+        notfound = False
+    count += 1
+    if count > len(altitude_capsule):
+        notfound = False
 
+if atmospheric_encounter == False:
+    print ('atmosphere missed!')
+else: 
+    simulation_end_epoch = atmospheric_encounter * 10
+
+print ('Atmospheric encounter at',atmospheric_encounter * 10 / constants.JULIAN_DAY,'days')
+
+#doing comms link stuff
 
 
 # Create termination settings
@@ -182,7 +182,6 @@ states_capsule_array = result2array(states_capsule)
 
 print(
     f"""
-Single Earth-Orbiting Satellite Example.
 The initial position vector of Orbiter is [km]: \n{
     states_orbiter[simulation_start_epoch][:3] / 1E3}
 The initial velocity vector of Orbiter is [km/s]: \n{
@@ -190,7 +189,7 @@ The initial velocity vector of Orbiter is [km/s]: \n{
 \nAfter {simulation_end_epoch} seconds the position vector of Orbiter is [km]: \n{
     states_orbiter[simulation_end_epoch][:3] / 1E3}
 And the velocity vector of the orbiter is [km/s]: \n{
-    states_orbiter[simulation_start_epoch][3:] / 1E3}
+    states_orbiter[simulation_end_epoch][3:] / 1E3}
     """
 )
 
