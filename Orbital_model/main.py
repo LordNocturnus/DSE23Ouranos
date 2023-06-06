@@ -39,7 +39,7 @@ bodies_to_create = ["Uranus","Titania"]
 
 # Set simulation start and end epochs
 simulation_start_epoch = 0.0
-simulation_end_epoch = constants.JULIAN_DAY/240
+simulation_end_epoch = constants.JULIAN_DAY*30
 
 # Create default body settings for bodies_to_create, with "Uranus"/"J2000" as the global frame origin and orientation
 global_frame_origin = "Uranus"
@@ -81,23 +81,29 @@ acceleration_models_capsule = propagation_setup.create_acceleration_models(
 # propagated in this simulation. The initial conditions are given in
 # Keplerian elements and later on converted to Cartesian elements
 uranus_gravitational_parameter = bodies.get("Uranus").gravitational_parameter
-initial_state_orbiter = astro.element_conversion.keplerian_to_cartesian_elementwise(
-    gravitational_parameter=uranus_gravitational_parameter,
-    semi_major_axis=-7500.0e3,
-    eccentricity=1.1,
-    inclination=np.deg2rad(85.3),
-    argument_of_periapsis=np.deg2rad(235.7),
-    longitude_of_ascending_node=np.deg2rad(23.4),
-    true_anomaly=np.deg2rad(30),)
+#initial_state_orbiter = astro.element_conversion.keplerian_to_cartesian_elementwise(
+#    gravitational_parameter=uranus_gravitational_parameter,
+#    semi_major_axis=-7500.0e6,
+#    eccentricity=1.1,
+#    inclination=np.deg2rad(85.3),
+#    argument_of_periapsis=np.deg2rad(235.7),
+#    longitude_of_ascending_node=np.deg2rad(23.4),
+#    true_anomaly=np.deg2rad(170),)
 
-initial_state_capsule = astro.element_conversion.keplerian_to_cartesian_elementwise(
-    gravitational_parameter=uranus_gravitational_parameter,
-    semi_major_axis=-7500.0e3,
-    eccentricity=1.1,
-    inclination=np.deg2rad(4.7),
-    argument_of_periapsis=np.deg2rad(235.7),
-    longitude_of_ascending_node=np.deg2rad(23.4),
-    true_anomaly=np.deg2rad(30),)
+#initial_state_capsule = astro.element_conversion.keplerian_to_cartesian_elementwise(
+#    gravitational_parameter=uranus_gravitational_parameter,
+#    semi_major_axis=-7500.0e6,
+#    eccentricity=1.1,
+#    inclination=np.deg2rad(4.7),
+#    argument_of_periapsis=np.deg2rad(235.7),
+#    longitude_of_ascending_node=np.deg2rad(23.4),
+#    true_anomaly=np.deg2rad(170),)
+
+initial_state_orbiter = np.array([1e9,1e9,1e9,0,500,0])
+initial_state_capsule = np.array([1e9,1e9,1e9,0,450,0])
+
+
+print (initial_state_orbiter)
 
 # Create termination settings
 termination_settings = propagation_setup.propagator.time_termination(simulation_end_epoch)
@@ -181,6 +187,7 @@ ax.legend()
 ax.set_xlabel('x [m]')
 ax.set_ylabel('y [m]')
 ax.set_zlabel('z [m]')
+ax.set_aspect('equal', adjustable='box')
 plt.show()
 
 #gravity assist program for inspiration
