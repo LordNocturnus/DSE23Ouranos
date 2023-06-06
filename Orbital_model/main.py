@@ -25,6 +25,10 @@ if __name__ == "__main__":
 
 #start of actual program
 
+#some placeholder values
+duration_of_entry = constants.JULIAN_DAY/24
+atmospheric_mission_time = constants.JULIAN_DAY/24*3
+
 #loading ephemeris
 spice.load_standard_kernels()
 print(spice.get_total_count_of_kernels_loaded())
@@ -113,6 +117,7 @@ dynamics_simulator_capsule = numerical_simulation.create_dynamics_simulator(
 
 states_capsule = dynamics_simulator_capsule.state_history
 states_capsule_array = result2array(states_capsule)
+capsule_position = np.array([states_capsule_array[-1,1],states_capsule_array[-1,2],states_capsule_array[-1,3]])
 radius_capsule = np.sqrt( states_capsule_array[:, 1] ** 2 + states_capsule_array[:, 2] ** 2 + states_capsule_array[:, 3] ** 2 )
 altitude_capsule = radius_capsule - radiusUranus
 count = 0
@@ -135,6 +140,63 @@ print ('Atmospheric encounter at',atmospheric_encounter * 10 / constants.JULIAN_
 
 #doing comms link stuff
 
+#initialising basic info about atmospheric mission
+start_atmospheric_mission = int(atmospheric_encounter + duration_of_entry/10)
+
+end_atmsopheric_mission = int(start_atmospheric_mission + atmospheric_mission_time/10)
+
+simulation_end_epoch = end_atmsopheric_mission
+
+position_glider = capsule_position
+
+#running simulation for orbiter
+termination_settings_telemetry = propagation_setup.propagator.time_termination(end_atmsopheric_mission)
+fixed_step_size = 10.0
+integrator_settings = propagation_setup.integrator.runge_kutta_4(fixed_step_size)
+propagator_settings_orbiter = propagation_setup.propagator.translational(
+    central_bodies,
+    acceleration_models_orbiter,
+    bodies_to_propagate_orbiter,
+    initial_state_orbiter,
+    simulation_start_epoch,
+    integrator_settings,
+    termination_settings_telemetry
+)
+dynamics_simulator_orbiter = numerical_simulation.create_dynamics_simulator(
+    bodies, propagator_settings_capsule
+)
+
+states_orbiter = dynamics_simulator_orbiter.state_history
+states_orbiter_array = result2array(states_orbiter)
+
+atmospheric_mission_orbiter_states_array = states_orbiter_array[start_atmospheric_mission:]
+
+atmospheric_mission_orbiter_x = atmospheric_mission_orbiter_states_array[:,1]
+atmospheric_mission_orbiter_y = atmospheric_mission_orbiter_states_array[:,2]
+atmospheric_mission_orbiter_z = atmospheric_mission_orbiter_states_array[:,3]
+
+telemetry_vector = np.zeros((len(atmospheric_mission_orbiter_x),3))
+telemetry_angle= np.zeros_like(atmospheric_mission_orbiter_x)
+telemetry_distance = np.zeros_like(atmospheric_mission_orbiter_x)
+
+input_angle = np.zeros_like(atmospheric_mission_orbiter_x)
+
+for i in range(len(telemetry_vector)):
+
+    telemetry_vector[i,0] = atmospheric_mission_orbiter_x[i] - position_glider[0]
+    telemetry_vector[i,1] = atmospheric_mission_orbiter_y[i] - position_glider[1]
+    telemetry_vector[i,2] = atmospheric_mission_orbiter_z[i] - position_glider[2]
+    telemetry_distance[i] = np.sqrt(telemetry_vector[i,0] ** 2 + telemetry_vector[i,1] ** 2 + telemetry_vector[i,2] ** 2 )
+    input_angle[i] = np.inner(telemetry_vector[i],position_glider)/(telemetry_distance[i]*np.linalg.norm(position_glider))
+    telemetry_angle[i] = np.arccos(np.inner(telemetry_vector[i],position_glider)/(telemetry_distance[i]*np.linalg.norm(position_glider)))
+
+
+
+plt.plot(np.arange(stop=len(telemetry_distance )* 10, start = 0, step = 10), telemetry_distance)
+plt.show()
+
+plt.plot(np.arange(stop=len(telemetry_distance) * 10, start = 0, step = 10), telemetry_angle)
+plt.show()
 
 # Create termination settings
 termination_settings = propagation_setup.propagator.time_termination(simulation_end_epoch)
@@ -224,7 +286,7 @@ plt.show()
 radius_capsule = np.sqrt( states_capsule_array[:, 1] ** 2 + states_capsule_array[:, 2] ** 2 + states_capsule_array[:, 3] ** 2 )
 altitude_capsule = radius_capsule - radiusUranus
 
-plt.plot(np.arange(stop=len(altitude_capsule * 10), start = 0, step = 1), altitude_capsule)
+plt.plot(np.arange(stop=len(altitude_capsule) * 10, start = 0, step = 10), altitude_capsule)
 plt.show()
 
 #gravity assist program for inspiration
