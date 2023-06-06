@@ -21,6 +21,7 @@ c_w_root = 1 # [m], root chord, set as dummy for now
 c_w_tip = 0.5 # [m], tip chord, set as dummy for now
 b_w = 2 # [m], wing span, set as dummy for now
 
+
 def calculate_c_w(c_w_root, c_w_tip, b_w): # estimates different values of chord for different values of spanwise location
     b_range = np.arange(0, b_w / 2 + 0.1, 0.1)  # range of half-span values used for estimation
     c_wing = np.zeros(len(b_range)) # creates array that stores all values of chord corresponding to spanwise location
@@ -31,26 +32,19 @@ def calculate_c_w(c_w_root, c_w_tip, b_w): # estimates different values of chord
 c_w = calculate_c_w(c_w_root, c_w_tip, b_w) # array of chord values that will be used for later estimations
 #print(c_w)
 
-def calculate_A_wing(c_w): # estimates area of wing section as function of chord
-    'Analysis performed for airfoil FX 62-K-153/20 (same one used in MSc Thesis), if changes then remember to change properties!'
-    K_A = 0.6 # constant value valid for approx. all commonly used airfoils, found on MIT document
-    t_w = 0.153 * c_w # max thickness, value found on airfoiltools.com
-    A_wing = K_A * t_w * c_w
-    return A_wing
+a_2 = c_w * 0.1 # [m], value used for the simplified airfoil cross section: will be found by analysing the actual geometry of the airfoil and
+        # simplifying the central section into a hollow rectangle, set as dummy for now. Shall be given as percentage of chord
+a_3 = c_w * 0.2 # [m], same reasoning as above, set as dummy for now. Shall be given as percentage of chord
 
-A_w = calculate_A_wing(c_w)
-#print(A_w)
+'In order to calculate the cross sectional properties needed for bending and tensile stresses (hence cross section A and moment of'
+'inertia I) the cross section of the wing has been idealised such that it is made by three different hollow parts: a half circle, '
+'a rectangle and an isosceles triangle. Ask Elia for more details on the geometry'
+def calculate_Ixx1(t_t):  # Calculate I for section 1 (half circle) as function of thickness t_t
+    t = 1 # [m], maximum thickness of airfoil: once the airfoil is selected, can be found on airfoiltools.com as function of the chord
+    Ixx_1 = np.pi / 16 * t**3 * t_t
+    return Ixx_1
 
-def calculate_I_wing(c_w): # estimates moment of inertia of wing section as function of chord
-    'Analysis performed for airfoil FX 62-K-153/20 (same one used in MSc Thesis), if changes then remember to change properties!'
-    K_I = 0.036 # constant value valid for approx. all commonly used airfoils, found on MIT document
-    t_w = 0.153 * c_w  # max thickness, value found on airfoiltools.com
-    h_w = 0.041 * c_w # maximum camber, value found on airfoiltools.com
-    I_wing = K_I * c_w * t_w * (t_w**2 + h_w**2)
-    return I_wing
-
-I_w = calculate_I_wing(c_w)
-print(I_w)
+def calculate_Ixx2(t_t, a_2):
 
 if __name__ == "__main__":
     print("Hello World")
