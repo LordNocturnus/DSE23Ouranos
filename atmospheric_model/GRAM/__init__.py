@@ -1,1 +1,1 @@
-from main import *
+from atmospheric_model.GRAM.main import *
