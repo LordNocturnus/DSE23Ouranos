@@ -37,6 +37,8 @@ print(spice.get_total_count_of_kernels_loaded())
 # Create default body settings for "Uranus"
 bodies_to_create = ["Uranus","Titania"]
 
+radiusUranus = 25362000
+
 # Set simulation start and end epochs
 simulation_start_epoch = 0.0
 simulation_end_epoch = constants.JULIAN_DAY*15
@@ -81,29 +83,58 @@ acceleration_models_capsule = propagation_setup.create_acceleration_models(
 # propagated in this simulation. The initial conditions are given in
 # Keplerian elements and later on converted to Cartesian elements
 uranus_gravitational_parameter = bodies.get("Uranus").gravitational_parameter
-#initial_state_orbiter = astro.element_conversion.keplerian_to_cartesian_elementwise(
-#    gravitational_parameter=uranus_gravitational_parameter,
-#    semi_major_axis=-7500.0e6,
-#    eccentricity=1.1,
-#    inclination=np.deg2rad(85.3),
-#    argument_of_periapsis=np.deg2rad(235.7),
-#    longitude_of_ascending_node=np.deg2rad(23.4),
-#    true_anomaly=np.deg2rad(170),)
 
-#initial_state_capsule = astro.element_conversion.keplerian_to_cartesian_elementwise(
-#    gravitational_parameter=uranus_gravitational_parameter,
-#    semi_major_axis=-7500.0e6,
-#    eccentricity=1.1,
-#    inclination=np.deg2rad(4.7),
-#    argument_of_periapsis=np.deg2rad(235.7),
-#    longitude_of_ascending_node=np.deg2rad(23.4),
-#    true_anomaly=np.deg2rad(170),)
-
-initial_state_orbiter = np.array([1e9,1e9,1e9,0,500,0])
-initial_state_capsule = np.array([1e9,1e9,1e9,0,450,0])
+initial_state_orbiter = np.array([1e9,1e9,1e9,0,-200,0])
+initial_state_capsule = np.array([1e9,1e9,1e9,0,-150,0])
 
 
 print (initial_state_orbiter)
+
+timenotfound = True
+atmosphere_height = 1e4
+simulation_end_epoch = 10*constants.JULIAN_DAY
+
+while timenotfound:
+
+    termination_settings = propagation_setup.propagator.time_termination(simulation_end_epoch)
+    fixed_step_size = 10.0
+    integrator_settings = propagation_setup.integrator.runge_kutta_4(fixed_step_size)
+    propagator_settings_capsule = propagation_setup.propagator.translational(
+        central_bodies,
+        acceleration_models_capsule,
+        bodies_to_propagate_capsule,
+        initial_state_capsule,
+        simulation_start_epoch,
+        integrator_settings,
+        termination_settings
+    )
+    dynamics_simulator_capsule = numerical_simulation.create_dynamics_simulator(
+        bodies, propagator_settings_capsule
+    )
+
+    states_capsule = dynamics_simulator_capsule.state_history
+    states_capsule_array = result2array(states_capsule)
+    radius_capsule = np.sqrt( states_capsule_array[:, 1] ** 2 + states_capsule_array[:, 2] ** 2 + states_capsule_array[:, 3] ** 2 )
+    altitude_capsule = radius_capsule - radiusUranus
+    distance = altitude_capsule[-1] - atmosphere_height
+    if altitude_capsule[-1] - atmosphere_height < 0:
+        timenotfound = False
+        print ('Atmospheric encounter at',simulation_end_epoch/constants.JULIAN_DAY,'Days')
+    elif not altitude_capsule[-1] == min(altitude_capsule):
+        simulation_end_epoch*=0.9
+        print('oops overshot')
+    else:
+        if altitude_capsule[-1] - atmosphere_height < 1e5:
+            simulation_end_epoch += constants.JULIAN_DAY/24
+            print('getting very close...\ndistance is',distance)
+        elif altitude_capsule[-1] - atmosphere_height < 1e6:
+            simulation_end_epoch += constants.JULIAN_DAY/6
+            print('getting closer\ndistance is',distance)
+        else:
+            simulation_end_epoch += constants.JULIAN_DAY
+            print('still far away\ndistance is',distance)
+
+
 
 # Create termination settings
 termination_settings = propagation_setup.propagator.time_termination(simulation_end_epoch)
@@ -162,7 +193,7 @@ And the velocity vector of the orbiter is [km/s]: \n{
     states_orbiter[simulation_start_epoch][3:] / 1E3}
     """
 )
-radiusUranus = 25362000
+
 
 # Define a 3D figure using pyplot
 fig = plt.figure(figsize=(6,6), dpi=125)
