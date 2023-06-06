@@ -130,6 +130,10 @@ class GRAM(object):
         self.read_data()
 
     def read_data(self):
+        """
+        loads the GRAM generated data into a pandas dataframe and filters out useless data look at GRAM documentation in
+        \GRAM_Suit_1_5\Documentation\Uranus-Gram User Guide.pdf for full ist of parameters
+        """
         self.data = pd.read_csv(__file__[:-7]+"atmos_OUTPUT.csv")
         #
         self.data.drop(columns=["LatitudeRadius_km", "AverageMolecularWeight", "LocalSolarTime_hr",
