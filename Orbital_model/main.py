@@ -39,7 +39,7 @@ bodies_to_create = ["Uranus","Titania"]
 
 # Set simulation start and end epochs
 simulation_start_epoch = 0.0
-simulation_end_epoch = constants.JULIAN_DAY*30
+simulation_end_epoch = constants.JULIAN_DAY*15
 
 # Create default body settings for bodies_to_create, with "Uranus"/"J2000" as the global frame origin and orientation
 global_frame_origin = "Uranus"
@@ -188,6 +188,13 @@ ax.set_xlabel('x [m]')
 ax.set_ylabel('y [m]')
 ax.set_zlabel('z [m]')
 ax.set_aspect('equal', adjustable='box')
+plt.show()
+
+#spherical_capsule_data = astro.cartesiantospherical(states_capsule)
+radius_capsule = np.sqrt( states_capsule_array[:, 1] ** 2 + states_capsule_array[:, 2] ** 2 + states_capsule_array[:, 3] ** 2 )
+altitude_capsule = radius_capsule - radiusUranus
+
+plt.plot(np.arange(stop=len(altitude_capsule * 10), start = 0, step = 1), altitude_capsule)
 plt.show()
 
 #gravity assist program for inspiration
