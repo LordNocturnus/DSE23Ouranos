@@ -88,8 +88,8 @@ acceleration_models_capsule = propagation_setup.create_acceleration_models(
 # Keplerian elements and later on converted to Cartesian elements
 uranus_gravitational_parameter = bodies.get("Uranus").gravitational_parameter
 
-initial_state_orbiter = np.array([1e9,1e9,1e9,0,-100,0])
-initial_state_capsule = np.array([1e9,1e9,1e9,0,-150,0])
+initial_state_orbiter = np.array([1e9,1e9,1e9,0,-380,15])
+initial_state_capsule = np.array([1e9,1e9,1e9,0,-380,0])
 
 
 print (initial_state_orbiter)
@@ -117,7 +117,6 @@ dynamics_simulator_capsule = numerical_simulation.create_dynamics_simulator(
 
 states_capsule = dynamics_simulator_capsule.state_history
 states_capsule_array = result2array(states_capsule)
-capsule_position = np.array([states_capsule_array[-1,1],states_capsule_array[-1,2],states_capsule_array[-1,3]])
 radius_capsule = np.sqrt( states_capsule_array[:, 1] ** 2 + states_capsule_array[:, 2] ** 2 + states_capsule_array[:, 3] ** 2 )
 altitude_capsule = radius_capsule - radiusUranus
 count = 0
@@ -136,6 +135,8 @@ if atmospheric_encounter == False:
 else: 
     simulation_end_epoch = atmospheric_encounter * 10
 
+capsule_position = np.array([states_capsule_array[atmospheric_encounter,1],states_capsule_array[atmospheric_encounter,2],states_capsule_array[atmospheric_encounter,3]])
+
 print ('Atmospheric encounter at',atmospheric_encounter * 10 / constants.JULIAN_DAY,'days')
 
 #doing comms link stuff
@@ -145,7 +146,7 @@ start_atmospheric_mission = int(atmospheric_encounter + duration_of_entry/10)
 
 end_atmsopheric_mission = int(start_atmospheric_mission + atmospheric_mission_time/10)
 
-simulation_end_epoch = end_atmsopheric_mission
+simulation_end_epoch = end_atmsopheric_mission * 10
 
 position_glider = capsule_position
 
@@ -163,13 +164,15 @@ propagator_settings_orbiter = propagation_setup.propagator.translational(
     termination_settings_telemetry
 )
 dynamics_simulator_orbiter = numerical_simulation.create_dynamics_simulator(
-    bodies, propagator_settings_capsule
+    bodies, propagator_settings_orbiter
 )
 
 states_orbiter = dynamics_simulator_orbiter.state_history
 states_orbiter_array = result2array(states_orbiter)
 
 atmospheric_mission_orbiter_states_array = states_orbiter_array[start_atmospheric_mission:]
+
+print(len(states_orbiter_array),'\n',start_atmospheric_mission)
 
 atmospheric_mission_orbiter_x = atmospheric_mission_orbiter_states_array[:,1]
 atmospheric_mission_orbiter_y = atmospheric_mission_orbiter_states_array[:,2]
@@ -195,7 +198,30 @@ for i in range(len(telemetry_vector)):
 plt.plot(np.arange(stop=len(telemetry_distance )* 10, start = 0, step = 10), telemetry_distance)
 plt.show()
 
-plt.plot(np.arange(stop=len(telemetry_distance) * 10, start = 0, step = 10), telemetry_angle)
+plt.plot(np.arange(stop=len(telemetry_distance) * 10, start = 0, step = 10), telemetry_angle/np.pi * 180)
+plt.show()
+
+# Define a 3D figure using pyplot
+fig = plt.figure(figsize=(6,6), dpi=125)
+ax = fig.add_subplot(111, projection='3d')
+ax.set_title(f'Trajectories at Uranian encounter')
+
+# Plot the positional state history
+ax.plot(atmospheric_mission_orbiter_x, atmospheric_mission_orbiter_y, atmospheric_mission_orbiter_z, label=bodies_to_propagate_orbiter[0], linestyle='-.')
+ax.scatter(position_glider[0],position_glider[1],position_glider[2], label="Glider", marker='x', color='red')
+
+u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
+x = np.cos(u)*np.sin(v)*radiusUranus
+y = np.sin(u)*np.sin(v)*radiusUranus
+z = np.cos(v)*radiusUranus
+ax.plot_wireframe(x, y, z, label="Uranus", color="blue")
+
+# Add the legend and labels, then show the plot
+ax.legend()
+ax.set_xlabel('x [m]')
+ax.set_ylabel('y [m]')
+ax.set_zlabel('z [m]')
+ax.set_aspect('equal', adjustable='box')
 plt.show()
 
 # Create termination settings
