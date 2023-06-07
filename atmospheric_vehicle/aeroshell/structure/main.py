@@ -132,9 +132,9 @@ if __name__ == "__main__":
 
 
     # Size Constraints
-    h_glider = 0.25
+    h_glider = 0.5
     h_parachute = 0.5
-    r_thermal = 2
+    r_thermal = 3
     r_parachute = 0.25
 
     # Capsule Properties
