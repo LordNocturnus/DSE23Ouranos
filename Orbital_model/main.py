@@ -47,151 +47,222 @@ radiusUranus = 25362000
 simulation_start_epoch = 0.0
 simulation_end_epoch = constants.JULIAN_DAY*15
 
-# Create default body settings for bodies_to_create, with "Uranus"/"J2000" as the global frame origin and orientation
-global_frame_origin = "Uranus"
-global_frame_orientation = "J2000"
-body_settings = environment_setup.get_default_body_settings(
-    bodies_to_create, global_frame_origin, global_frame_orientation)
+class orbital_trajectory:
 
-# Create system of bodies 
-bodies = environment_setup.create_system_of_bodies(body_settings)
-central_bodies = ["Uranus"]
-#do encounter
-bodies.create_empty_body("Orbiter")
-bodies.create_empty_body("Capsule")
+    def __init__(self,initial_state,desired_orbit,duration_of_mission):
+        #storing inputs in class
+        self.initial_state = initial_state
+        self.desired_orbit = desired_orbit
 
-#bodies_to_propagate = ("Orbiter","Capsule")
-bodies_to_propagate_orbiter = ["Orbiter"]
-bodies_to_propagate_capsule = ["Capsule"]
+        #setting up basic properties of the orbital simulation as part of the class
+        self.global_frame_origin = "Uranus"
+        self.global_frame_orientation = "J2000"
+        body_settings = environment_setup.get_default_body_settings(
+            bodies_to_create, self.global_frame_origin, self.global_frame_orientation)
+        self.bodies = environment_setup.create_system_of_bodies(body_settings)
+        self.duration_of_mission = duration_of_mission
+        self.central_bodies = ["Uranus"]
+        self.bodies.create_empty_body("Capsule")
+        self.bodies.create_empty_body("Orbiter")
+        self.uranus_gravitational_parameter = self.bodies.get("Uranus").gravitational_parameter
 
-# Define accelerations acting on objects
-acceleration_settings = dict(
-    Uranus=[propagation_setup.acceleration.point_mass_gravity()]
-    )
+    def capsuletrajectory(self,atmosphere_height=5e6,step_size=10):
 
+        bodies_to_propagate_capsule = ["Capsule"]
 
-#acceleration_settings = {"Orbiter": acceleration_settings_orbiter,"Capsule": acceleration_settings_capsule}
-acceleration_settings_orbiter = {"Orbiter": acceleration_settings}
-acceleration_settings_capsule = {"Capsule": acceleration_settings}
-
-# Create acceleration models
-acceleration_models_orbiter = propagation_setup.create_acceleration_models(
-    bodies, acceleration_settings_orbiter, bodies_to_propagate_orbiter, central_bodies
-    )
-
-acceleration_models_capsule = propagation_setup.create_acceleration_models(
-    bodies, acceleration_settings_capsule, bodies_to_propagate_capsule, central_bodies
-    )
-
-# Set initial conditions for the satellite that will be
-# propagated in this simulation. The initial conditions are given in
-# Keplerian elements and later on converted to Cartesian elements
-uranus_gravitational_parameter = bodies.get("Uranus").gravitational_parameter
-
-initial_state_orbiter = np.array([1e9,1e9,1e9,0,-380,15])
-initial_state_capsule = np.array([1e9,1e9,1e9,0,-380,0])
+        # Define accelerations acting on objects
+        acceleration_settings = dict(
+            Uranus=[propagation_setup.acceleration.point_mass_gravity()]
+            )
 
 
-print (initial_state_orbiter)
+        #acceleration_settings = {"Orbiter": acceleration_settings_orbiter,"Capsule": acceleration_settings_capsule}
+        acceleration_settings_capsule = {"Capsule": acceleration_settings}
 
-timenotfound = True
-atmosphere_height = 1e4
-simulation_end_epoch = 40*constants.JULIAN_DAY
+        # Create acceleration models
+        acceleration_models_capsule = propagation_setup.create_acceleration_models(
+            self.bodies, acceleration_settings_capsule, bodies_to_propagate_capsule, self.central_bodies
+            )
+
+        # Set initial conditions for the satellite that will be
+        # propagated in this simulation. The initial conditions are given in
+        # Keplerian elements and later on converted to Cartesian elements
+        #uranus_gravitational_parameter = self.bodies.get("Uranus").gravitational_parameter
+
+        
+        initial_state_capsule = np.array([1e9,1e9,1e9,0,-380,0])
+
+        print (initial_state_orbiter)
+
+        timenotfound = True
+        simulation_end_epoch = 40*constants.JULIAN_DAY
+
+        #doing simulation
+        termination_settings = propagation_setup.propagator.time_termination(simulation_end_epoch)
+        fixed_step_size = step_size
+        integrator_settings = propagation_setup.integrator.runge_kutta_4(fixed_step_size)
+        propagator_settings_capsule = propagation_setup.propagator.translational(
+            self.central_bodies,
+            acceleration_models_capsule,
+            bodies_to_propagate_capsule,
+            initial_state_capsule,
+            simulation_start_epoch,
+            integrator_settings,
+            termination_settings
+        )
+        dynamics_simulator_capsule = numerical_simulation.create_dynamics_simulator(
+            self.bodies, propagator_settings_capsule
+        )
+
+        #postprocessing data
+
+        #getting states from simulator
+        states_capsule = dynamics_simulator_capsule.state_history
+        states_capsule_array = result2array(states_capsule)
+
+        #detecting when capsule encounters atmosphere
+        radius_capsule = np.sqrt( states_capsule_array[:, 1] ** 2 + states_capsule_array[:, 2] ** 2 + states_capsule_array[:, 3] ** 2 )
+        altitude_capsule = radius_capsule - radiusUranus - atmosphere_height
+        count = 0
+        atmospheric_encounter = False
+        notfound = True
+        while notfound:
+            if altitude_capsule[count] < 0:
+                atmospheric_encounter = count
+                notfound = False
+            count += 1
+            if count > len(altitude_capsule):
+                notfound = False
+
+        if atmospheric_encounter == False:
+            print ('atmosphere missed!')
+        else: 
+            simulation_end_epoch = atmospheric_encounter * step_size
+
+        self.atmospheric_encounter = atmospheric_encounter
+
+        capsule_position = np.array([states_capsule_array[atmospheric_encounter,1],states_capsule_array[atmospheric_encounter,2],states_capsule_array[atmospheric_encounter,3]])
+
+        print ('Atmospheric encounter at',atmospheric_encounter * step_size / constants.JULIAN_DAY,'days')
+
+        capsule_state_at_encounter = states_capsule[atmospheric_encounter*step_size]
+
+        self.states_capsule_array = states_capsule_array
+
+        return astro.element_conversion.cartesian_to_spherical(capsule_state_at_encounter)
+    
+    def get_delta_v(self):
+        initial_state_keplerian = astro.element_conversion.cartesian_to_keplerian(self.initial_state)
+        initial_velocity_periapsis = np.sqrt(self.uranus_gravitational_parameter/initial_state_keplerian[0] * (1+initial_state_keplerian[1])/(1-initial_state_keplerian[1]))
+        final_velocity_periapsis = np.sqrt(self.uranus_gravitational_parameter/self.desired_orbit[0] * (1+self.desired_orbit[1])/(1-self.desired_orbit[1]))
+        return initial_velocity_periapsis - final_velocity_periapsis
+    
+    def orbiter_initial_trajectory(self,duration_of_entry,capsule_position,step_size=10):
+
+        start_atmospheric_mission = int(self.atmospheric_encounter + duration_of_entry/step_size)
+
+        end_atmsopheric_mission = int(start_atmospheric_mission + atmospheric_mission_time/step_size)
+
+        simulation_end_epoch = end_atmsopheric_mission * step_size
+
+        bodies_to_propagate_orbiter = ["Orbiter"]
+
+        # Define accelerations acting on objects
+        acceleration_settings = dict(
+            Uranus=[propagation_setup.acceleration.point_mass_gravity()]
+            )
 
 
-termination_settings = propagation_setup.propagator.time_termination(simulation_end_epoch)
-fixed_step_size = 10.0
-integrator_settings = propagation_setup.integrator.runge_kutta_4(fixed_step_size)
-propagator_settings_capsule = propagation_setup.propagator.translational(
-    central_bodies,
-    acceleration_models_capsule,
-    bodies_to_propagate_capsule,
-    initial_state_capsule,
-    simulation_start_epoch,
-    integrator_settings,
-    termination_settings
-)
-dynamics_simulator_capsule = numerical_simulation.create_dynamics_simulator(
-    bodies, propagator_settings_capsule
-)
+        #acceleration_settings = {"Orbiter": acceleration_settings_orbiter,"Capsule": acceleration_settings_capsule}
+        acceleration_settings_orbiter = {"Orbiter": acceleration_settings}
 
-states_capsule = dynamics_simulator_capsule.state_history
-states_capsule_array = result2array(states_capsule)
-radius_capsule = np.sqrt( states_capsule_array[:, 1] ** 2 + states_capsule_array[:, 2] ** 2 + states_capsule_array[:, 3] ** 2 )
-altitude_capsule = radius_capsule - radiusUranus
-count = 0
-atmospheric_encounter = False
-notfound = True
-while notfound:
-    if altitude_capsule[count] < 0:
-        atmospheric_encounter = count
-        notfound = False
-    count += 1
-    if count > len(altitude_capsule):
-        notfound = False
+        # Create acceleration models
+        acceleration_models_orbiter = propagation_setup.create_acceleration_models(
+            self.bodies, acceleration_settings_orbiter, bodies_to_propagate_orbiter, self.central_bodies
+            )
 
-if atmospheric_encounter == False:
-    print ('atmosphere missed!')
-else: 
-    simulation_end_epoch = atmospheric_encounter * 10
+        position_glider = capsule_position[:3]
 
-capsule_position = np.array([states_capsule_array[atmospheric_encounter,1],states_capsule_array[atmospheric_encounter,2],states_capsule_array[atmospheric_encounter,3]])
+        #running simulation for orbiter to find periapsis
+        termination_settings_telemetry = propagation_setup.propagator.time_termination(end_atmsopheric_mission * step_size)
+        fixed_step_size = step_size
+        integrator_settings = propagation_setup.integrator.runge_kutta_4(fixed_step_size)
+        propagator_settings_orbiter = propagation_setup.propagator.translational(
+            self.central_bodies,
+            acceleration_models_orbiter,
+            bodies_to_propagate_orbiter,
+            initial_state_orbiter,
+            simulation_start_epoch,
+            integrator_settings,
+            termination_settings_telemetry
+        )
+        dynamics_simulator_orbiter = numerical_simulation.create_dynamics_simulator(
+            self.bodies, propagator_settings_orbiter
+        )
 
-print ('Atmospheric encounter at',atmospheric_encounter * 10 / constants.JULIAN_DAY,'days')
+        states_orbiter = dynamics_simulator_orbiter.state_history
+        states_orbiter_array = result2array(states_orbiter)
 
-#doing comms link stuff
+        #searching periapsis data
+        radius = np.zeros((len(states_orbiter_array)))
+        for i in range(len(states_orbiter_array)):
+            radius[i] = np.sqrt( states_orbiter_array[i,1] ** 2 + states_orbiter_array[i,2] ** 2 + states_orbiter_array[i,3] ** 2 )
 
-#initialising basic info about atmospheric mission
-start_atmospheric_mission = int(atmospheric_encounter + duration_of_entry/10)
+        index_min = np.argmin(radius)
 
-end_atmsopheric_mission = int(start_atmospheric_mission + atmospheric_mission_time/10)
+        state_periapsis = 
 
-simulation_end_epoch = end_atmsopheric_mission * 10
+        #state_periapsis = np.array([states_orbiter_array[index_min,1],states_orbiter_array[index_min,2],states_orbiter_array[index_min,3],states_orbiter_array[index_min,4],states_orbiter_array[index_min,5],states_orbiter_array[index_min,6]])
+        #state_periapsis = states_orbiter[index_min]
+        #keplerian_state = astro.element_conversion.cartesian_to_keplerian(state_periapsis)
+        #print (keplerian_state)
 
-position_glider = capsule_position
+        atmospheric_mission_orbiter_states_array = states_orbiter_array[start_atmospheric_mission:]
 
-#running simulation for orbiter
-termination_settings_telemetry = propagation_setup.propagator.time_termination(end_atmsopheric_mission)
-fixed_step_size = 10.0
-integrator_settings = propagation_setup.integrator.runge_kutta_4(fixed_step_size)
-propagator_settings_orbiter = propagation_setup.propagator.translational(
-    central_bodies,
-    acceleration_models_orbiter,
-    bodies_to_propagate_orbiter,
-    initial_state_orbiter,
-    simulation_start_epoch,
-    integrator_settings,
-    termination_settings_telemetry
-)
-dynamics_simulator_orbiter = numerical_simulation.create_dynamics_simulator(
-    bodies, propagator_settings_orbiter
-)
+        print(len(states_orbiter_array),'\n',start_atmospheric_mission)
 
-states_orbiter = dynamics_simulator_orbiter.state_history
-states_orbiter_array = result2array(states_orbiter)
+        atmospheric_mission_orbiter_x = atmospheric_mission_orbiter_states_array[:,1]
+        atmospheric_mission_orbiter_y = atmospheric_mission_orbiter_states_array[:,2]
+        atmospheric_mission_orbiter_z = atmospheric_mission_orbiter_states_array[:,3]
 
-atmospheric_mission_orbiter_states_array = states_orbiter_array[start_atmospheric_mission:]
+        telemetry_vector = np.zeros((len(atmospheric_mission_orbiter_x),3))
+        telemetry_angle= np.zeros_like(atmospheric_mission_orbiter_x)
+        telemetry_distance = np.zeros_like(atmospheric_mission_orbiter_x)
 
-print(len(states_orbiter_array),'\n',start_atmospheric_mission)
+        input_angle = np.zeros_like(atmospheric_mission_orbiter_x)
 
-atmospheric_mission_orbiter_x = atmospheric_mission_orbiter_states_array[:,1]
-atmospheric_mission_orbiter_y = atmospheric_mission_orbiter_states_array[:,2]
-atmospheric_mission_orbiter_z = atmospheric_mission_orbiter_states_array[:,3]
+        for i in range(len(telemetry_vector)):
 
-telemetry_vector = np.zeros((len(atmospheric_mission_orbiter_x),3))
-telemetry_angle= np.zeros_like(atmospheric_mission_orbiter_x)
-telemetry_distance = np.zeros_like(atmospheric_mission_orbiter_x)
+            telemetry_vector[i,0] = atmospheric_mission_orbiter_x[i] - position_glider[0]
+            telemetry_vector[i,1] = atmospheric_mission_orbiter_y[i] - position_glider[1]
+            telemetry_vector[i,2] = atmospheric_mission_orbiter_z[i] - position_glider[2]
+            telemetry_distance[i] = np.sqrt(telemetry_vector[i,0] ** 2 + telemetry_vector[i,1] ** 2 + telemetry_vector[i,2] ** 2 )
+            input_angle[i] = np.inner(telemetry_vector[i],position_glider)/(telemetry_distance[i]*np.linalg.norm(position_glider))
+            telemetry_angle[i] = np.arccos(np.inner(telemetry_vector[i],position_glider)/(telemetry_distance[i]*np.linalg.norm(position_glider)))
 
-input_angle = np.zeros_like(atmospheric_mission_orbiter_x)
+        delta_v = 1
 
-for i in range(len(telemetry_vector)):
+        return delta_v, telemetry_distance, telemetry_angle
 
-    telemetry_vector[i,0] = atmospheric_mission_orbiter_x[i] - position_glider[0]
-    telemetry_vector[i,1] = atmospheric_mission_orbiter_y[i] - position_glider[1]
-    telemetry_vector[i,2] = atmospheric_mission_orbiter_z[i] - position_glider[2]
-    telemetry_distance[i] = np.sqrt(telemetry_vector[i,0] ** 2 + telemetry_vector[i,1] ** 2 + telemetry_vector[i,2] ** 2 )
-    input_angle[i] = np.inner(telemetry_vector[i],position_glider)/(telemetry_distance[i]*np.linalg.norm(position_glider))
-    telemetry_angle[i] = np.arccos(np.inner(telemetry_vector[i],position_glider)/(telemetry_distance[i]*np.linalg.norm(position_glider)))
+        
+
+initialstate = np.array([1e9,1e9,1e9,-380,0,0])
+
+desiredorbit = np.array([1,1,1,1,1,1])
+
+time=constants.JULIAN_DAY / 24 * 3
+
+entry_time = constants.JULIAN_DAY / 24
+
+trajectory = orbital_trajectory(initial_state=initialstate,desired_orbit=desiredorbit,duration_of_mission=time)
+
+capsulestate = trajectory.capsuletrajectory(atmosphere_height=5e6,step_size=10)
+
+capsulestatecartesian = astro.element_conversion.spherical_to_cartesian(capsulestate)
+
+deltav, telemetry_distance, telemetry_angle = trajectory.orbiter_initial_trajectory(duration_of_entry=entry_time,capsule_position=capsulestatecartesian,step_size=10)
+
+print('break') 
 
 
 
