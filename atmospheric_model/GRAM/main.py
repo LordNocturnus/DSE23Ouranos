@@ -35,7 +35,7 @@ class GRAM(object):
         self.stepsize = 0.0
         self.trajectorypath = __file__[:-7]+"traj_data.txt"
         self.runs = 1
-        self.altitudes = np.arange(5000, -501, -1, dtype=float)
+        self.altitudes = np.arange(5000, -291, -1, dtype=float)
         self.lat = np.zeros_like(self.altitudes)
         self.long = np.zeros_like(self.altitudes)
         self.time = np.arange(0, len(self.altitudes), 1, dtype=float)
@@ -107,8 +107,8 @@ class GRAM(object):
             raise IndexError("length of the altitude latitude longitude and timestamps for the GRAM trajectory should be the same")
         if any(self.time < 0):
             raise ValueError("time should be positive")
-        if any(self.altitudes > 5000) or any(self.altitudes < -500):
-            raise ValueError("GRAM altitude should be between 5000 and -500")
+        if any(self.altitudes > 5000) or any(self.altitudes < -290):
+            raise ValueError("GRAM altitude should be between 5000 and -290")
         if any(np.abs(self.lat) > 90.0):
             raise ValueError("GRAM latitude should be +- 90° with negative being south")
         if any(self.long > 0.0) or any(self.long > 360.0):
@@ -136,7 +136,7 @@ class GRAM(object):
 
         self.data = pd.read_csv(__file__[:-7]+"atmos_OUTPUT.csv")
         #
-        self.data.drop(columns=["LatitudeRadius_km", "AverageMolecularWeight", "LocalSolarTime_hr",
+        self.data.drop(columns=["AverageMolecularWeight", "LocalSolarTime_hr",
                                "NSWindPerturbation_ms", "PerturbedEWWind_ms", "PerturbedNSWind_ms",
                                "EWStandardDeviation_ms", "NSStandardDeviation_ms", "EWWind_ms", "NSWind_ms",
                                "EWWindPerturbation_ms", "LongitudeOfTheSun", "SubsolarLatitude_deg",
@@ -148,7 +148,7 @@ class GRAM(object):
         self.data.drop(columns=self.data.columns[-1], inplace=True)
         #print(self.data.head())
         for c in self.data.columns:
-            print(c)
+            #print(c)
             if self.data[c].isnull().any():
                 raise ValueError(f"GRAM returned NaN values in {c} please investigate")
 
