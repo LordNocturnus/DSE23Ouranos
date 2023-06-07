@@ -203,15 +203,6 @@ class orbital_trajectory:
         states_orbiter = dynamics_simulator_orbiter.state_history
         states_orbiter_array = result2array(states_orbiter)
 
-        #searching periapsis data
-        radius = np.zeros((len(states_orbiter_array)))
-        for i in range(len(states_orbiter_array)):
-            radius[i] = np.sqrt( states_orbiter_array[i,1] ** 2 + states_orbiter_array[i,2] ** 2 + states_orbiter_array[i,3] ** 2 )
-
-        index_min = np.argmin(radius)
-
-        state_periapsis = 
-
         #state_periapsis = np.array([states_orbiter_array[index_min,1],states_orbiter_array[index_min,2],states_orbiter_array[index_min,3],states_orbiter_array[index_min,4],states_orbiter_array[index_min,5],states_orbiter_array[index_min,6]])
         #state_periapsis = states_orbiter[index_min]
         #keplerian_state = astro.element_conversion.cartesian_to_keplerian(state_periapsis)
