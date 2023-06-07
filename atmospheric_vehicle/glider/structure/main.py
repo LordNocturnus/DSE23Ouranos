@@ -32,19 +32,59 @@ def calculate_c_w(c_w_root, c_w_tip, b_w): # estimates different values of chord
 c_w = calculate_c_w(c_w_root, c_w_tip, b_w) # array of chord values that will be used for later estimations
 #print(c_w)
 
-a_2 = c_w * 0.1 # [m], value used for the simplified airfoil cross section: will be found by analysing the actual geometry of the airfoil and
-        # simplifying the central section into a hollow rectangle, set as dummy for now. Shall be given as percentage of chord
+'Simplified dimensions used for wing cross section properties calculations'
+a_2 = c_w * 0.1 # [m], value used for the simplified airfoil cross section: will be found by analysing the actual geometry of the
+# airfoil and simplifying the central section into a hollow rectangle, set as dummy for now. Shall be given as percentage of chord
 a_3 = c_w * 0.2 # [m], same reasoning as above, set as dummy for now. Shall be given as percentage of chord
+t = c_w * 0.05 # [m], maximum thickness of airfoil: once the airfoil is selected, can be found on airfoiltools.com as
+# percentage of the chord. Set as dummy for now
 
-'In order to calculate the cross sectional properties needed for bending and tensile stresses (hence cross section A and moment of'
-'inertia I) the cross section of the wing has been idealised such that it is made by three different hollow parts: a half circle, '
-'a rectangle and an isosceles triangle. Ask Elia for more details on the geometry'
-def calculate_Ixx1(t_t):  # Calculate I for section 1 (half circle) as function of thickness t_t
-    t = 1 # [m], maximum thickness of airfoil: once the airfoil is selected, can be found on airfoiltools.com as function of the chord
-    Ixx_1 = np.pi / 16 * t**3 * t_t
-    return Ixx_1
+# In order to calculate the cross sectional properties needed for bending and tensile stresses (hence cross section A, moment of
+# inertia I and x location of centroid (section is symmetric wrt z, so no need for  location)) the cross section of the wing has been
+# idealised such that it is made by three different hollow parts: a half circle,
+# a rectangle and an isosceles triangle. Ask Elia for more details on the geometry
 
-def calculate_Ixx2(t_t, a_2):
+'Wing cross section properties calculations'
+#NOTE: for centroids, datum is always taken starting from the leftmost edge of cross section (where half circle begins)
+def calculate_props1(t_t):  # Calculate I, A and x_centroid for section 1 (half circle) as function of thickness t_t
+    Ixx_1 = np.pi / 16 * t**3 * t_t # https://izabellaldgalvan.blogspot.com/2022/09/moment-of-inertia-of-circle.html (for half-circle)
+    A_1 = np.pi * t_t * (1 + t) # own work
+    Xcentr_1 = t / 2 * (np.pi - 1) / (np.pi + 1) # https://en.wikipedia.org/wiki/List_of_centroids (for anular sector with alpha=90)
+    return Ixx_1, A_1, Xcentr_1
+
+def calculate_props2(t_t):  # Calculate I, A and x_centroid for section 2 (rectangle) as function of thickness t_t
+    Ixx_2 = 1 / 2 * t**2 * t_t * a_2 + 1 / 6 * t_t * t**3 # https://amaris-has-pacheco.blogspot.com/2022/04/hollow-rectangular-beam-moment-of.html
+    A_2 = 2 * t_t * (t + a_2) # own work
+    Xcentr_2 = (t + a_2) / 2 # simply by looking at geometry
+    return Ixx_2, A_2, Xcentr_2
+
+def calculate_props3(t_t):  # Calculate I, A and x_centroid for section 3 (isosceles triangle) as function of thickness t_t
+    Ixx_3 = 1 / 8 * t**2 * t_t * a_3 + 1 / 24 * t_t * t**3 # https://amesweb.info/section/area-moment-of-inertia-of-isosceles-triangle.aspx (used formula for Iy)
+    A_3 = t_t * (t + a_3) # own work
+    Xcentr_3 = t /2 + a_2 + (a_3 / 3 * (t + 2 * a_3)) / (2 * a_3 + 2 * t) # https://amesweb.info/section/area-moment-of-inertia-of-isosceles-triangle.aspx (did outside triangle-inside triangle analysis)
+    return Ixx_3, A_3, Xcentr_3
+
+def calculate_props_total(Ixx_1, Ixx_2, Ixx_3,A_1, A_2, A_3,Xcentr_1, Xcentr_2, Xcentr_3):
+    Ixx_tot = Ixx_1 + Ixx_2 + Ixx_3
+    A_tot = A_1 + A_2 + A_3
+    Xcentr_tot = (A_1 * Xcentr_1 + A_2 * Xcentr_2 + A_3 * Xcentr_3) / A_tot
+    return Ixx_tot, A_tot, Xcentr_tot
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 if __name__ == "__main__":
     print("Hello World")
