@@ -1,130 +1,113 @@
+from scipy.integrate import solve_ivp
 from matplotlib import pyplot as plt
-from tudatpy.kernel.interface import spice
-from tudatpy.kernel import numerical_simulation
-from tudatpy.kernel.numerical_simulation import environment_setup, environment, propagation_setup, propagation
-from tudatpy.kernel.astro import element_conversion
-from tudatpy.kernel import constants
-from tudatpy.util import result2array
 import numpy as np
 import scipy as sp
-import math
 
-# Create a class for the aerodynamic guidance of the STS, inheriting from 'propagation.AerodynamicGuidance'
-class STSAerodynamicGuidance:
+from atmospheric_model import GRAM
 
-    def __init__(self, bodies: environment.SystemOfBodies):
 
-        # Extract the STS and Earth bodies
-        self.vehicle = bodies.get_body("STS")
-        self.earth = bodies.get_body("Earth")
+class Core:
 
-        # Extract the STS flight conditions, angle calculator, and aerodynamic coefficient interface
-        environment_setup.add_flight_conditions( bodies, 'STS', 'Earth')
-        self.vehicle_flight_conditions = bodies.get_body("STS").flight_conditions
-        self.aerodynamic_angle_calculator = self.vehicle_flight_conditions.aerodynamic_angle_calculator
-        self.aerodynamic_coefficient_interface = self.vehicle_flight_conditions.aerodynamic_coefficient_interface
+    def __init__(self):
+        self.mass = 0.0
+        self.c_d = 0.0
+        self.c_l = 0.0
+        self.beta = 0.0
+        self.gamma = 0.0
 
-        self.current_time = float("NaN")
+        self._lat = 0.0
+        self._lon = 0.0
+        self.heading = 0.0
 
-    def getAerodynamicAngles(self, current_time: float):
-        self.updateGuidance( current_time )
-        return np.array([self.angle_of_attack, 0.0, self.bank_angle])
+        self.alt = 0.0
+        self.dis = 0.0
+        self.vx = 0.0
+        self.vy = 0.0
+        self.ax = 0.0
+        self.ay = 0.0
 
-    # Function that is called at each simulation time step to update the ideal bank angle of the vehicle
-    def updateGuidance(self, current_time: float):
+        self.t = 0.0
 
-        if( math.isnan( current_time ) ):
-            self.current_time = float("NaN")
-        elif( current_time != self.current_time ):
-            # Get the (constant) angular velocity of the Earth body
-            earth_angular_velocity = np.linalg.norm(self.earth.body_fixed_angular_velocity)
-            # Get the distance between the vehicle and the Earth bodies
-            earth_distance = np.linalg.norm(self.vehicle.position)
-            # Get the (constant) mass of the vehicle body
-            body_mass = self.vehicle.mass
+    @property
+    def y(self):
+        return np.array([self.alt,
+                         self.dis,
+                         self.vy,
+                         self.vx])
 
-            # Extract the current Mach number, airspeed, and air density from the flight conditions
-            mach_number = self.vehicle_flight_conditions.mach_number
-            airspeed = self.vehicle_flight_conditions.airspeed
-            density = self.vehicle_flight_conditions.density
+    @property
+    def dy(self):
+        return np.array([self.vy,
+                         self.vx,
+                         self.ay,
+                         self.ax])
 
-            # Set the current Angle of Attack (AoA). The following line enforces the followings:
-            # * the AoA is constant at 40deg when the Mach number is above 12
-            # * the AoA is constant at 10deg when the Mach number is below 6
-            # * the AoA varies close to linearly when the Mach number is between 12 and 6
-            # * a Logistic relation is used so that the transition in AoA between M=12 and M=6 is smoother
-            self.angle_of_attack = np.deg2rad(30 / (1 + np.exp(-2*(mach_number-9))) + 10)
+    @y.setter
+    def y(self, y):
+        self.alt = y[0]
+        self.dis = y[1]
+        self.vy = y[2]
+        self.vx = y[3]
 
-            # Update the variables on which the aerodynamic coefficients are based (AoA and Mach)
-            current_aerodynamics_independent_variables = [self.angle_of_attack, mach_number]
-            # Update the aerodynamic coefficients
-            self.aerodynamic_coefficient_interface.update_coefficients(
-                current_aerodynamics_independent_variables, current_time)
 
-            # Extract the current force coefficients (in order: C_D, C_S, C_L)
-            current_force_coefficients = self.aerodynamic_coefficient_interface.current_force_coefficients
-            # Extract the (constant) reference area of the vehicle
-            aerodynamic_reference_area = self.aerodynamic_coefficient_interface.reference_area
+def uranus_entry_sim(alt, lat, lon, vel, gamma, heading, mass, beta, c_l, c_d):
+    gram =GRAM.GRAM()
+    gram.altitudes = np.array(0.0)
+    gram.lat = np.array(lat)
+    gram.long = np.array(lon)
+    gram.time = np.array(0.0)
+    gram.run()
+    radius = gram.data.LatitudeRadius_km[0]
+    core = Core()
 
-            # Get the heading, flight path, and latitude angles from the aerodynamic angle calculator
-            heading = self.aerodynamic_angle_calculator.get_angle(environment.heading_angle)
-            flight_path_angle = self.aerodynamic_angle_calculator.get_angle(environment.flight_path_angle)
-            latitude = self.aerodynamic_angle_calculator.get_angle(environment.latitude_angle)
+    core.mass = mass
+    core.c_d = c_d
+    core.c_l = c_l
+    core.beta = beta
+    core.gamma = gamma
 
-            # Compute the acceleration caused by Lift
-            lift_acceleration = 0.5 * density * airspeed ** 2 * aerodynamic_reference_area * current_force_coefficients[2] / body_mass
-            # Compute the gravitational acceleration
-            downward_gravitational_acceleration = self.earth.gravitational_parameter / (earth_distance ** 2)
-            # Compute the centrifugal acceleration
-            spacecraft_centrifugal_acceleration = airspeed ** 2 / earth_distance
-            # Compute the Coriolis acceleration
-            coriolis_acceleration = 2 * earth_angular_velocity * airspeed * np.cos(latitude) * np.sin(heading)
-            # Compute the centrifugal acceleration from the Earth
-            earth_centrifugal_acceleration = earth_angular_velocity ** 2 * earth_distance * np.cos(latitude) *             (np.cos(latitude) * np.cos(flight_path_angle) + np.sin(flight_path_angle) * np.sin(latitude) * np.cos(heading))
+    core._lat = lat
+    core._lon = lon
+    core.heading = heading
 
-            # Compute the cosine of the ideal bank angle
-            cosine_of_bank_angle = ((downward_gravitational_acceleration - spacecraft_centrifugal_acceleration) * np.cos(flight_path_angle) - coriolis_acceleration - earth_centrifugal_acceleration) / lift_acceleration
-            # If the cosine lead to a value out of the [-1, 1] range, set to bank angle to 0deg or 180deg
-            if (cosine_of_bank_angle < -1):
-                self.bank_angle = np.pi
-            elif (cosine_of_bank_angle > 1):
-                self.bank_angle = 0.0
-            else:
-                # If the cos is in the correct range, return the computed bank angle
-                self.bank_angle = np.arccos(cosine_of_bank_angle)
-            self.current_time = current_time
+    vx = vel * np.cos(gamma)
+    vy = vel * np.sin(gamma)
+    y0 = np.asarray([alt - radius, 0.0, vx, vy])
 
+    def rhs(t, y):
+        core.y = y
+        core.t = t
+
+        alpha = np.arctan2(core.vy, core.vx)
+        gram.altitudes = np.array(core.alt)
+        gram.run()
+        core.ax = -1 / 2 * gram.data.Density_kgm3[0] / (np.cos(alpha) * core.beta) * \
+                  (core.vx ** 2 - core.vx * core.vy * core.c_l / core.c_d)
+        core.ay = 1 / 2 * gram.data.Density_kgm3[0] / (np.sin(alpha) * core.beta) * \
+                  (core.vy ** 2 + core.vx * core.vy * core.c_l / core.c_d) + gram.data.Gravity_ms2[0]
+        return core.dy
+
+    def event_dis(t, y):
+        return 50000 - y[1]
+
+    event_dis.terminal = True
+
+    def event_alt(t, y):
+        return y[0]
+
+    event_alt.terminal = True
+
+    sol = solve_ivp(rhs, [core.t, 18000], y0,
+                    events=[event_dis, event_alt],
+                    max_step=0.001, method="LSODA",
+                    rtol=1e-3, atol=1e-6)
+
+    return sol
 
 if __name__ == "__main__":
+    example_data = [3.02877105e+07, -6.40748300e-02, -1.63500310e+00,  1.93919454e+04, -4.15342314e-01, -2.35413606e+00]
 
-    # Load spice kernels
-    spice.load_standard_kernels()
-
-    # Set simulation start epoch
-    simulation_start_epoch = 6000.0
-
-    # Set the maximum simulation time (avoid very long skipping re-entry)
-    max_simulation_time = 3*constants.JULIAN_DAY
-
-
-    # ## Environment setup
-    #
-    # Let’s create the environment for our simulation. This setup covers the creation of (celestial) bodies, vehicle(s), and environment interfaces.
-    #
-
-    # Create default body settings for "Earth"
-    bodies_to_create = ["Uranus"]
-
-    # Create default body settings for bodies_to_create, with "Earth"/"J2000" as the global frame origin and orientation
-    global_frame_origin = "Uranus"
-    global_frame_orientation = "J2000"
-    body_settings = environment_setup.get_default_body_settings(
-        bodies_to_create, global_frame_origin, global_frame_orientation)
-    body_settings.get("Uranus").
-
-    # Create system of bodies (in this case only Earth)
-    bodies = environment_setup.create_system_of_bodies(body_settings)
-
-    # Create vehicle object and set its constant mass
-    bodies.create_empty_body("STS")
-    bodies.get_body( "STS" ).set_constant_mass(5.0e3)
+    print(np.arctan2(0, 1))
+    print(np.arctan2(1, 0))
+    print(np.arctan2(0, -1))
+    print(np.arctan2(-1, 0))
