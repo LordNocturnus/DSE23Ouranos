@@ -136,7 +136,7 @@ class GRAM(object):
 
         self.data = pd.read_csv(__file__[:-7]+"atmos_OUTPUT.csv")
         #
-        self.data.drop(columns=["LatitudeRadius_km", "AverageMolecularWeight", "LocalSolarTime_hr",
+        self.data.drop(columns=["AverageMolecularWeight", "LocalSolarTime_hr",
                                "NSWindPerturbation_ms", "PerturbedEWWind_ms", "PerturbedNSWind_ms",
                                "EWStandardDeviation_ms", "NSStandardDeviation_ms", "EWWind_ms", "NSWind_ms",
                                "EWWindPerturbation_ms", "LongitudeOfTheSun", "SubsolarLatitude_deg",
