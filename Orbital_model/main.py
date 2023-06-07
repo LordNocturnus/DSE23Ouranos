@@ -151,7 +151,7 @@ class orbital_trajectory:
 
         return astro.element_conversion.cartesian_to_spherical(capsule_state_at_encounter)
     
-    def get_delta_v(self):
+    def get_capture_delta_v(self):
         initial_state_keplerian = astro.element_conversion.cartesian_to_keplerian(self.initial_state)
         initial_velocity_periapsis = np.sqrt(self.uranus_gravitational_parameter/initial_state_keplerian[0] * (1+initial_state_keplerian[1])/(1-initial_state_keplerian[1]))
         final_velocity_periapsis = np.sqrt(self.uranus_gravitational_parameter/self.desired_orbit[0] * (1+self.desired_orbit[1])/(1-self.desired_orbit[1]))
@@ -162,6 +162,14 @@ class orbital_trajectory:
         start_atmospheric_mission = int(self.atmospheric_encounter + duration_of_entry/step_size)
 
         end_atmsopheric_mission = int(start_atmospheric_mission + atmospheric_mission_time/step_size)
+
+        initial_state_orbiter_keplerian = self.initial_state
+
+        initial_state_captured = np.array([desiredorbit[0],desiredorbit[1],initial_state_orbiter_keplerian[2],initial_state_orbiter_keplerian[3],initial_state_orbiter_keplerian[4],initial_state_orbiter_keplerian[5],])
+
+        delta_mean_anomaly = astro.element_conversion.true_to_mean_anomaly(initial_state_orbiter_keplerian[1],initial_state_orbiter_keplerian[5])
+
+        time_to_periapsis = astro.element_conversion.delta_mean_anomaly_to_elapsed_time(delta_mean_anomaly,self.uranus_gravitational_parameter,initial_state_orbiter_keplerian[0])
 
         simulation_end_epoch = end_atmsopheric_mission * step_size
 
@@ -184,29 +192,42 @@ class orbital_trajectory:
         position_glider = capsule_position[:3]
 
         #running simulation for orbiter to find periapsis
-        termination_settings_telemetry = propagation_setup.propagator.time_termination(end_atmsopheric_mission * step_size)
+        termination_settings_before_capture = propagation_setup.propagator.time_termination(time_to_periapsis * step_size)
+        termination_settings_after_capture = propagation_setup.propagator.time_termination((end_atmsopheric_mission - time_to_periapsis) * step_size)
         fixed_step_size = step_size
         integrator_settings = propagation_setup.integrator.runge_kutta_4(fixed_step_size)
-        propagator_settings_orbiter = propagation_setup.propagator.translational(
+        propagator_settings_before_capture = propagation_setup.propagator.translational(
             self.central_bodies,
             acceleration_models_orbiter,
             bodies_to_propagate_orbiter,
             initial_state_orbiter,
             simulation_start_epoch,
             integrator_settings,
-            termination_settings_telemetry
+            termination_settings_before_capture
         )
-        dynamics_simulator_orbiter = numerical_simulation.create_dynamics_simulator(
-            self.bodies, propagator_settings_orbiter
+        propagator_settings_after_capture = propagation_setup.propagator.translational(
+            self.central_bodies,
+            acceleration_models_orbiter,
+            bodies_to_propagate_orbiter,
+            initial_state_captured,
+            time_to_periapsis,
+            integrator_settings,
+            termination_settings_after_capture
+        )
+        dynamics_simulator_before_capture = numerical_simulation.create_dynamics_simulator(
+            self.bodies, propagator_settings_before_capture
+        )
+        dynamics_simulator_after_capture = numerical_simulation.create_dynamics_simulator(
+            self.bodies, propagator_settings_after_capture
         )
 
-        states_orbiter = dynamics_simulator_orbiter.state_history
-        states_orbiter_array = result2array(states_orbiter)
+        states_orbiter_before_capture = dynamics_simulator_before_capture.state_history
+        states_orbiter_array_before_capture = result2array(states_orbiter_before_capture)
 
-        #state_periapsis = np.array([states_orbiter_array[index_min,1],states_orbiter_array[index_min,2],states_orbiter_array[index_min,3],states_orbiter_array[index_min,4],states_orbiter_array[index_min,5],states_orbiter_array[index_min,6]])
-        #state_periapsis = states_orbiter[index_min]
-        #keplerian_state = astro.element_conversion.cartesian_to_keplerian(state_periapsis)
-        #print (keplerian_state)
+        states_orbiter_after_capture = dynamics_simulator_after_capture.state_history
+        states_orbiter_array_after_capture = result2array(states_orbiter_after_capture)
+
+        states_orbiter_array = np.append(states_orbiter_array_before_capture,states_orbiter_array_after_capture)
 
         atmospheric_mission_orbiter_states_array = states_orbiter_array[start_atmospheric_mission:]
 
@@ -231,9 +252,7 @@ class orbital_trajectory:
             input_angle[i] = np.inner(telemetry_vector[i],position_glider)/(telemetry_distance[i]*np.linalg.norm(position_glider))
             telemetry_angle[i] = np.arccos(np.inner(telemetry_vector[i],position_glider)/(telemetry_distance[i]*np.linalg.norm(position_glider)))
 
-        delta_v = 1
-
-        return delta_v, telemetry_distance, telemetry_angle
+        return telemetry_distance, telemetry_angle
 
         
 
@@ -249,9 +268,11 @@ trajectory = orbital_trajectory(initial_state=initialstate,desired_orbit=desired
 
 capsulestate = trajectory.capsuletrajectory(atmosphere_height=5e6,step_size=10)
 
+capture_velocity = trajectory.get_capture_delta_v
+
 capsulestatecartesian = astro.element_conversion.spherical_to_cartesian(capsulestate)
 
-deltav, telemetry_distance, telemetry_angle = trajectory.orbiter_initial_trajectory(duration_of_entry=entry_time,capsule_position=capsulestatecartesian,step_size=10)
+telemetry_distance, telemetry_angle = trajectory.orbiter_initial_trajectory(duration_of_entry=entry_time,capsule_position=capsulestatecartesian,step_size=10)
 
 print('break') 
 
