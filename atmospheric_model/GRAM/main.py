@@ -146,10 +146,11 @@ class GRAM(object):
                                "Hend_m3", "Hemass_pct", "Hemole_pct", "Heamw",
                                "CH4nd_m3", "CH4mass_pct", "CH4mole_pct", "CH4amw"], inplace=True)
         self.data.drop(columns=self.data.columns[-1], inplace=True)
-        print(self.data.head())
-        if self.data.isnull().any():
-            raise ValueError("GRAM returned NaN values please investigate")
-
+        #print(self.data.head())
+        for c in self.data.columns:
+            print(c)
+            if self.data[c].isnull().any():
+                raise ValueError(f"GRAM returned NaN values in {c} please investigate")
 
 
 if __name__ == "__main__":
