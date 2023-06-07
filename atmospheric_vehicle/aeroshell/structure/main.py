@@ -14,7 +14,7 @@ def angle_cone(r_big, r_small, height):
 def t_pressure(p, r_big, a, sigma_y):
     """
     Function to determine the thickness required to withstand pressure loads during entry. Formulas were derived from
-    the following website: https://www.weldingandndt.com/summary-of-asme-bpvc-section-viii-div-1-part-2/
+    the following website: https://123sanat.com/d/catalogue/ASME-VIII-_8_-div.1-2019.pdf
     :param p: External pressure
     :param r_big: Top radius of cone
     :param a: angle between hypotenuse and base
