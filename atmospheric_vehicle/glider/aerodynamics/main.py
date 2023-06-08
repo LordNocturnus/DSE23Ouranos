@@ -1,10 +1,12 @@
 #Estimating Wing Geometry
 #Parameters (wing assumed to be trapezoidal)
-b = 6 #[m]
+b_w = 6 #[m]
+b_h = 1.3025 #[m]
 W_S_avg = 224.482 #[N/m^2]
 m = 112 #[kg]
 g_ur = 9.01 #[m/s^2]
-c_r =0.785 #[m]
+c_r_w = 0.785 #[m]
+c_r_h = 1.5 #[m]
 Re_low_bar = 3.21*(10**6)
 Re_high_bar = 5.41*(10**6)
 Viscosity_low_bar = 2.29*(10**(-5)) #[m^2/s]
@@ -19,6 +21,7 @@ V_glider_low_bar = 80 #[m/s]
 V_glider_high_bar= 0 #[m/s]
 rho_low_bar = 0.05 #[kg/m^3]
 rho_high_bar = 3.012 #[kg/m^3]
+S_avg_h = 1.357 #[m]
 
 #determine Mach Number at pressure levels considered:
 M_low_bar = V_glider_low_bar/a_low_bar
@@ -30,13 +33,17 @@ p_dynamic_low_bar = 0.5*rho_low_bar*(V_glider_low_bar**2)
 p_dynamic_high_bar = 0.5*rho_high_bar*(V_glider_high_bar**2)
 
 #determine Wing area and Tip Chord for Wing:
-S_avg = (1/W_S_avg)*(W) #[m^2]
-c_t = ((S_avg/2)-((b/4)*c_r))*(4/b) #[m]
-c_avg = (S_avg/2)/(b/2)
+S_avg_w = (1/W_S_avg)*(W) #[m^2]
+c_t_w = ((S_avg_w/2)-((b_w/4)*c_r_w))*(4/b_w) #[m]
+c_avg_w = (S_avg_w/2)/(b_w/2)
+A_w = (b_w**2)/S_avg_w
+
+c_t_h = ((S_avg_h/2)-((b_h/4)*c_r_h))*(4/b_h)
+c_avg_h = (S_avg_h/2)/(b_h/2)
+A_h = (b_h**2)/S_avg_h
 
 
 #Stability and Control derivatives + Parameters:
-x_cg = 0
 x_n_fixed = 0
 C_m_delta_e = 0
 C_m_alpha = 0
@@ -44,12 +51,26 @@ C_m_0 = 0
 C_N_alpha = 0
 alpha_0 = 0 #[deg]
 alpha = []
+C_l_alpha_ah = 4.02
+C_l_alpha_h = 4.02
+de_da = []
+l_h = 2.765 #[m]
+l_w = 1.5 #[m]
+
+V_h_over_V = 1
+SM = 0.15 #[%]
+x_ac = l_w - 0.75*c_avg_w
+x_cg = l_w - (c_avg_w - 0.333)
+
+
+#determining de/da:
+def downwash_vs_alpha(A):
+    de_da = 4/(A+2)
+    return de_da
 
 #Stability:
-def stability_cg(C_l_alpha_h, C_l_alpha_ah, de_dalpha, l_h, chord, V_h, V, x_ac_bar, SM):
-    S_h_S_stab = []
-
-    S_h_S_stab = (1/((C_l_alpha_h/C_l_alpha_ah)*(1-de_dalpha)*(l_h/chord)*((V_h/V)**2))) - ((x_ac_bar - SM)/((C_l_alpha_h/C_l_alpha_ah)*(1-de_dalpha)*(l_h/chord)*((V_h/V)**2)))
+def stability_cg(C_l_alpha_h, C_l_alpha_ah, de_dalpha, l_h, chord, V_h_over_V, x_ac_bar, SM, x_cg):
+    S_h_S_stab = (x_cg/((C_l_alpha_h/C_l_alpha_ah)*(1-de_dalpha)*(l_h/chord)*(V_h_over_V**2))) - ((x_ac_bar - SM)/((C_l_alpha_h/C_l_alpha_ah)*(1-de_dalpha)*(l_h/chord)*((V_h_over_V)**2)))
 
     return S_h_S_stab
 
@@ -62,23 +83,11 @@ def controllability_cg(x_bar_cg, C_L_h, C_L_Ah, l_h, chord, V_h, V, C_m_ac, x_ba
     return S_h_S_cont
 
 #Elevator trim:
+'''''
 delta_e = -(1/C_m_delta_e)*(C_m_0 + (W/(p_dynamic_low_bar*S_avg))*((x_cg-x_n_fixed)/c_avg))
 delta_e = -(1/C_m_delta_e)*(C_m_0 + (W/(p_dynamic_high_bar*S_avg))*((x_cg-x_n_fixed)/c_avg))
-def trim(C_m_ac, C_L_h, x_ac, chord):
-    C_L_Ah = []
-    d_x_cg = []
-    for i in range(0, 91, 1):
-    numbers = [round(x, 2) for x in range(0, 91, 1)]
-    d_x_cg = [x / 100 for x in numbers]
-
-
-        C_L_Ah += (-C_m_ac + C_L_h) * (chord / (d_x_cg[i] - x_ac))
-
-
-    plt(d_x_cg,C_L_Ah, 'r=+')
-
-    return C_L_Ah
-trim(0.1,0.9, 5, 10)
+'''''
+print(stability_cg(C_l_alpha_h, C_l_alpha_ah, downwash_vs_alpha(A_w), l_h, c_avg_w, V_h_over_V, x_ac, SM, x_cg))
 
 if __name__ == "__main__":
     print("Hello World")
