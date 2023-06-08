@@ -18,9 +18,6 @@ import scipy.optimize as opt
 import pygmo as pg
 import os
 
-#func for local testing, ignore
-if __name__ == "__main__":
-    print("Hello World")
 
 
 #start of actual program
@@ -50,12 +47,20 @@ simulation_end_epoch = constants.JULIAN_DAY*15
 class orbital_trajectory:
 
     def __init__(self,initial_state):
+        #throw error if initial state is incorrect
+        if not len(initial_state) == 6:
+            raise IndexError("The initial state has the wrong size")
+        if np.linalg.norm(initial_state[:3]) < 1e8:
+            raise ValueError("The initial state is too close to Uranus")
+        if np.linalg.norm(initial_state[3:]) < 10:
+            raise ValueError("The initial speed is too low")
         #storing inputs in class
         self.initial_state = initial_state
 
         #setting up basic properties of the orbital simulation as part of the class
         self.global_frame_origin = "Uranus"
         self.global_frame_orientation = "J2000"
+        self.radiusUranus = 25362000
         body_settings = environment_setup.get_default_body_settings(
             bodies_to_create, self.global_frame_origin, self.global_frame_orientation)
         self.bodies = environment_setup.create_system_of_bodies(body_settings)
@@ -65,6 +70,8 @@ class orbital_trajectory:
         self.uranus_gravitational_parameter = self.bodies.get("Uranus").gravitational_parameter
 
     def initial_manoeuvre_capsule(self,desired_periapsis,capsule_retrograde = False):
+        if desired_periapsis < 25362000* 0.95:
+            raise ValueError("Periapsis location is too low, radisus of Uranus is 25362000 meters")
         radius = np.sqrt(self.initial_state[0]**2+self.initial_state[1]**2+self.initial_state[2]**2)
         initial_state_keplerian = astro.element_conversion.cartesian_to_keplerian(self.initial_state)
         
@@ -85,8 +92,13 @@ class orbital_trajectory:
         self.initial_state_capsule = astro.element_conversion.keplerian_to_cartesian(state)
 
         return np.sqrt((self.initial_state[3]-self.initial_state_capsule[3]) ** 2 + (self.initial_state[4]-self.initial_state_capsule[4]) ** 2 + (self.initial_state[5]-self.initial_state_capsule[5]) ** 2 )
+    
+    def capsule_no_manoeuvre(self):
+        self.initial_state_capsule= self.initial_state
 
     def initial_manoeuvre_orbiter(self,desired_periapsis):
+        if desired_periapsis < 25367000:
+            raise ValueError("Periapsis location is too low, radisus of Uranus is 25362000 meters. Orbiter would encounter the atmosphere.")
         radius = np.sqrt(self.initial_state[0]**2+self.initial_state[1]**2+self.initial_state[2]**2)
         initial_state_keplerian = astro.element_conversion.cartesian_to_keplerian(self.initial_state)
         
@@ -108,8 +120,14 @@ class orbital_trajectory:
 
         return np.sqrt((self.initial_state[3]-self.initial_state_orbiter[3]) ** 2 + (self.initial_state[4]-self.initial_state_orbiter[4]) ** 2 + (self.initial_state[5]-self.initial_state_orbiter[5]) ** 2 )
 
-    def capsuletrajectory(self,atmosphere_height=5e6,step_size=10):
-
+    def capsule_trajectory(self,atmosphere_height=5e6,step_size=10):
+        if atmosphere_height < 6000:
+            raise ValueError("Atmosphere is too low. Atmosphere height is given in meters.")
+        if step_size <= 0:
+            raise ValueError("The step size is zero or negative.")
+        if not hasattr(self,"initial_state_capsule"):
+            raise ValueError("The capsule initial state has not been set. use function .capsule_initial_manoeuvre or .capsule_no_manoeuvre before calling this funciton")
+        
         bodies_to_propagate_capsule = ["Capsule"]
 
         # Define accelerations acting on objects
@@ -159,7 +177,7 @@ class orbital_trajectory:
 
         #detecting when capsule encounters atmosphere
         radius_capsule = np.sqrt( states_capsule_array[:, 1] ** 2 + states_capsule_array[:, 2] ** 2 + states_capsule_array[:, 3] ** 2 )
-        altitude_capsule = radius_capsule - radiusUranus - atmosphere_height
+        altitude_capsule = radius_capsule - self.radiusUranus - atmosphere_height
         count = 0
         atmospheric_encounter = False
         notfound = True
@@ -172,7 +190,7 @@ class orbital_trajectory:
                 notfound = False
 
         if atmospheric_encounter == False:
-            print ('atmosphere missed!')
+            raise RuntimeError("The atmosphere was not encountered. Set the periapsis lower.")
         else: 
             simulation_end_epoch = atmospheric_encounter * step_size
 
@@ -182,19 +200,33 @@ class orbital_trajectory:
 
         print ('Atmospheric encounter at',atmospheric_encounter / constants.JULIAN_DAY,'days')
 
-        capsule_state_at_encounter = states_capsule[atmospheric_encounter]
+        capsule_state_at_encounter = states_capsule[atmospheric_encounter*step_size]
 
         self.states_capsule_array = states_capsule_array
 
         return astro.element_conversion.cartesian_to_spherical(capsule_state_at_encounter)
     
     def get_capture_delta_v(self):
+        if not hasattr(self,"initial_state_orbiter"):
+            raise ValueError("The initial state of the orbiter has not been set. Call .orbiter_initial_manoeuvre before calling this function.")
         initial_state_keplerian = astro.element_conversion.cartesian_to_keplerian(self.initial_state_orbiter)
         initial_velocity_periapsis = np.sqrt(self.uranus_gravitational_parameter/initial_state_keplerian[0] * (1+initial_state_keplerian[1])/(1-initial_state_keplerian[1]))
         final_velocity_periapsis = np.sqrt(self.uranus_gravitational_parameter/self.desired_orbit[0] * (1+self.desired_orbit[1])/(1-self.desired_orbit[1]))
         return initial_velocity_periapsis - final_velocity_periapsis
     
-    def orbiter_initial_trajectory(self,duration_of_entry,capsule_position,step_size=10):
+    def orbiter_initial_trajectory(self,duration_of_entry,glider_position,step_size=10):
+        if not hasattr(self,"initial_state_orbiter"):
+            raise ValueError("The initial state of the orbiter has not been set. Call .orbiter_initial_manoeuvre before calling this function.")
+        if duration_of_entry <= 0:
+            raise ValueError("the entry duration should be positive.")
+        if np.linalg.norm(glider_position[:3]) <= 25062000:
+            raise ValueError("The capsule posisiton is too low.")
+        if np.linalg.norm(glider_position[:3]) > 25363000:
+            raise ValueError("The capsule posisiton is too high.")
+        if abs(glider_position[1]) < 5 or abs(glider_position[2]) < 5:
+            raise ValueError("The capsule posisiton is given in the wrong coordinate frame. Cartesian coordinates are expected.")
+        if step_size <= 0:
+            raise ValueError("The step size should be greater than 0.")
 
         start_atmospheric_mission = int(self.atmospheric_encounter + duration_of_entry)
 
@@ -228,7 +260,7 @@ class orbital_trajectory:
             self.bodies, acceleration_settings_orbiter, bodies_to_propagate_orbiter, self.central_bodies
             )
 
-        self.position_glider = capsule_position[:3]
+        self.position_glider = glider_position[:3]
 
         #running simulation for orbiter to find periapsis
         termination_settings_before_capture = propagation_setup.propagator.time_termination(time_to_periapsis)
@@ -239,7 +271,7 @@ class orbital_trajectory:
             self.central_bodies,
             acceleration_models_orbiter,
             bodies_to_propagate_orbiter,
-            initial_state_orbiter,
+            self.initial_state_orbiter,
             simulation_start_epoch,
             integrator_settings,
             termination_settings_before_capture
@@ -301,6 +333,8 @@ class orbital_trajectory:
         return telemetry_distance, telemetry_distance_max, telemetry_angle
     
     def plot_during_atmospheric_mission(self,plot_space_track=True,plot_distance_time=True,plot_angle_time=True):
+        if not hasattr(self,"atmospheric_mission_orbiter_states_array"):
+            raise AttributeError("The states of the orbiter are missing. Run .orbiter_initial_trajectory before this function")
 
         # Define a 3D figure using pyplot
         fig = plt.figure(figsize=(6,6), dpi=125)
@@ -312,9 +346,9 @@ class orbital_trajectory:
         ax.scatter(self.position_glider[0],self.position_glider[1],self.position_glider[2], label="Glider", marker='x', color='red')
 
         u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
-        x = np.cos(u)*np.sin(v)*radiusUranus
-        y = np.sin(u)*np.sin(v)*radiusUranus
-        z = np.cos(v)*radiusUranus
+        x = np.cos(u)*np.sin(v)*self.radiusUranus
+        y = np.sin(u)*np.sin(v)*self.radiusUranus
+        z = np.cos(v)*self.radiusUranus
         ax.plot_wireframe(x, y, z, label="Uranus", color="blue")
 
         # Add the legend and labels, then show the plot
@@ -332,7 +366,10 @@ class orbital_trajectory:
         plt.show()
 
     def plot_orbital_trajectory(self):
-
+        if not hasattr(self,"states_capsule_array"):
+            raise AttributeError("The states of the capsule are missing. Run .capsule_trajectory before this function")
+        if not hasattr(self,"atmospheric_mission_orbiter_states_array"):
+            raise AttributeError("The states of the orbiter are missing. Run .orbiter_initial_trajectory before this function")
         # Define a 3D figure using pyplot
         fig = plt.figure(figsize=(6,6), dpi=125)
         ax = fig.add_subplot(111, projection='3d')
@@ -343,9 +380,9 @@ class orbital_trajectory:
         #ax.scatter(0.0, 0.0, 0.0, label="Earth", marker='o', color='blue')
 
         u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
-        x = np.cos(u)*np.sin(v)*radiusUranus
-        y = np.sin(u)*np.sin(v)*radiusUranus
-        z = np.cos(v)*radiusUranus
+        x = np.cos(u)*np.sin(v)*self.radiusUranus
+        y = np.sin(u)*np.sin(v)*self.radiusUranus
+        z = np.cos(v)*self.radiusUranus
         ax.plot_wireframe(x, y, z, label="Uranus", color="blue")
 
         ax.plot(self.states_capsule_array[:, 1], self.states_capsule_array[:, 2], self.states_capsule_array[:, 3], label="Capsule", linestyle='-.')
@@ -359,40 +396,36 @@ class orbital_trajectory:
         ax.set_aspect('equal', adjustable='box')
         plt.show()                
 
-initialstate = np.array([1e9,1e9,1e9,-380,0,0])
-
-desiredorbit = np.array([1,1,1,1,1,1])
-
-time=constants.JULIAN_DAY / 24 * 3
-
-entry_time = constants.JULIAN_DAY / 24
-
-trajectory = orbital_trajectory(initial_state=initialstate,desired_orbit=desiredorbit,duration_of_mission=time)
-
-capsulestate = trajectory.capsuletrajectory(atmosphere_height=5e6,step_size=10)
-
-print(capsulestate)
-
-capture_velocity = trajectory.get_capture_delta_v
-
-capsulestatecartesian = astro.element_conversion.spherical_to_cartesian(capsulestate)
-
-telemetry_distance, telemetry_distance_max, telemetry_angle = trajectory.orbiter_initial_trajectory(duration_of_entry=entry_time,capsule_position=capsulestatecartesian,step_size=10)
-
-trajectory.plot_during_atmospheric_mission()
-
-trajectory.plot_orbital_trajectory()
-
-print('break') 
-
-#    def orbiter_trajectory():
-
-# Create default body settings for bodies_to_create, with "Uranus"/"J2000" as the global frame origin and orientation
-global_frame_origin = "Uranus"
-global_frame_orientation = "J2000"
-body_settings = environment_setup.get_default_body_settings(
-    bodies_to_create, global_frame_origin, global_frame_orientation)
+#func for local testing, ignore
+if __name__ == "__main__":
+    print("Hello World")
 
 
-#gravity assist program for inspiration
+    initialstate = np.array([1e9,1e9,1e9,-380,0,0])
+
+    desiredorbit = np.array([1,1,1,1,1,1])
+
+    time=constants.JULIAN_DAY / 24 * 3
+
+    entry_time = constants.JULIAN_DAY / 24
+
+    trajectory = orbital_trajectory(initial_state=initialstate)
+
+    trajectory.capsule_no_manoeuvre()
+
+    capsulestate = trajectory.capsule_trajectory(atmosphere_height=5e6,step_size=10)
+
+    print(capsulestate)
+
+    capture_velocity = trajectory.get_capture_delta_v
+
+    capsulestatecartesian = astro.element_conversion.spherical_to_cartesian(capsulestate)
+
+    telemetry_distance, telemetry_distance_max, telemetry_angle = trajectory.orbiter_initial_trajectory(duration_of_entry=entry_time,glider_position=capsulestatecartesian,step_size=10)
+
+    trajectory.plot_during_atmospheric_mission()
+
+    trajectory.plot_orbital_trajectory()
+
+    print('break') 
 
