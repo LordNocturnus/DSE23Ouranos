@@ -55,7 +55,12 @@ class Launcher:
             self.tb_b = tb_boost
 
     def dv_for_payload(self, dv_goal):
-        """For a given launcher, calculate how much mass it can transport for a given delta V."""
+        """
+        For a given launcher, using payload to LEO, calculate payload for input delta V.
+        dv_goal: Delta V beyond LEO
+        NOTE: The calculator only works downwards, i.e., the final destination has to be closer by than the dV being
+        calculated for. It answers the question: "if I decrease my payload, how much further can I go?"
+        """
         # how much fuel does stage 2 use for a transfer?
         m_prop_trans = (np.exp(self.dv / self.ve_2_vac) - 1) * (self.m_pl + self.m_str_2)
         m_prop_leo = self.m_prop_2 - m_prop_trans  # how much fuel did the circularisation burn take?
@@ -64,16 +69,28 @@ class Launcher:
         print(f"Delta V of the second stage to LEO: {round(dv_leo)} [m/s]")
         m_stage_2 = self.m_pl + self.m_wet_2 + self.m_shell
 
+        m_pl_attempt = self.m_pl
+        x = True
+        while x and m_pl_attempt > 0:  # stage 2 to LEO
+
+            m_pl_attempt -= 10
+            # Prop to LEO for lower payload
+            m_prop_leo_attempt = (1 - 1 / np.exp(dv_leo / self.ve_2_vac)) * \
+                                 (self.m_prop_2 + self.m_str_2 + self.m_shell + m_pl_attempt)
+            m_prop_trans_attempt = self.m_prop_2 - m_prop_leo_attempt  # Prop available beyond LEO
+            dv_trans_attempt = self.ve_2_vac * np.log((m_pl_attempt + self.m_str_2 + m_prop_trans_attempt) /
+                                                      (m_pl_attempt + self.m_str_2))  # dV from this propellant
+            if dv_trans_attempt >= dv_goal:
+                x = False
+                print(f"Delta V for transfer of {round(m_pl_attempt)} [kg] payload: {round(dv_trans_attempt)} [m/s]\n")
+                      # f"Fuel for LEO manoeuvre: {round(m_prop_leo_attempt)} of {round(self.m_prop_2)} [kg]\n")
+        """
         if self.nr_b:  # if we have a booster
             tb_core = self.tb_1 - self.tb_b
             m_prop_core = tb_core/self.tb_1 * self.m_prop_1
             dv_core = self.ve_1_vac * np.log((m_stage_2 + self.m_str_1 + m_prop_core)/(m_stage_2 + self.m_str_1))
-            # print(f"Delta V of the core on its own: {round(dv_core)} [m/s]")
             m_dot_1 = self.m_prop_1/self.tb_1
             m_dot_b = self.nr_b * self.m_prop_b/self.tb_b
-            # print(f"Mass flows of {round(m_dot_1)} and {round(m_dot_b)} for the core and boosters, respectively")
-
-
             # We average the isp by mass flow
             ve_1b_sea = self.ve_1_sea * m_dot_1/(m_dot_1 + m_dot_b) + self.ve_b_sea * m_dot_b/(m_dot_1 + m_dot_b)
             ve_1b_vac = self.ve_1_vac * m_dot_1 / (m_dot_1 + m_dot_b) + self.ve_b_vac * m_dot_b / (m_dot_1 + m_dot_b)
@@ -81,26 +98,8 @@ class Launcher:
 
             dv_1b = ve_avg * np.log((m_stage_2 + self.m_str_1 + self.nr_b * self.m_str_b + self.m_prop_1 +
                                      self.nr_b * self.m_prop_b)/(m_stage_2 + self.m_str_1 + self.nr_b * self.m_str_b))
-            # print(f"Delta V of the boosted first stage: {round(dv_1b)} [m/s]")
-            # print(f"Delta V of the transfer: {round(self.dv)} [m/s]")
-            # print(f"This sums to a total delta V of {round(dv_1b+dv_leo+dv_core+self.dv)} [m/s] for a payload"
-            #       f" of {round(self.m_pl)} [kg]")
-
-
-            m_pl_attempt = self.m_pl
-            x = True
-            while x and m_pl_attempt > 0:  # stage 2 to LEO
-                m_pl_attempt -= 10
-                m_prop_leo_attempt = (1 - 1/np.exp(dv_leo/self.ve_2_vac)) * \
-                                     (self.m_prop_2 + self.m_str_2 + self.m_shell + m_pl_attempt)
-                m_prop_trans_attempt = self.m_prop_2 - m_prop_leo_attempt
-                dv_trans_attempt = self.ve_2_vac * np.log((m_pl_attempt + self.m_str_2 + m_prop_trans_attempt) /
-                                                          (m_pl_attempt + self.m_str_2))
-                # print(dv_trans_attempt)
-                if dv_trans_attempt >= dv_goal:
-                    x = False
-                    print(f"Delta V for transfer of {round(m_pl_attempt)} [kg] payload: {round(dv_trans_attempt)} [m/s]\n" 
-                          f"Fuel for LEO manoeuvre: {round(m_prop_leo_attempt)} of {round(self.m_prop_2)} [kg]")
+            
+        """
 
 
 falcon_heavy_pluto = Launcher(8200, 1700, 3500,  # general data
