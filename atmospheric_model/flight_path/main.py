@@ -4,7 +4,7 @@ from atmospheric_model import GRAM
 import cmath
 
 # Variables
-gamma_glide = np.radians(5)
+gamma_glide = np.radians(-1.5)
 C_L_C_D = 1 / np.sin(abs(gamma_glide))
 m = 72  # kg
 g_u = 8.69  # m/s^2
@@ -291,7 +291,8 @@ if __name__ == "__main__":
     points = np.arange(index_min, index_max + 1, 1)
 
     ### DEPLOYMENT TRAJECTORY CALCULATIONS ###
-    while gamma_deploy_list[-1] < gamma_glide and t_deploy[-1] < 200:
+    #gamma_deploy_list[-1] < gamma_glide and
+    while  t_deploy[-1] < 200:
         n += 1
         rho = gram.data.Density_kgm3[index_min]
 
