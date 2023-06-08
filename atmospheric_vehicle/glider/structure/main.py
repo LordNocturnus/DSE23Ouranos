@@ -40,7 +40,7 @@ t = c_w * B # [m], maximum thickness of airfoil. Set as dummy for now
 a_3 = c_w * C # [m], same reasoning as for a_2, set as dummy for now
 
 'Resultant lift force due to simplified geometry'
-L_res = L_distr * ((a_2[0] + a_2[-1]) * b_w / 2) / 2
+L_res = L_distr * ((c_w[0] + c_w[-1]) * b_w / 2) / 2
 
 # In order to calculate the cross sectional properties needed for bending and tensile stresses (hence cross section A, moment of
 # inertia I and x location of centroid (section is symmetric wrt z, so no need for  location)) the cross section of the wing has been
@@ -90,7 +90,8 @@ def calculate_tau_xz(tau):
 t_t_tau_xz = max(safe_thick * calculate_tau_xz(tau_yield)[0])
 print('The minimum thickness required for the wings to sustain shear loads due to torques in the xz plane is: ', t_t_tau_xz*10**3, ' mm')
 
-
+def calculate_sigma_bend_xz(sigma):
+    Mx = -2 / 3 * (c_w_root - c_w_tip) / b_w * L_res * b_range**3 + c_w_root / 2 * L_res * b_range**2
 
 
 
