@@ -58,7 +58,7 @@ class aerodynamicproperties():
         #Stability and Control derivatives + Parameters:
         self.x_n_fixed = 0
         self.C_m_delta_e = 0
-        self.C_m_alpha = 0
+        self.C_m_alpha = -0.009
         self.C_m_0 = 0
         self.C_N_w_alpha = 0
         self.C_N_h_alpha = 0
@@ -66,7 +66,6 @@ class aerodynamicproperties():
         self.alpha = []
         self.C_l_alpha_ah = 4.02
         self.C_l_alpha_h = 4.02
-        self.de_da = []
         self.l_h = 2.765 #[m]
         self.l_w = 1.5 #[m]
         self.C_L_h = 0.45
@@ -76,6 +75,7 @@ class aerodynamicproperties():
         self.d_C_D_over_d_V = 0
         self.d_C_L_over_d_V = 0
         self.C_m_u = 0
+        self.delta_C_L = 0
 
         self.V_h_over_V = 1
         self.SM = 0.15 #[%]
@@ -162,7 +162,8 @@ class aerodynamicproperties():
         return C_X_alpha, C_Z_alpha, C_m_alpha
 
     # Stability Derivatives with respect to sideslip angle
-    
+    def stab_derivatives_beta(self):
+        C_Y_beta  = self.C_Y_v_alpha*(1-self.dtheta_dbeta)*(self.V_h_over_V**2)*(self.S_v/self.S)
 
     # Stability Derivatives with respect to roll rate
 
