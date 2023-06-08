@@ -111,7 +111,7 @@ class GRAM(object):
             raise ValueError("GRAM altitude should be between 5000 and -290")
         if any(np.abs(self.lat) > 90.0):
             raise ValueError("GRAM latitude should be +- 90° with negative being south")
-        if any(self.long > 0.0) or any(self.long > 360.0):
+        if any(self.long < 0.0) or any(self.long > 360.0):
             raise ValueError("GRAM longitude should be between 0° and 360°")
 
         with open(__file__[:-7]+"traj_data.txt", "w") as file:
