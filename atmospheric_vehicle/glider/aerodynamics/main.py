@@ -83,7 +83,47 @@ class aerodynamicproperties():
         self.x_cg = self.l_w - (self.c_avg_w - 0.333)
         self.de_da = 4/(self.A_w+2)    
 
+    def mass_properties(self,mass,x_cg,I_xx,I_yy,I_zz,J_xz):
+        self.m = mass
+        self.x_cg = x_cg
+        self.K_x_2 = np.sqrt(I_xx/mass)
+        self.K_y_2 = np.sqrt(I_yy/mass)
+        self.K_z_2 = np.sqrt(I_zz/mass)
+        self.K_x_z = J_xz / mass
+        self.W = self.mass * 9.01 #[m/s^2]
 
+    def mainwing(self,wingspan,wing_loading,taper_ratio,x_w):
+
+        self.b_w = wingspan
+        self.S_w = wing_loading * self.m
+        self.c_avg_w = self.S_w/wingspan
+        self.c_t_w = self.c_avg_w /(taper_ratio+1)  
+        self.c_r_w = taper_ratio * self.c_t_w      
+
+    def horizontal_tail(self,wingspan,surface_area,taper_ratio,l_h,z_h):
+        self.b_h = wingspan
+        self.S_h = surface_area
+        self.c_avg_h = surface_area/wingspan
+        self.c_t_h = self.c_avg_h /(taper_ratio+1)  
+        self.c_r_h = taper_ratio * self.c_t_h     
+        self.l_h = l_h
+        self.z_h = z_h
+
+    def atmospheric_properties(self,speed_of_sound,reynolds_number,viscosity,temperature,density,velocity):
+        self.Re_low_bar = reynolds_number[0]
+        self.Re_high_bar = reynolds_number[-1]
+        self.Viscosity_low_bar = viscosity[0]
+        self.Viscosity_high_bar = viscosity[-1]
+        self.a_low_bar = speed_of_sound[0]
+        self.a_high_bar = speed_of_sound[-1]
+        self.Temp_low_bar = temperature[0]
+        self.Temp_high_bar = temperature[-1]
+        self.V_glider_low_bar = velocity[0]
+        self.V_glider_high_bar= velocity[-1]
+        self.rho_low_bar = density[0]
+        self.rho_high_bar = density[-1]       
+        self.p_dynamic_low_bar = 0.5*self.rho_low_bar*(self.V_glider_low_bar**2)
+        self.p_dynamic_high_bar = 0.5*self.rho_high_bar*(self.V_glider_high_bar**2)
 
     #Stability:
     def stability_cg(self):
