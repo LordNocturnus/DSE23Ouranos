@@ -152,3 +152,4 @@ def asymmetric_complex_eigenvalues_analysis(lambda1, V):
         P = 2 * np.pi / eta_c * b / V
         T_half = np.log(0.5) / xi_c * b / V
         return P, T_half
+

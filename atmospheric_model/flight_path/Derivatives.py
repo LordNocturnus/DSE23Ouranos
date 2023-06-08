@@ -29,5 +29,6 @@ C_n_r = 2.3
 C_Z_alpha_dot = 1
 C_Z_q = 1.2
 C_Z_0 = 1.4
+
 C_m_alpha_dot = 1.5
 C_m_q = 1.6

@@ -4,16 +4,19 @@ from DeploymentTrajectory import *
 from atmospheric_model import GRAM
 from matplotlib import pyplot as plt
 
+# Lists for Gliding Flight
 V_flight_path = []
 h_flight_path = []
 t_flight_path = []
 
+# Lists for Deployement Trajectory
 V_deploy = [V_0_deploy]
 gamma_deploy_list = [gamma_0_deploy]
 h_deploy = []
 x_deploy = []
 t_deploy = [0]
 
+# Time Interval and Number of Loops
 dt = 0.01
 n = 0
 
@@ -24,14 +27,14 @@ if __name__ == "__main__":
     # gram.densityperturbation = 1.0  # Between 0.0 and 2.0, 1.0 = 3 sigma
     gram.run()
 
-    # Finding indeces for the relevant pressures
+    # Finding indexes for the relevant pressures
     index_1 = gram.data.Pressure_Pa[gram.data.Pressure_Pa > 10 ** 4].index
     index_2 = gram.data.Pressure_Pa[gram.data.Pressure_Pa < p_max].index
 
-    # Find common indeces
+    # Find common indexes
     index = np.sort(list(set(index_1) & set(index_2)))
 
-    # Find density and heights from indeces
+    # Find density and heights from indexes
     density = gram.data.Density_kgm3[index]
     height = gram.data.Height_km[index]
 
@@ -108,16 +111,15 @@ if __name__ == "__main__":
     plt.title("Altitude vs Time of the Glider")
     plt.show()
 
-
     ### EIGENVALUE CALCULATIONS ###
-    # Find eigenvalues of the symmetric eigenmotions
+    # Find Eigenvalues of the Symmetric Eigenmotions
     lambda_short_1 = eigenvalue_short_period_V_constant()
     lambda_short_2 = eigenvalue_short_period_V_constant_gamma_constant()
     lambda_phugoid_1 = eigenvalue_phugoid_q_dot_zero_alpha_zero()
     lambda_phugoid_2 = eigenvalue_phugoid_q_dot_zero_alpha_dot_zero()
     lambdas_sym = [lambda_short_1, lambda_short_2, lambda_phugoid_1, lambda_phugoid_2]
 
-    # Find eigenvalues of the asymmetric eigenmotions
+    # Find Eigenvalues of the Asymmetric Eigenmotions
     lambda_aperiodic_roll = eigenvalue_heavily_damped_aperiodic_roll()
     lambda_dutch_roll_1 = eigenvalue_dutch_roll_phi_zero()
     lambda_dutch_roll_2 = eigenvalue_dutch_roll_phi_zero_yaw_only()
@@ -127,7 +129,7 @@ if __name__ == "__main__":
                     lambda_dutch_roll_plus_spiral[0], lambda_dutch_roll_plus_spiral[1],
                     lambda_dutch_roll_plus_spiral[2]]
 
-    # Analysis symmetric eigenvalues
+    # Analysis Symmetric Eigenvalues
     for i in np.arange(len(lambdas_sym)):
         if lambdas_sym[i].imag == 0:
             T_half, tau = symmetric_real_eigenvalues_analysis(lambdas_sym[i].real, V_flight_path[0])
@@ -138,7 +140,7 @@ if __name__ == "__main__":
             print("The halving time and period of " + str(lambdas_sym[i]) + " are " + str(T_half) + " s and " + str(
                 P) + " s ")
 
-    # Analysis asymmetric eigenvalues
+    # Analysis Asymmetric Eigenvalues
     for i in np.arange(len(lambdas_asym)):
         if lambdas_asym[i].imag == 0:
             T_half = asymmetric_real_eigenvalues_analysis(lambdas_asym[i].real, V_flight_path[0])
