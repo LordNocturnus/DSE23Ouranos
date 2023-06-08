@@ -1,8 +1,8 @@
 dod = 1
 n_bat = 0.9
 n_cab = 0.9
-vol_energy = 400e3
-spec_energy = 250
+vol_energy = 1653.65e3
+spec_energy = 711.3 #https://www.greencarcongress.com/2023/04/20230429-li.html
 margin = 0.5
 days=3
 
