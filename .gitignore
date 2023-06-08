@@ -163,3 +163,5 @@ cython_debug/
 atmospheric_model/GRAM/GRAM Suite 1.5/
 gram_config.txt
 traj_data.txt
+*.bsp
+*.tpc
