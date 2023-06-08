@@ -28,12 +28,9 @@ atmospheric_mission_time = constants.JULIAN_DAY/24*3
 
 #loading ephemeris
 spice.load_standard_kernels()
-print(spice.get_total_count_of_kernels_loaded())
 path = os.path.dirname(__file__)
 spice.load_kernel(path+'/ura111.bsp')
 spice.load_kernel(path+'/Gravity.tpc')
-
-print(spice.get_total_count_of_kernels_loaded())
 
 # Create default body settings for "Uranus"
 bodies_to_create = ["Uranus","Titania"]
@@ -204,8 +201,6 @@ class orbital_trajectory:
 
         capsule_position = np.array([states_capsule_array[atmospheric_encounter,1],states_capsule_array[atmospheric_encounter,2],states_capsule_array[atmospheric_encounter,3]])
 
-        print ('Atmospheric encounter at',atmospheric_encounter / constants.JULIAN_DAY,'days')
-
         capsule_state_at_encounter = states_capsule[atmospheric_encounter*step_size]
 
         self.states_capsule_array = states_capsule_array
@@ -226,11 +221,12 @@ class orbital_trajectory:
         captured_state_keplerian[0] = final_semi_major_axis
         captured_state_keplerian[1] = final_eccentricity
         captured_state_keplerian[5] = 0
+        captured_orbital_period = 2 * np.pi / np.sqrt(self.uranus_gravitational_parameter) * np.sqrt(final_semi_major_axis ** 3)
 
         self.captured_state = astro.element_conversion.keplerian_to_cartesian(captured_state_keplerian,self.uranus_gravitational_parameter)
 
         final_velocity_periapsis = np.sqrt(self.uranus_gravitational_parameter/final_semi_major_axis * (1+final_eccentricity)/(1-final_eccentricity))
-        return initial_velocity_periapsis - final_velocity_periapsis
+        return initial_velocity_periapsis - final_velocity_periapsis, captured_orbital_period
     
     def orbiter_initial_trajectory(self,duration_of_entry,glider_position,step_size=10):
         if not hasattr(self,"initial_state_orbiter"):
@@ -240,7 +236,6 @@ class orbital_trajectory:
         if np.linalg.norm(glider_position[:3]) <= 25062000:
             raise ValueError("The capsule posisiton is too low.")
         if np.linalg.norm(glider_position[:3]) > 30362000:
-            print (np.linalg.norm(glider_position[:3]))
             raise ValueError("The capsule posisiton is too high.")
         if abs(glider_position[1]) < 5 or abs(glider_position[2]) < 5:
             raise ValueError("The capsule posisiton is given in the wrong coordinate frame. Cartesian coordinates are expected.")
@@ -251,18 +246,19 @@ class orbital_trajectory:
 
         self.start_atmospheric_mission = start_atmospheric_mission
 
-        end_atmsopheric_mission = int(start_atmospheric_mission + atmospheric_mission_time/step_size)
+        self.start_atmospheric_mission_index = int(start_atmospheric_mission/10)
+
+        end_atmsopheric_mission = int(start_atmospheric_mission + atmospheric_mission_time)
+
+        self.end_atmospheric_mission_index = int(end_atmsopheric_mission/10)
 
         initial_state_orbiter_keplerian = astro.element_conversion.cartesian_to_keplerian(self.initial_state_orbiter,self.uranus_gravitational_parameter)
 
-        delta_mean_anomaly = astro.element_conversion.true_to_mean_anomaly(initial_state_orbiter_keplerian[1],initial_state_orbiter_keplerian[5])
-
-        if delta_mean_anomaly < 0:
-            delta_mean_anomaly = np.pi * 2 + delta_mean_anomaly
+        delta_mean_anomaly = - astro.element_conversion.true_to_mean_anomaly(initial_state_orbiter_keplerian[1],initial_state_orbiter_keplerian[5])
 
         time_to_periapsis = astro.element_conversion.delta_mean_anomaly_to_elapsed_time(delta_mean_anomaly,self.uranus_gravitational_parameter,initial_state_orbiter_keplerian[0])
 
-        simulation_end_epoch = end_atmsopheric_mission * step_size
+        simulation_end_epoch = end_atmsopheric_mission 
 
         bodies_to_propagate_orbiter = ["Orbiter"]
 
@@ -284,7 +280,7 @@ class orbital_trajectory:
 
         #running simulation for orbiter to find periapsis
         termination_settings_before_capture = propagation_setup.propagator.time_termination(time_to_periapsis)
-        termination_settings_after_capture = propagation_setup.propagator.time_termination((end_atmsopheric_mission - time_to_periapsis))
+        termination_settings_after_capture = propagation_setup.propagator.time_termination(simulation_end_epoch)
         fixed_step_size = step_size
         integrator_settings = propagation_setup.integrator.runge_kutta_4(fixed_step_size)
         propagator_settings_before_capture = propagation_setup.propagator.translational(
@@ -308,25 +304,30 @@ class orbital_trajectory:
         dynamics_simulator_before_capture = numerical_simulation.create_dynamics_simulator(
             self.bodies, propagator_settings_before_capture
         )
-        dynamics_simulator_after_capture = numerical_simulation.create_dynamics_simulator(
-            self.bodies, propagator_settings_after_capture
-        )
 
         states_orbiter_before_capture = dynamics_simulator_before_capture.state_history
         states_orbiter_array_before_capture = result2array(states_orbiter_before_capture)
 
-        states_orbiter_after_capture = dynamics_simulator_after_capture.state_history
-        states_orbiter_array_after_capture = result2array(states_orbiter_after_capture)
+        if simulation_end_epoch > time_to_periapsis:
+            dynamics_simulator_after_capture = numerical_simulation.create_dynamics_simulator(
+                self.bodies, propagator_settings_after_capture
+            )
 
-        states_orbiter_array = np.append(states_orbiter_array_before_capture,states_orbiter_array_after_capture,axis=0)
+            states_orbiter_after_capture = dynamics_simulator_after_capture.state_history
+            states_orbiter_array_after_capture = result2array(states_orbiter_after_capture)
+
+            states_orbiter_array = np.append(states_orbiter_array_before_capture,states_orbiter_array_after_capture,axis=0)
+        else:
+            states_orbiter_array = states_orbiter_array_before_capture[:int(simulation_end_epoch/step_size)]
+        print(simulation_end_epoch-time_to_periapsis)
+
+
 
         self.states_orbiter_array = states_orbiter_array
 
         atmospheric_mission_orbiter_states_array = states_orbiter_array[int(start_atmospheric_mission/step_size):]
 
         self.atmospheric_mission_orbiter_states_array = atmospheric_mission_orbiter_states_array
-
-        print(len(states_orbiter_array),'\n',start_atmospheric_mission)
 
         atmospheric_mission_orbiter_x = atmospheric_mission_orbiter_states_array[:,1]
         atmospheric_mission_orbiter_y = atmospheric_mission_orbiter_states_array[:,2]
@@ -350,7 +351,9 @@ class orbital_trajectory:
 
         telemetry_distance_max = np.max(telemetry_distance)
 
-        return telemetry_distance, telemetry_distance_max, telemetry_angle
+        telemetry_angle_max = np.max(telemetry_angle)
+
+        return telemetry_distance, telemetry_distance_max, telemetry_angle, telemetry_angle_max
     
     def plot_during_atmospheric_mission(self,plot_space_track=True,plot_distance_time=True,plot_angle_time=True):
         if not hasattr(self,"atmospheric_mission_orbiter_states_array"):
@@ -362,7 +365,8 @@ class orbital_trajectory:
         ax.set_title(f'Trajectories at Uranian encounter')
 
         # Plot the positional state history
-        ax.plot(self.atmospheric_mission_orbiter_states_array[self.start_atmospheric_mission:,1], self.atmospheric_mission_orbiter_states_array[self.start_atmospheric_mission:,2], self.atmospheric_mission_orbiter_states_array[self.start_atmospheric_mission:,3], label="Orbiter", linestyle='-.')
+        end_index = self.end_atmospheric_mission_index = self.start_atmospheric_mission_index
+        ax.plot(self.atmospheric_mission_orbiter_states_array[:end_index,1], self.atmospheric_mission_orbiter_states_array[:end_index,2], self.atmospheric_mission_orbiter_states_array[:end_index,3], label="Orbiter", linestyle='-.')
         ax.scatter(self.position_glider[0],self.position_glider[1],self.position_glider[2], label="Glider", marker='x', color='red')
 
         u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
@@ -435,17 +439,15 @@ if __name__ == "__main__":
 
     capsulestate = trajectory.capsule_trajectory(atmosphere_height=5e6,step_size=10)
 
-    print(capsulestate)
-
     capture_velocity = trajectory.get_capture_delta_v
 
     capsulestatecartesian = astro.element_conversion.spherical_to_cartesian(capsulestate)
 
     initialmanoeuvre = trajectory.initial_manoeuvre_orbiter(35380000)
 
-    capturedeltav = trajectory.get_capture_delta_v(583000000)
+    capturedeltav, orbital_period = trajectory.get_capture_delta_v(583000000)
 
-    telemetry_distance, telemetry_distance_max, telemetry_angle = trajectory.orbiter_initial_trajectory(duration_of_entry=entry_time,glider_position=capsulestatecartesian,step_size=10)
+    telemetry_distance, telemetry_distance_max, telemetry_angle, telemetry_angle_max = trajectory.orbiter_initial_trajectory(duration_of_entry=entry_time,glider_position=capsulestatecartesian,step_size=10)
 
     trajectory.plot_during_atmospheric_mission()
 
