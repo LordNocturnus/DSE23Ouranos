@@ -107,7 +107,7 @@ def final_architecture(material, propellant, margin, m_subsystems):
     axial_check_compr = axial_loads(acc_axial_compr * m_total, sigma_y_compr[material], min(r_f, r_o))
     axial_shock = axial_loads(acc_shock * m_total, sigma_y_compr[material], min(r_f, r_o))
     if not axial_shock or not axial_check_compr or not axial_check_tens:
-        print(f'Stress checks not passed:\n'
+        print(f'DANGER! Stress checks not passed:\n'
               f'Axial Tension --> {axial_check_tens}\n'
               f'Axial Compression --> {axial_check_compr}\n'
               f'Axial Shock --> {axial_shock}')
@@ -123,6 +123,19 @@ def final_architecture(material, propellant, margin, m_subsystems):
               f'Thickness Oxidiser: {t_cylind_o, t_caps_o}\n'
               f'Thicknesses Fuel: {t_cylind_f, t_caps_f}\n'
               f'----------------------------------')
+    return l_tot, max(r_f, r_o), m_tot_structure
+
+def natural_frequency(l_tot, r, material, m_tot, f_ax_min, f_lat_min):
+    I = 1/12 * 2 * r * l_tot ** 3
+    f_lat = 0.276 * np.sqrt((E[material] * I) / (m_tot * l_tot**3 + 0.236 * m_tot * l_tot**3))
+    f_ax = 0.160 * np.sqrt((np.pi * r**2 * E[material]) / (m_tot * l_tot + 0.333 * m_tot * l_tot))
+    if f_ax > f_ax_min and f_lat > f_lat_min:
+        print(f'Frequency checks passed')
+
+    else:
+        print(f'DANGER! Resonance could occur')
+    return f_lat, f_ax
+
 
 
 
@@ -157,6 +170,8 @@ if __name__ == '__main__':
     acc_axial_compr = 2 * 9.81  # https://www.spacex.com/media/falcon-users-guide-2021-09.pdf
     acc_lateral = 2 * 9.81  # Same for compression and tension (https://www.spacex.com/media/falcon-users-guide-2021-09.pdf)
     acc_shock = 1000 * 9.81 # https://www.spacex.com/media/falcon-users-guide-2021-09.pdf
+    f_lat_min = 10  # Falcon Heavy user manual
+    f_ax_min = 25  # Falcon Heavy user manual
 
 
     # Launcher Constraints
@@ -165,8 +180,9 @@ if __name__ == '__main__':
 
     material = ['Ti-6Al-4V', 'Aluminium 7075']
 
-    final_architecture(material[0], propellant, margin, m_subsystems)
-    final_architecture(material[1], propellant, margin, m_subsystems)
+    l_structure, r_structure, m_structure = final_architecture(material[0], propellant, margin, m_subsystems)
+    f_lat, f_ax = natural_frequency(l_structure, r_structure, material[0], m_subsystems + m_structure, f_ax_min, f_lat_min)
+
 
 
 
