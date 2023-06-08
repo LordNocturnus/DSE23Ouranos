@@ -136,15 +136,15 @@ class GRAM(object):
 
         self.data = pd.read_csv(__file__[:-7]+"atmos_OUTPUT.csv")
         #
-        self.data.drop(columns=["AverageMolecularWeight", "LocalSolarTime_hr",
-                               "NSWindPerturbation_ms", "PerturbedEWWind_ms", "PerturbedNSWind_ms",
-                               "EWStandardDeviation_ms", "NSStandardDeviation_ms", "EWWind_ms", "NSWind_ms",
-                               "EWWindPerturbation_ms", "LongitudeOfTheSun", "SubsolarLatitude_deg",
-                               "SubsolarLongitudeE_deg", "SolarZenithAngle_deg", "OneWayLightTime_min",
-                               "OrbitalRadius_AU", "SecondsPerSol", "PressureAtSurface_Pa", "TotalNumberDensity_m3",
-                               "H2nd_m3", "H2mass_pct", "H2mole_pct", "H2amw",
-                               "Hend_m3", "Hemass_pct", "Hemole_pct", "Heamw",
-                               "CH4nd_m3", "CH4mass_pct", "CH4mole_pct", "CH4amw"], inplace=True)
+        #self.data.drop(columns=["AverageMolecularWeight", "LocalSolarTime_hr",
+         #                      "NSWindPerturbation_ms", "PerturbedEWWind_ms", "PerturbedNSWind_ms",
+          #                     "EWStandardDeviation_ms", "NSStandardDeviation_ms", "EWWind_ms", "NSWind_ms",
+           #                    "EWWindPerturbation_ms", "LongitudeOfTheSun", "SubsolarLatitude_deg",
+            #                   "SubsolarLongitudeE_deg", "SolarZenithAngle_deg", "OneWayLightTime_min",
+             #                  "OrbitalRadius_AU", "SecondsPerSol", "PressureAtSurface_Pa", "TotalNumberDensity_m3",
+              #                 "H2nd_m3", "H2mass_pct", "H2mole_pct", "H2amw",
+               #                "Hend_m3", "Hemass_pct", "Hemole_pct", "Heamw",
+                #               "CH4nd_m3", "CH4mass_pct", "CH4mole_pct", "CH4amw"], inplace=True)
         self.data.drop(columns=self.data.columns[-1], inplace=True)
         #print(self.data.head())
         for c in self.data.columns:
