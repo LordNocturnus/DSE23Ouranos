@@ -15,8 +15,8 @@ b_w = 6 # [m], wing span, given from Luigi
 L_distr = 224.482 # [N/m^2], found from MSc Thesis (given from Luigi)
 
 'Safety factor(s)' # to be applied as safety margin
-safe_thick = 1.3
-safe_load = 0.9
+safe_thick = 1.3 # applied to thicknesses calculated for all load cases
+safe_load = 0.9 # applied (for the eventual cases) when stresses are compared to failure criteria values
 
 def calculate_c_w(c_w_root, c_w_tip, b_w): # estimates different values of chord for different values of spanwise location
     db = 0.1 # [m], span increment used for analysis
@@ -38,9 +38,6 @@ a_2 = c_w * A # [m], value used for the simplified airfoil cross section: will b
 # airfoil and simplifying the central section into a hollow rectangle, set as dummy for now
 t = c_w * B # [m], maximum thickness of airfoil. Set as dummy for now
 a_3 = c_w * C # [m], same reasoning as for a_2, set as dummy for now
-
-'Resultant lift force due to simplified geometry'
-L_res = L_distr * ((c_w[0] + c_w[-1]) * b_w / 2) / 2
 
 # In order to calculate the cross sectional properties needed for bending and tensile stresses (hence cross section A, moment of
 # inertia I and x location of centroid (section is symmetric wrt z, so no need for  location)) the cross section of the wing has been
@@ -83,6 +80,7 @@ def calculate_tau_xz(tau):
     Xcentr_tot = ((np.pi * (1 + t) * t / 2 * (np.pi - 1) / (np.pi + 1) + 2 * (t + a_2) * (t / 2 + a_2 / 2) + (
                 t + a_3) * (a_3 / 3 * (t + 2 * a_3) / (2 * a_3 + 2 * t) + t / 2 + a_2)) / (
                               np.pi * (1 + t) + 2 * (t + a_2) + t + a_3))
+    L_res = L_distr * ((c_w[0] + c_w[-1]) * b_w / 2) / 2
     Am = t * (np.pi / 4 * t + a_2 + a_3 / 2)
     Ty = np.abs(L_res * ( Xcentr_tot - t / 2 - a_2 / 2))
     t_t = Ty / (2 * Am * tau)
@@ -90,10 +88,17 @@ def calculate_tau_xz(tau):
 t_t_tau_xz = max(safe_thick * calculate_tau_xz(tau_yield)[0])
 print('The minimum thickness required for the wings to sustain shear loads due to torques in the xz plane is: ', t_t_tau_xz*10**3, ' mm')
 
+
+'Normal stress in xz plane due to moment in the x direction caused by lift'
 def calculate_sigma_bend_xz(sigma):
-    Mx = -2 / 3 * (c_w_root - c_w_tip) / b_w * L_res * b_range**3 + c_w_root / 2 * L_res * b_range**2
-
-
+    Mx = -2 / 3 * (c_w_root - c_w_tip) / b_w * L_distr * b_range**3 + c_w_root / 2 * L_distr * b_range**2
+    t_t = (Mx * t / 2) / ((1 / 2 * t**2 * a_2 + 1 / 6 * t**3 + (np.pi / 16 + 1 / 12) * t**3 + 1 / 8 * t**2 * a_3
+                           + 1 / 24 * t**3) * sigma)
+    Ixx = t_t * (1 / 2 * t**2 * a_2 + 1 / 6 * t**3 + (np.pi / 16 + 1 / 12) * t**3 + 1 / 8 * t**2 * a_3 + 1 / 24 * t**3)
+    return t_t, Mx, Ixx
+t_t_sigma_bend_xz = safe_thick * calculate_sigma_bend_xz(sigma_yield)[0]
+t_t_sigma_bend_xz = max(np.delete(t_t_sigma_bend_xz, 0))
+print('The minimum thickness required for the wings to sustain normal stress loads due to bending in the xz plane applied in the x direction is: ', t_t_sigma_bend_xz*10**3, ' mm')
 
 
 
