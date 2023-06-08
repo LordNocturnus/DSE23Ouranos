@@ -1,5 +1,9 @@
+#Library Import
+import numpy as np
+
 #Estimating Wing Geometry
 #Parameters (wing assumed to be trapezoidal)
+
 
 class aerodynamicproperties():
     def __init__(self):
@@ -7,6 +11,7 @@ class aerodynamicproperties():
         self.b_h = 1.3025 #[m]
         self.W_S_avg = 224.482 #[N/m^2]
         self.m = 112 #[kg]
+        self.oswald = 0.8
         self.g_ur = 9.01 #[m/s^2]
         self.c_r_w = 0.785 #[m]
         self.c_r_h = 1.5 #[m]
@@ -25,6 +30,10 @@ class aerodynamicproperties():
         self.rho_low_bar = 0.05 #[kg/m^3]
         self.rho_high_bar = 3.012 #[kg/m^3]
         self.S_avg_h = 1.357 #[m]
+        self.C_L_over_C_D = 38.202 # value obtained from Noah's atmospheric flight model
+        self.C_L_max_range = 0.45 # value obtained from literature
+        self.C_m_0 = 0
+        self.C_m_ac = self.C_L_max_range/self.C_L_over_C_D
 
         #determine Mach Number at pressure levels considered:
         self.M_low_bar = self.V_glider_low_bar/self.a_low_bar
@@ -51,7 +60,8 @@ class aerodynamicproperties():
         self.C_m_delta_e = 0
         self.C_m_alpha = 0
         self.C_m_0 = 0
-        self.C_N_alpha = 0
+        self.C_N_w_alpha = 0
+        self.C_N_h_alpha = 0
         self.alpha_0 = 0 #[deg]
         self.alpha = []
         self.C_l_alpha_ah = 4.02
@@ -59,6 +69,13 @@ class aerodynamicproperties():
         self.de_da = []
         self.l_h = 2.765 #[m]
         self.l_w = 1.5 #[m]
+        self.C_L_h = 0.45
+        self.C_L_ah = 0.45
+        self.C_X_0 = 0
+        self.C_Z_0 = 0
+        self.d_C_D_over_d_V = 0
+        self.d_C_L_over_d_V = 0
+        self.C_m_u = 0
 
         self.V_h_over_V = 1
         self.SM = 0.15 #[%]
@@ -78,12 +95,39 @@ class aerodynamicproperties():
         return S_h_S_stab
 
     #Control:
-    def controllability_cg(self,x_bar_cg, C_L_h, C_L_Ah, l_h, chord, V_h, V, C_m_ac, x_bar_ac):
-        S_h_S_cont = []
+    def controllability_cg(self):
 
-        S_h_S_cont = (x_bar_cg/((C_L_h/C_L_Ah)*(l_h/chord)*((V_h/V)**2)))+(((C_m_ac/C_L_Ah)-x_bar_ac)/(((C_L_h/C_L_Ah)*(l_h/chord)*((V_h/V)**2))))
+        S_h_S_cont = ((self.x_cg/self.c_avg_w)/
+                      ((self.C_L_h/self.C_L_ah)*(self.l_h/self.c_avg_w)*
+                       (self.V_h_over_V**2)))+(((self.C_m_ac/self.C_L_ah)-(self.x_ac/self.c_avg_w))/(((self.C_L_h/self.C_L_ah)*(self.l_h/self.c_avg_w)*(self.V_h_over_V**2))))
 
         return S_h_S_cont
+
+    #Stability Derivatives with respect to airspeed
+    def stab_derivatives_speed(self):
+        C_X_u_lowbar = 2*self.C_X_0 - self.d_C_D_over_d_V*self.V_glider_low_bar
+        C_Z_u_lowbar = 2 * self.C_Z_0 - self.d_C_L_over_d_V * self.V_glider_low_bar
+
+        C_X_u_highbar = 2 * self.C_X_0 - self.d_C_D_over_d_V * self.V_glider_high_bar
+        C_Z_u_highbar = 2 * self.C_Z_0 - self.d_C_L_over_d_V * self.V_glider_high_bar
+
+        return C_X_u_lowbar, C_X_u_highbar, C_Z_u_lowbar, C_Z_u_highbar
+
+    # Stability Derivatives with respect to angle of attack
+    def stab_derivatives_alpha(self,S_h_S):
+        C_X_alpha = self.C_L_ah*(1-((2*self.C_l_alpha_ah)/(np.pi*self.A_w*self.oswald)))
+        C_Z_alpha = -self.C_N_w_alpha - self.C_N_h_alpha*(1-self.de_da)*(self.V_h_over_V**2)*(S_h_S)
+        C_m_alpha = self.C_N_w_alpha*((self.x_cg-self.l_w)/self.c_avg_w) - self.C_N_h_alpha*(1-self.de_da)*(self.V_h_over_V**2)*(S_h_S)*(self.l_h/self.c_avg_w)
+
+        return C_X_alpha, C_Z_alpha, C_m_alpha
+
+    # Stability Derivatives with respect to sideslip angle
+    
+
+    # Stability Derivatives with respect to roll rate
+
+    # Stability Derivatives with respect to yaw rate
+
 
 #Elevator trim:
 '''''
@@ -97,4 +141,10 @@ if __name__ == "__main__":
     glider = aerodynamicproperties()
 
     #print(glider.stability_cg(C_l_alpha_h, C_l_alpha_ah, downwash_vs_alpha(A_w), l_h, c_avg_w, V_h_over_V, x_ac, SM, x_cg))
+    '''
     print(glider.stability_cg())
+    print(glider.controllability_cg())
+    print(glider.stability_cg()*glider.S_avg_w)
+    print(glider.controllability_cg() * glider.S_avg_w)
+    print(glider.S_avg_w)
+    '''
