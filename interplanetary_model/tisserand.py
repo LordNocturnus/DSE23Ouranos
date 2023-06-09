@@ -34,3 +34,5 @@ def run_tisserand(planets):
     tp.ax.text(3, -190, "Uranus", color=BODY_COLORS["Uranus"])
 
     plt.show()
+
+run_tisserand(planets)
