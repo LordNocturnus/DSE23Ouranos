@@ -29,7 +29,7 @@ def n_0(t_s): #first estimation, update with https://deepspace.jpl.nasa.gov/dsnd
     return 1.380e-23*t_s
 
 def energy_per_bit_criteria(e_b, n_0):
-    print(e_b/n_0)
+    print(unit_to_db(e_b/n_0))
     print("Energy per bit criteria:", (e_b / n_0 >= 10))
 
 if __name__ == "__main__":
@@ -47,8 +47,8 @@ if __name__ == "__main__":
     print("g_rx:",g_rx_ao)
     l_rx = unit_to_db(1/n_rx) #dB
     print("l_rx:",l_rx)
-    l_m = 0
-    p_tx_ao = 100 #W
+    l_m = unit_to_db(1/0.9)
+    p_tx_ao = 20 #W
     p_tx_ao = unit_to_db(p_tx_ao) #dB
     print("p_tx:",p_tx_ao)
     p_rx_ao = p_rx(p_tx_ao, g_tx_ao, l_tx, l_fs_ao, l_m, g_rx_ao, l_rx)
@@ -56,6 +56,7 @@ if __name__ == "__main__":
     print("p_rx:",db_to_unit(p_rx_ao))
     e_b_ao = e_b(db_to_unit(p_rx_ao), bit_rate_ao)
     print("e_b:", e_b_ao)
+    print("e_b [dB]:", unit_to_db(e_b_ao))
     n_0 = n_0(103.15)
     print("n_0:", n_0)
     print("n_0 [dB]:", unit_to_db(n_0))
