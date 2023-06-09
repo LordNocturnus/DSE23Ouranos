@@ -15,8 +15,8 @@ b_w = 6 # [m], wing span, given from Luigi
 L_distr = 224.482 # [N/m^2], found from MSc Thesis (given from Luigi)
 
 'Safety factor(s)' # to be applied as safety margin
-safe_thick = 1.3 # applied to thicknesses calculated for all load cases
-safe_load = 0.9 # applied (for the eventual cases) when stresses are compared to failure criteria values
+safe_thick = 1.3 # applied to thicknesses calculated for all load cases HAS TO BE DELETED, WILL BE USED FACTOR FOR LOADS RATHER THAN THICKNESSES
+safe_load = 1.1 # applied to loads as safety factor REMEMBER TO APPLY THIS AND NOT ONE ABOVE
 
 def calculate_c_w(c_w_root, c_w_tip, b_w): # estimates different values of chord for different values of spanwise location
     db = 0.1 # [m], span increment used for analysis
@@ -100,12 +100,43 @@ t_t_sigma_bend_xz = safe_thick * calculate_sigma_bend_xz(sigma_yield)[0]
 t_t_sigma_bend_xz = max(np.delete(t_t_sigma_bend_xz, 0))
 print('The minimum thickness required for the wings to sustain normal stress loads due to bending in the xz plane applied in the x direction is: ', t_t_sigma_bend_xz*10**3, ' mm')
 
+def calculate_tau_xz_shear(t_t): # gives already q_max for every cross section
+    q_max = np.zeros(len(c_w)-1)
+    for i in range(len(c_w)-1):
+        S_shear = (c_w[i] + c_w[i+1]) * db / 2
+        Vy = L_distr * S_shear
+        A = np.array([[ 2 * (np.sqrt(2) + 1) / (t[i] * G * t_t), -2 / (t[i] * G * t_t), 0, -1 ],
+                       [ -1 / (2 * G * t_t * a_2[i]), (a_2[i] + t[i]) / (G * t_t * a_2[i] * t[i]), -1 / (2 * G * t_t * a_2[i]), -1],
+                       [0, -1 / (a_3[i] * G * t_t), (1 / (a_3[i] * G * t_t) + np.sqrt(t[i]**2 / 4 + a_3[i]**2) / (t[i] * a_3[i] * G * t_t)), -1],
+                       [t[i]**2 / 2, 2 * a_2[i] * t[i], t[i] * a_3[i], 0]])
+        s = np.array([[-Vy / (t[i]**2 * G * t_t)],
+                       [-Vy / (2 * G * t_t * a_2[i] * t[i])],
+                       [-Vy / (2 * t[i] * a_3[i] * G * t_t)],
+                       [-Vy * a_2[i]]])
+        solution = np.linalg.solve(A, s)
+        qs0_1 = solution[0]
+        qs0_2 = solution[1]
+        qs0_3 = solution[2]
+        q26 = Vy / (2 * t[i]) + qs0_1 - qs0_2
+        q35 = Vy / (2 * t[i]) + qs0_2 - qs0_3
+        if np.sum(q26) > np.sum(q35):
+            q_max[i] = q26
+        else:
+            q_max[i] = q35
+    return q_max
 
-
-
-
-
-
+j = 0
+t_t0 = 0.0001
+t_t_shear = np.zeros(len(c_w-1))
+for i in range(len(c_w)-1):
+    print(i)
+    q_max = calculate_tau_xz_shear(t_t0)[i]
+    tau = 1000 * 10**6
+    while tau > tau_yield:
+        t_t0 += 0.0001
+        tau = q_max / t_t0
+    t_t_shear[i] = t_t0
+print(t_t_shear)
 
 if __name__ == "__main__":
     print("Hello World")
