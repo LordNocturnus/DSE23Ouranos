@@ -143,14 +143,14 @@ if __name__ == "__main__":
 
     example_2500 = [2.78349356e+07, -2.20565560e-01, -2.91545691e+00,  2.02425574e+04, -3.05261011e-01, 2.33104808e+00]
 
-    mass = 1350
+    mass = 250 + 1520
     c_l = 0
     c_d = 1.536
     r_eff = 2.25
     beta = mass / (np.pi * r_eff ** 2 * c_d)
 
     test = uranus_entry_sim(example_2500[0] - 1500000, example_2500[1], example_2500[2] + 2 * np.pi, example_2500[3],
-                            np.deg2rad(-10), example_2500[5], mass, beta, c_l, c_d, r_eff)
+                            np.deg2rad(-45), example_2500[5], mass, beta, c_l, c_d, r_eff)
 
     gram = GRAM.GRAM()
     gram.altitudes = test.y[0] / 1000
