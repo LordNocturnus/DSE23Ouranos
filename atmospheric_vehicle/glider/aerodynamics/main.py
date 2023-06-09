@@ -76,13 +76,29 @@ class aerodynamicproperties():
         self.d_C_L_over_d_V = 0
         self.C_m_u = 0
         self.delta_C_L = 0
+        self.C_Z_0 = 0 # C_Z at 0 alpha
+        self.C_l_p = 0 # read from table if necessary
+        self.C_Y_v_alpha = 0
+        self.dtheta_dbeta = 0
+        self.sweep = 0 #[deg]
+        self.beta = 0 #[rad]
+        self.dL_dV = 0
+        self.L = 0 #[N]
+        self.N = 0 #[N]
+        self.p = 0 #[rad/s or deg/s] roll rate
+        self.C_Y_r_v = 0
+        self.r = 0 ##[rad/s or deg/s] yaw rate
+        self.C_L = 0
+        self.Y_v = 0 #[N]
+        self.N = 0 #[N]
+
 
         self.V_h_over_V = 1
         self.SM = 0.15 #[%]
         self.x_ac = self.l_w - 0.75*self.c_avg_w
         self.x_cg = self.l_w - (self.c_avg_w - 0.333)
-        self.de_da = 4/(self.A_w+2)    
-
+        self.de_da = 4/(self.A_w+2)
+        self.z_cg = 0  # [m]
     def mass_properties(self,mass,x_cg,I_xx,I_yy,I_zz,J_xz):
         self.m = mass
         self.x_cg = x_cg
@@ -99,6 +115,8 @@ class aerodynamicproperties():
         self.c_avg_w = self.S_w/wingspan
         self.c_t_w = self.c_avg_w /(taper_ratio+1)  
         self.c_r_w = taper_ratio * self.c_t_w      
+        self.V = 0 #[m^3]
+        self.x_w = x_w
 
     def horizontal_tail(self,wingspan,surface_area,taper_ratio,l_h,z_h):
         self.b_h = wingspan
@@ -108,6 +126,13 @@ class aerodynamicproperties():
         self.c_r_h = taper_ratio * self.c_t_h     
         self.l_h = l_h
         self.z_h = z_h
+
+    def vertical_tail(self, l_v, x_v, S_v, V_v, z_v):
+        self.l_v = l_v #[m]
+        self.x_v = x_v  # [m]
+        self.z_v = z_v  # [m]
+        self.S_v = S_v #[m^2]
+        self.V_v = V_v #[m^3]
 
     def atmospheric_properties(self,speed_of_sound,reynolds_number,viscosity,temperature,density,velocity):
         self.Re_low_bar = reynolds_number[0]
@@ -163,11 +188,41 @@ class aerodynamicproperties():
 
     # Stability Derivatives with respect to sideslip angle
     def stab_derivatives_beta(self):
-        C_Y_beta  = self.C_Y_v_alpha*(1-self.dtheta_dbeta)*(self.V_h_over_V**2)*(self.S_v/self.S)
+        C_Y_beta  = self.C_Y_v_alpha*(1-self.dtheta_dbeta)*(self.V_h_over_V**2)*(self.S_v/self.S_w)
+        C_l_beta_lowbar = (2*self.dL_dV)/(self.rho_low_bar*(self.V_glider_low_bar**2)*self.S_w*np.sin(2*self.sweep)*self.beta) + C_Y_beta*(((self.z_v - self.z_cg)/self.b_w)*np.cos(self.alpha_0) - ((self.x_v - self.x_cg)/self.b_w)*np.sin(self.alpha_0))
+        C_n_beta = self.C_Y_v_alpha*(1-self.dtheta_dbeta)*((self.V_v/self.V)**2)*((self.S_v*self.l_v)/(self.S_w*self.b_w))
+
+        C_l_beta_highbar = (2 * self.dL_dV) / (self.rho_high_bar * (self.V_glider_high_bar ** 2) * self.S_w * np.sin(
+            2 * self.sweep) * self.beta) + C_Y_beta * (((self.z_v - self.z_cg) / self.b_w) * np.cos(self.alpha_0) - (
+                    (self.x_v - self.x_cg) / self.b_w) * np.sin(self.alpha_0))
+
+        return C_Y_beta, C_l_beta_lowbar, C_l_beta_highbar, C_n_beta
 
     # Stability Derivatives with respect to roll rate
+    def stab_derivatives_rollrate(self):
+        C_n_p_lowbar = self.N/(((self.p*self.b_w)/2*self.V_glider_low_bar)*0.5*self.rho_low_bar*(self.V_glider_low_bar**2)*self.S_w*self.b_w)
+        C_n_p_highbar = self.N/(((self.p*self.b_w)/2*self.V_glider_high_bar)*0.5*self.rho_high_bar*(self.V_glider_high_bar**2)*self.S_w*self.b_w)
+        #value should be between -1 & -0.1
+
+        return C_n_p_lowbar, C_n_p_highbar
 
     # Stability Derivatives with respect to yaw rate
+    def stab_derivatives_yawrate(self):
+        C_Y_r_v = 2*self.C_Y_v_alpha*((self.V_v/self.V)**2)*((self.S_v*self.l_v)/(self.S_w*self.b_w))
+        C_l_r_lowbar = self.L/(((self.r*self.b_w)/(2*self.V_glider_low_bar))*0.5*self.rho_low_bar*(self.V_glider_low_bar**2)*self.S_w*self.b_w) + self.C_Y_r_v*(((self.z_v-self.z_cg)/self.b_w*np.cos(self.alpha_0))-((self.x_v-self.x_cg)/self.b_w*np.sin(self.alpha_0)))
+        C_l_r_highbar = self.L/(((self.r*self.b_w)/(2*self.V_glider_high_bar))*0.5*self.rho_high_bar*(self.V_glider_high_bar**2)*self.S_w*self.b_w) + self.C_Y_r_v*(((self.z_v-self.z_cg)/self.b_w*np.cos(self.alpha_0))-((self.x_v-self.x_cg)/self.b_w*np.sin(self.alpha_0)))
+        C_n_r = -C_Y_r_v*(self.l_v/self.b_w)
+
+        return C_Y_r_v, C_l_r_lowbar, C_l_r_highbar, C_n_r
+
+    #Other Derivatives
+    def stab_derivatives_others(self):
+        C_Z_alpha_dot = -self.C_N_h_alpha*(self.V_h_over_V**2)*self.de_da*((self.S_h*self.l_h)/(self.S_w*self.c_avg_w))
+        C_Z_q = -2*self.C_N_h_alpha*(self.V_h_over_V**2)*((self.S_h*self.l_h)/(self.S_w*self.c_avg_w))
+        C_m_alpha_dot = -self.C_N_h_alpha*(self.V_h_over_V**2)*self.de_da*((self.S_h*self.l_h**2)/(self.S_w*self.c_avg_w**2))
+        C_m_q = 1.1*C_Z_q*0.5*(self.l_h/self.c_avg_w)
+
+        return C_Z_alpha_dot, C_Z_q, C_m_alpha_dot, C_m_q
 
 
 #Elevator trim:
