@@ -14,6 +14,7 @@ class Core:
         self.c_l = 0.0
         self.beta = 0.0
         self.gamma = 0.0
+        self.r_eff = 0.0
 
         self.radius = 0.0
         self.heading = 0.0
@@ -72,7 +73,7 @@ class Core:
         self.dlon = self.vx / (self.alt + self.radius) * np.cos(self.heading)
 
 
-def uranus_entry_sim(alt, lat, lon, vel, gamma, heading, mass, beta, c_l, c_d):
+def uranus_entry_sim(alt, lat, lon, vel, gamma, heading, mass, beta, c_l, c_d, r_eff):
     gram =GRAM.GRAM()
     gram.altitudes = np.array([0.0])
     gram.lat = np.array([np.rad2deg(lat)])
@@ -88,6 +89,7 @@ def uranus_entry_sim(alt, lat, lon, vel, gamma, heading, mass, beta, c_l, c_d):
     core.c_l = c_l
     core.beta = beta
     core.gamma = gamma
+    core.r_eff = r_eff
 
     core._lat = lat
     core._lon = lon
@@ -111,7 +113,8 @@ def uranus_entry_sim(alt, lat, lon, vel, gamma, heading, mass, beta, c_l, c_d):
                   core.vx ** 2 * (core.c_l / core.c_d * np.tan(alpha) + 1)
         core.ay = 1 / 2 * gram.data.Density_kgm3[0] / (core.beta * np.sin(alpha)) * \
                   core.vy ** 2 * (core.c_l / core.c_d * 1 / np.tan(alpha) - 1) - gram.data.Gravity_ms2[0]
-        core.q = (core.vx ** 2 + core.vy ** 2) ** (3/2) * gram.data.Density_kgm3[0]
+        k = 1 / (gram.data.H2mass_pct[0] / 0.0395 + gram.data.Hemass_pct[0] / 0.0797)
+        core.q = k * (core.vx ** 2 + core.vy ** 2) ** (3/2) * np.sqrt(gram.data.Density_kgm3[0] / core.r_eff)
         return core.dy
 
     def event_alt(t, y):
@@ -124,7 +127,7 @@ def uranus_entry_sim(alt, lat, lon, vel, gamma, heading, mass, beta, c_l, c_d):
 
     sol = solve_ivp(rhs, [core.t, 18000], y0,
                     events=event_alt,
-                    max_step=1, method="LSODA",
+                    max_step=0.1, method="LSODA",
                     rtol=1e-3, atol=1e-6)
 
     return sol
@@ -135,8 +138,14 @@ if __name__ == "__main__":
 
     example_2500 = [2.78349356e+07, -2.20565560e-01, -2.91545691e+00,  2.02425574e+04, -3.05261011e-01, 2.33104808e+00]
 
-    test = uranus_entry_sim(example_2500[0]-1700000, example_2500[1], example_2500[2] + 2 * np.pi, example_2500[3],
-                            np.deg2rad(-10), example_2500[5], 500, 125, 0, 1)
+    mass = 500
+    c_l = 0
+    c_d = 1.536
+    r_eff = 2
+    beta = mass / (np.pi * r_eff ** 2 * c_d)
+
+    test = uranus_entry_sim(example_2500[0], example_2500[1], example_2500[2] + 2 * np.pi, example_2500[3],
+                            np.deg2rad(-10), example_2500[5], mass, beta, c_l, c_d, r_eff)
 
     gram = GRAM.GRAM()
     gram.altitudes = test.y[0] / 1000
@@ -156,7 +165,10 @@ if __name__ == "__main__":
     plt.legend()
     plt.show()
 
-    plt.plot(test.t, (test.y[3] ** 2 + test.y[4] ** 2) ** (3/2) * np.asarray(gram.data.Density_kgm3), label="heat flux")
+    k = 1 / (gram.data.H2mass_pct / 0.0395 + gram.data.Hemass_pct / 0.0797)
+    q = k * (test.y[3] ** 2 + test.y[4] ** 2) ** (3/2) * np.sqrt(gram.data.Density_kgm3 / r_eff)
+
+    plt.plot(test.t, q / 100**2, label="heat flux")
     plt.legend()
     plt.show()
 
