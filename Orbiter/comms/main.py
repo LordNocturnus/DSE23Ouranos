@@ -7,22 +7,22 @@ earthRadius = 6371000. # radius Earth in m
 L_a = -0.5 # atmospheric attenuation in dB
 AU = 149597870691 # one AU in m
 d_EarthSC = 20.8 # max distance between SC and Earth in AU
-Tnoisedown = 135 # Noise temperature in K
-Tnoiseup = 614 # Noise temperature in K
+Tnoisedown = 424 # Noise temperature in K
+Tnoiseup = 763 # Noise temperature in K
 TurnAroundRatio = 3599 / 3344
 
 # antenna spacecraft:
-d_antenna = 5.2 # antenna diameter in m
+d_antenna = 5 # antenna diameter in m
 eta_antenna = 0.55
-P = 100 # transmitting power in W
+P = 60 # transmitting power in W
 L_l = 0.9 # loss factor spacecraft
-PointingAccuracy = 0.1 # pointing accuracy in deg
-DR = 10000 # downlink data rate in bps
+PointingAccuracy = 0.0572958 # pointing accuracy in deg
+DR = 8000 # downlink data rate in bps
 f = 32 # Downlink frequency in GHz
 wavelengthdown = c / (f * 10 ** 9)
 
 # antenna ground station:
-P_gs = 1300 # power ground station in W
+P_gs = 800 # power ground station in W
 d_gs = 70 # antenna diameter in m
 L_r = 0.75 # loss factor ground station
 uplinkDR = 25000 # uplink data rate in bps
@@ -72,7 +72,9 @@ def downlink(P, L_l, L_r, L_a, DR, Tnoise, k):
     Tnoise = 10 * np.log10(1 / Tnoise)  # [dB]
     k = 10 * np.log10(1 / k)
     EbN0 = P + G_t + G_r + L_l + L_r + L_s + L_pr + L_a + DR + Tnoise + k
-    return P, G_t, G_r, L_l, L_r, L_s, L_pr, DR, Tnoise, k, EbN0
+    Eb = EbN0 - Tnoise - k
+    Eb = 10 ** (Eb / 10)
+    return P, G_t, G_r, L_l, L_r, L_s, L_pr, DR, Tnoise, k, EbN0, Eb
 
 def uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoise, k):
     P = 10 * np.log10(P_gs)  # in [dB]
@@ -91,7 +93,9 @@ def uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoise, k):
     Tnoise = 10 * np.log10(1 / Tnoise)  # [dB]
     k = 10 * np.log10(1 / k)
     EbN0 = P + G_t + G_r + L_l + L_r + L_s + L_pr + L_a + DR + Tnoise + k
-    return P, G_t, G_r, L_l, L_r, L_s, L_pr, DR, Tnoise, k, EbN0
+    Eb = EbN0 - Tnoise - k
+    Eb = 10 ** (Eb / 10)
+    return P, G_t, G_r, L_l, L_r, L_s, L_pr, DR, Tnoise, k, EbN0, Eb
 
 
 if __name__ == "__main__":
@@ -107,6 +111,7 @@ if __name__ == "__main__":
     print('Tnoise:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[8])
     print('k:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[9])
     print('EbN0:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[10])
+    print('Eb:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[11])
     print()
     print('**** UPLINK ****')
     print('P:', uplink(f_gs, P_gs, L_l, L_r, L_a,uplinkDR, Tnoiseup, k)[0])
@@ -120,3 +125,4 @@ if __name__ == "__main__":
     print('Tnoise:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[8])
     print('k:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[9])
     print('EbN0:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[10])
+    print('Eb:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[11])
