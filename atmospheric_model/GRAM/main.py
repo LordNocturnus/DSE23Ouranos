@@ -35,7 +35,7 @@ class GRAM(object):
         self.stepsize = 0.0
         self.trajectorypath = __file__[:-7]+"traj_data.txt"
         self.runs = 1
-        self.altitudes = np.arange(5000, -291, -1, dtype=float)
+        self.altitudes = np.arange(7000, -291, -1, dtype=float)
         self.lat = np.zeros_like(self.altitudes)
         self.long = np.zeros_like(self.altitudes)
         self.time = np.arange(0, len(self.altitudes), 1, dtype=float)
@@ -107,8 +107,8 @@ class GRAM(object):
             raise IndexError("length of the altitude latitude longitude and timestamps for the GRAM trajectory should be the same")
         if any(self.time < 0):
             raise ValueError("time should be positive")
-        if any(self.altitudes > 5000) or any(self.altitudes < -290):
-            raise ValueError("GRAM altitude should be between 5000 and -290")
+        if any(self.altitudes > 7000) or any(self.altitudes < -290):
+            raise ValueError("GRAM altitude should be between 7000 and -290")
         if any(np.abs(self.lat) > 90.0):
             raise ValueError("GRAM latitude should be +- 90° with negative being south")
         if any(self.long < 0.0) or any(self.long > 360.0):
