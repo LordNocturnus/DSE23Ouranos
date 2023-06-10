@@ -6,7 +6,6 @@ import subprocess
 import re
 
 # Check what OS we are running in to select correct version
-print()
 if platform.system() == "Windows":
     gram_path = "GRAM_Suite_1.5/Windows/UranusGRAM.exe"
 elif platform.system() == "Linux":
@@ -16,14 +15,16 @@ else:
 if not os.path.exists(__file__[:-7]+"GRAM_Suite_1_5"):
     raise ImportError("Gram not found please contact Felix for the files")
 
+_path = os.path.dirname(__file__)
+
 
 class GRAM(object):
 
     def __init__(self):
         self.gram_path = gram_path
-        self.spice_path = __file__[:-7]+"GRAM_Suite_1_5/SPICE"
-        self.list_path = __file__[:-7]+"atmos_LIST"
-        self.col_path = __file__[:-7]+"atmos_OUTPUT"
+        self.spice_path = _path+"/GRAM_Suite_1_5/SPICE"
+        self.list_path = _path+"/atmos_LIST"
+        self.col_path = _path+"/atmos_OUTPUT"
         self.month = 3
         self.day = 25
         self.year = 2020
@@ -33,7 +34,7 @@ class GRAM(object):
         self.seed = 1001
         self.densityperturbation = 1.0
         self.stepsize = 0.0
-        self.trajectorypath = __file__[:-7]+"traj_data.txt"
+        self.trajectorypath = _path+"/traj_data.txt"
         self.runs = 1
         self.altitudes = np.arange(7000, -291, -1, dtype=float)
         self.lat = np.zeros_like(self.altitudes)
@@ -88,7 +89,7 @@ class GRAM(object):
             raise ValueError("Density perturbation needs to be between 0.0 and 2.0 (3 sigma ~= 1.0")
         txt += f"  MinimumRelativeStepSize  = 0.0\n"
 
-        txt += f"  TrajectoryFileName = '{__file__[:-7]}traj_data.txt'\n"
+        txt += f"  TrajectoryFileName = '{_path}/traj_data.txt'\n"
 
         if 1 <= self.runs and type(self.runs) == int:
             txt += f"  NumberOfMonteCarloRuns = {self.runs}\n"
@@ -97,7 +98,7 @@ class GRAM(object):
         txt += f"  ExtraPrecision    = 0\n"
 
         txt += f" $END"
-        with open(__file__[:-7]+"gram_config.txt", "w") as file:
+        with open(_path+"/gram_config.txt", "w") as file:
             file.write(txt)
 
     def compile_trajectory(self):
@@ -114,15 +115,15 @@ class GRAM(object):
         if any(self.long < 0.0) or any(self.long > 360.0):
             raise ValueError("GRAM longitude should be between 0° and 360°")
 
-        with open(__file__[:-7]+"traj_data.txt", "w") as file:
+        with open(_path+"/traj_data.txt", "w") as file:
             for k, _ in enumerate(self.altitudes):
                 file.write(f"{self.time[k]} {self.altitudes[k]} {self.lat[k]} {self.long[k]}\n")
 
     def run(self):
         self.compile_config()
         self.compile_trajectory()
-        out = subprocess.check_output([__file__[:-7]+"GRAM_Suite_1_5/Windows/UranusGRAM.exe", "-file",
-                                       __file__[:-7]+"gram_config.txt"])
+        out = subprocess.check_output([_path+"/GRAM_Suite_1_5/Windows/UranusGRAM.exe", "-file",
+                                       _path+"/gram_config.txt"])
 
         if not re.search("Files output: ", str(out)):
             print(str(out))
@@ -134,7 +135,7 @@ class GRAM(object):
         loads the GRAM generated data into a pandas dataframe and filters out useless data look at GRAM documentation in
         /GRAM_Suit_1_5/Documentation/Uranus-Gram User Guide.pdf for full ist of parameters"""
 
-        self.data = pd.read_csv(__file__[:-7]+"atmos_OUTPUT.csv")
+        self.data = pd.read_csv(_path+"/atmos_OUTPUT.csv")
         #
         #self.data.drop(columns=["AverageMolecularWeight", "LocalSolarTime_hr",
          #                      "NSWindPerturbation_ms", "PerturbedEWWind_ms", "PerturbedNSWind_ms",
