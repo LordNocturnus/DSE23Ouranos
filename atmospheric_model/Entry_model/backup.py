@@ -134,7 +134,6 @@ def uranus_entry_sim(alt, lat, lon, vel, gamma, heading, mass, beta, c_l, c_d, r
                     events=[event_alt, event_vel],
                     max_step=0.01, method="LSODA",
                     rtol=1e-3, atol=1e-6)
-
     return sol
 
 
