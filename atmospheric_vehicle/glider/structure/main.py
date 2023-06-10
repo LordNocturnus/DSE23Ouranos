@@ -107,14 +107,17 @@ def thickness_tau_xz_shear(tau_yield):
             q_max = calculate_tau_xz_shear(t_t0)[i]
             tau = q_max / t_t0
         t_t_shear[i] = t_t0
-    return 1 * 10**-3 > max(t_t_shear)
+    if 0.5 * 10**-3 > max(t_t_shear):
+        return True
+    else:
+        print(f'False, required thickness is: {max(t_t_shear)}')
 
 if __name__ == "__main__":
     'Material properties (Ti-6Al-4V, Titanium-Aluminum alloy)'  # source: Mechanics of Materials textbook
     E = 120 * 10 ** 9  # [Pa]
     G = 44 * 10 ** 9  # [Pa]
-    sigma_yield = 924 * 10 ** 6  # [Pa], normal yield stress, used as failure criterion
-    tau_yield = 508.2 * 10 ** 6  # [Pa], shear yield stress, used as failure criterion
+    sigma_yield = 924 * 10 ** 6 * 1.1  # [Pa], normal yield stress, used as failure criterion with margin of safety
+    tau_yield = 508.2 * 10 ** 6 * 1.1  # [Pa], shear yield stress, used as failure criterion with margin of safety
     rho = 4430  # [kg/m^3]
 
     'Wing properties'
