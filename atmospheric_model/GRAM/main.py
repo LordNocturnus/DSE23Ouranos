@@ -8,9 +8,9 @@ import re
 # Check what OS we are running in to select correct version
 print()
 if platform.system() == "Windows":
-    gram_path = "GRAM_Suite_1.5/Windows/UranusGRAM.exe"
+    gram_path = "GRAM_Suite_1_5/Windows/UranusGRAM.exe"
 elif platform.system() == "Linux":
-    gram_path = "GRAM_Suite_1.5/Linux/UranusGRAM.exe"
+    gram_path = "GRAM_Suite_1_5/Linux/UranusGRAM.exe"
 else:
     raise OSError("Please ues a proper OS! Gram only supports Windows and Linux")
 if not os.path.exists(__file__[:-7]+"GRAM_Suite_1_5"):

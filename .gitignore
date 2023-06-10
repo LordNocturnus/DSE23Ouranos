@@ -160,6 +160,6 @@ cython_debug/
 .idea/
 
 
-atmospheric_model/GRAM/GRAM Suite 1.5/
+atmospheric_model/GRAM/GRAM_Suite_1_5/
 gram_config.txt
 traj_data.txt
