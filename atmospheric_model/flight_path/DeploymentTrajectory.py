@@ -4,7 +4,7 @@ from GliderVariables import *
 # Equations for Glider Deployment
 
 def dV_dt(rho, V, gamma):
-    a = -0.5 * rho * V * V * S * C_D / m
+    a = -0.5 * rho * V * V * S * C_D_deploy / m
     b = -g_u * np.sin(gamma)
     dVdt = a + b
     return dVdt
