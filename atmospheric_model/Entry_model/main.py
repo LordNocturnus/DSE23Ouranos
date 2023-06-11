@@ -187,36 +187,13 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
     # Extract the resulting simulation dependent variables
     dependent_variables = dynamics_simulator.dependent_variable_history
     # Convert the dependent variables from a dictionary to a numpy array
-    return result2array(dependent_variables)
+    dependent_variables_array = result2array(dependent_variables)
 
-
-if __name__ == "__main__":
-    angle = -30
-    dependent_variables_array = entry_sim(1550, 1.53, 4.5, 3.02877105e+07, -6.40748300e-02, -1.63500310e+00 + 2 * np.pi,
-                                          1.93919454e+04, np.deg2rad(angle),  -2.35413606e+00)
-    gram = GRAM.GRAM()
     gram.altitudes = dependent_variables_array[:, 1] / 1000
     gram.time = dependent_variables_array[:, 0]
     gram.lat = np.rad2deg(dependent_variables_array[:, 2])
     gram.long = np.rad2deg((dependent_variables_array[:, 3] + 2 * np.pi) % (2 * np.pi))
     gram.run()
-
-    """plt.plot(dependent_variables_array[:, 0], dependent_variables_array[:, 1] / 1000, label="Altitude")
-    plt.grid()
-    plt.legend()
-    plt.show()
-
-    plt.plot(dependent_variables_array[:, 0], dependent_variables_array[:, 5], label="Speed_total")
-    plt.grid()
-    plt.legend()
-    plt.show()
-
-    plt.plot(dependent_variables_array[:, 0], dependent_variables_array[:, 6], label="Acc_1")
-    plt.plot(dependent_variables_array[:, 0], dependent_variables_array[:, 7], label="Acc_2")
-    plt.plot(dependent_variables_array[:, 0], dependent_variables_array[:, 8], label="Acc_3")
-    plt.grid()
-    plt.legend()
-    plt.show()"""
 
     k = 1 / (np.asarray(gram.data.H2mass_pct) / 0.0395 + np.asarray(gram.data.Hemass_pct) / 0.0797)
     q = k * dependent_variables_array[:, 4] ** 3 * np.sqrt(np.asarray(gram.data.Density_kgm3) / (np.pi * 2.25 ** 2))
@@ -224,15 +201,15 @@ if __name__ == "__main__":
     q_func = sp.interpolate.interp1d(dependent_variables_array[:, 0], q)
     h = sp.integrate.quad(lambda x: q_func(x) / 10000, dependent_variables_array[0, 0],
                           dependent_variables_array[-1, 0])[0]
-    print(h)
 
-    h = sp.integrate.quad(lambda x: q_func(x), dependent_variables_array[0, 0],
-                          dependent_variables_array[-1, 0])[0] / 10000
-    print(h)
+    return h, max(q), dependent_variables_array
 
-    plt.plot(dependent_variables_array[:, 0], q / 10000, label=f"Heat_flux {angle}")
-    plt.grid()
-    plt.legend()
-    plt.show()
+
+if __name__ == "__main__":
+    angle = -30
+    h, q, dependent_variables_array = entry_sim(1550, 1.53, 4.5, 3.02877105e+07, -6.40748300e-02,
+                                                -1.63500310e+00 + 2 * np.pi, 1.93919454e+04, np.deg2rad(angle),
+                                                -2.35413606e+00)
+    print(h)
 
     print("finished")
