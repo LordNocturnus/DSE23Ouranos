@@ -10,9 +10,9 @@ def eigenvalue_short_period_V_constant():
     C = C_Z_alpha * C_m_q - (2 * mu_c + C_Z_q) * C_m_alpha
     lambda1 = -B / (2 * A) + cmath.sqrt(B * B - 4 * A * C) / (2 * A)
     if lambda1.real < 0:
-        print("The short period with constant velocity is stable")
+        print("The short period with constant velocity is stable (lambda = " +str(lambda1) + " )")
     else:
-        print("The short period with constant velocity is not stable")
+        print("The short period with constant velocity is not stable (lambda = " +str(lambda1) + " )")
     return lambda1
 
 
@@ -22,9 +22,9 @@ def eigenvalue_short_period_V_constant_gamma_constant():
     C = C_m_alpha
     lambda1 = -B / (2 * A) + cmath.sqrt(B * B - 4 * A * C) / (2 * A)
     if lambda1.real < 0:
-        print("The short period with constant velocity and constant flight path angle is stable")
+        print("The short period with constant velocity and constant flight path angle is stable (lambda = " +str(lambda1) + " )")
     else:
-        print("The short period with constant and constant flight path angle velocity is not stable")
+        print("The short period with constant and constant flight path angle velocity is not stable (lambda = " +str(lambda1) + " )")
     return lambda1
 
 
@@ -34,9 +34,9 @@ def eigenvalue_phugoid_q_dot_zero_alpha_zero():
     C = - C_Z_u * C_Z_0
     lambda1 = -B / (2 * A) + cmath.sqrt(B * B - 4 * A * C) / (2 * A)
     if lambda1.real < 0:
-        print("The phugoid with q_dot and angle of attack zero is stable")
+        print("The phugoid with q_dot and angle of attack zero is stable (lambda = " +str(lambda1) + " )")
     else:
-        print("The phugoid with q_dot and angle of attack zero is not stable")
+        print("The phugoid with q_dot and angle of attack zero is not stable (lambda = " +str(lambda1) + " )")
     return lambda1
 
 
@@ -46,9 +46,9 @@ def eigenvalue_phugoid_q_dot_zero_alpha_dot_zero():
     C = C_Z_0 * (C_m_u * C_Z_alpha - C_Z_u * C_m_alpha)
     lambda1 = -B / (2 * A) + cmath.sqrt(B * B - 4 * A * C) / (2 * A)
     if lambda1.real < 0:
-        print("The phugoid with q_dot and alpha_dot zero is stable")
+        print("The phugoid with q_dot and alpha_dot zero is stable (lambda = " +str(lambda1) + " )")
     else:
-        print("The phugoid with q_dot and alpha_dot zero is not stable")
+        print("The phugoid with q_dot and alpha_dot zero is not stable (lambda = " +str(lambda1) + " )")
     return lambda1
 
 
@@ -56,9 +56,9 @@ def eigenvalue_heavily_damped_aperiodic_roll():
     A = 4 * mu_b * K_X_2
     lambda1 = C_l_p / A
     if lambda1 < 0:
-        print("The aperiodic roll is stable")
+        print("The aperiodic roll is stable (lambda = " +str(lambda1) + " )")
     else:
-        print("The aperiodic roll is not stable")
+        print("The aperiodic roll is not stable (lambda = " +str(lambda1) + " )")
     return lambda1
 
 
@@ -68,9 +68,9 @@ def eigenvalue_dutch_roll_phi_zero():
     C = 4 * mu_b * C_n_beta + C_Y_beta * C_n_r
     lambda1 = -B / (2 * A) + cmath.sqrt(B * B - 4 * A * C) / (2 * A)
     if lambda1.real < 0:
-        print("The dutch roll with phi zero is stable")
+        print("The dutch roll with phi zero is stable (lambda = " +str(lambda1) + " )")
     else:
-        print("The dutch roll with phi zero is not stable")
+        print("The dutch roll with phi zero is not stable (lambda = " +str(lambda1) + " )")
     return lambda1
 
 
@@ -80,9 +80,9 @@ def eigenvalue_dutch_roll_phi_zero_yaw_only():
     C = -C_n_beta
     lambda1 = -B / (2 * A) + cmath.sqrt(B * B - 4 * A * C) / (2 * A)
     if lambda1.real < 0:
-        print("The dutch roll with phi zero and yaw only is stable")
+        print("The dutch roll with phi zero and yaw only is stable (lambda = " +str(lambda1) + " )")
     else:
-        print("The dutch roll with phi zero and yaw only is not stable")
+        print("The dutch roll with phi zero and yaw only is not stable (lambda = " +str(lambda1) + " )")
     return lambda1
 
 
@@ -92,9 +92,9 @@ def eigenvalue_aperiodic_spiral():
     C = C_n_p * (C_Y_beta * C_l_r + 4 * mu_b * C_l_beta)
     lambda1 = A / (B - C)
     if lambda1 < 0:
-        print("The aperiodic spiral is stable")
+        print("The aperiodic spiral is stable (lambda = " +str(lambda1) + " )")
     else:
-        print("The aperiodic spiral is not stable")
+        print("The aperiodic spiral is not stable (lambda = " +str(lambda1) + " )")
     return lambda1
 
 
@@ -109,9 +109,9 @@ def eigenvalue_dutch_roll_plus_aperiodic_spiral_motion():
     lambda3 = lambdas[2]
 
     if lambda1.real < 0 and lambda2.real < 0 and lambda3.real < 0:
-        print("The dutch roll plus spiral is stable")
+        print("The dutch roll plus spiral is stable (lambda = " +str(lambda1) + " )")
     elif lambda1.real < 0 or lambda2.real < 0 or lambda3.real < 0:
-        print("The dutch roll plus spiral is not stable")
+        print("The dutch roll plus spiral is not stable (lambda = " +str(lambda1) + " )")
     return lambdas
 
 

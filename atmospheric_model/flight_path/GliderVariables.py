@@ -23,5 +23,5 @@ C_D = 2 * C_D_0
 gamma_0_deploy = -np.pi / 2  # rad
 V_capsule = 80  # m/s
 V_0_deploy = V_capsule  # m/s
-C_D_deploy = 0.0
-C_L_deploy = 0.0
+C_D_deploy = 0.03
+C_L_deploy = 0.7498
