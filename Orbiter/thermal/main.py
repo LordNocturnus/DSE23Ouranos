@@ -170,11 +170,11 @@ if __name__ == "__main__":
     A_rtg = np.pi * w_rtg * l_rtg
     p_rtg_tot = 4500
     n_rtg = 3
-    A_single_l = 0.05 * A_rtg * n_rtg / (np.pi * w_rtg)
+    A_single_l = 0.05 * w_rtg * np.pi
     n_louvres = A_rtg * n_rtg / A_single_l
     mass_louvres = 0.001 * np.pi * n_rtg * l_rtg * w_rtg * 2700  # Assumed to be an alluminum plate https://ntrs.nasa.gov/api/citations/20190028943/downloads/20190028943.pdf
                                                                  # Alluminum properties https://material-properties.org/aluminium-thermal-properties-melting-point-thermal-conductivity-expansion/
 
     d_rtg, areas = power_phases(planets_list, r_orbit, A_rec, A_emit, alpha, epsilon, n_rtg, p_rtg_tot, A_single_l)
-
+    print(areas)
 

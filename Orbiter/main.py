@@ -1,15 +1,49 @@
 """
 Script for the orbiter design tool
 """
+import numpy as np
 import Orbiter.propulsion as prop
 import Orbiter.structure as strt
 import Orbiter.comms as comms
 import Orbiter.power as pwr
+import Orbiter.thermal as thm
 
 
 class Orb:
 
     def __init__(self, P_comms, d_antenna=5):
+        # Payload
+        self.T_operational = 283.15  # Operational temperature of payload instruments in K
+        self.m_payload = ...
+        
+        # Data Handling
+
+        # Comms
+        self.d_antenna = d_antenna
+        self.DR = ...
+        self.f_dl = ...
+        self.wavelength_dl = c / (self.f_dl * 10 ** 9)
+        self.f_ul = self.f_dl * TurnAroundRatio
+        self.wavelength_ul = c / (self.f_ul * 10 ** 9)
+        self.EbN0_dl = comms.downlink(self.P_comms, L_l, L_r, L_a, self.DR, Tnoisedown, k)
+        self.EBN0_ul = comms.uplink(self.f_ul, P_gs, L_l, L_r, L_a, DR_ul, Tnoiseup, k)
+        self.m_comms = ...
+
+        # Power
+        self.t_mission = ...  # Mission Timeline Tool
+        self.P_comms = P_comms
+        self.P_prop = ...
+        self.P_adcs = ...
+        self.P_dh = ...
+        self.P_payload = ...
+        self.P_thermal = 0
+        self.P_pw = ...
+        self.P_req = self.P_comms + self.P_pw + self.P_dh + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop
+        self.n_rtg = pwr.numberRTG(self.P_req)
+        self.m_power = pwr.massRTG(mass_RTG)
+        self.cost_rtg = pwr.costRTG(costRTG1)
+
+        # Structure and Prop
         self.mass = ...  # Orbiter dry mass
         self.mixture_ratio = 1.65
         self.mass_AV = ...  # Atmospheric vehicle mass (import from AV class)
@@ -30,33 +64,13 @@ class Orb:
         self.wet_mass_final = self.dry_mass_final + self.prop_mass
         self.f_lat, self.f_ax = strt.natural_frequency(self.l_tanks, self.r_tanks, self.material, self.mass_final, f_ax_min, f_lat_min)
 
-        # Power
-        self.t_mission = ...  # Mission Timeline Tool
-        self.P_comms = P_comms
-        self.P_prop = ...
-        self.P_adcs = ...
-        self.P_dh = ...
-        self.P_payload = ...
-        self.P_thermal = 0
-        self.P_pw = ...
-        self.P_req = self.P_comms + self.P_pw + self.P_dh + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop
-        self.n_rtg = pwr.numberRTG(self.P_req)
-        self.m_rtg = pwr.massRTG(mass_RTG)
-        self.cost_rtg = pwr.costRTG(costRTG1)
 
-
-
-        # Comms
-        self.d_antenna = d_antenna
-        self.DR = ...
-        self.f_dl = ...
-        self.wavelength_dl = c / (self.f_dl * 10**9)
-        self.f_ul = self.f_dl * TurnAroundRatio
-        self.wavelength_ul = c / (self.f_ul * 10**9)
-        self.EbN0_dl = comms.downlink(self.P_comms, L_l, L_r, L_a, self.DR, Tnoisedown, k)
-        self.EBN0_ul = comms.uplink(self.f_ul, P_gs, L_l, L_r, L_a, DR_ul, Tnoiseup, k)
-
-
+        # Thermal
+        self.A_rec = np.pi * self.l_tanks * self.r_tanks
+        self.A_emit = 2 * np.pi * self.r_tanks * self.l_tanks + np.pi * self.r_tanks ** 2
+        self.m_louvres = 0.001 * np.pi * self.n_rtg * l_rtg * w_rtg * 2700
+        self.d_rtg, self.n_l_closed = thm.power_phases(planets_list, r_orbit, self.A_rec, self.A_emit, alpha, epsilon, self.n_rtg, p_rtg_tot, A_single_l)
+        self.m_thermal = self.m_louvres + ...
 
 
     def mass_iteration(self):
@@ -71,11 +85,16 @@ class Orb:
             diff = abs(m_structure - self.m_structure)
             m_structure = self.m_structure
 
-
+    
+    
+    
+    
 if __name__ == "__main__":
     g = 9.81
     R = 8.314
     margin = 0.2
+    boltzman = 5.67 * 10 ** (-8)  # Boltzamn constant for thermal
+    k = 1.38 * 10 ** (-23)  # boltzmann constant for comms
 
     # --- STRUCTURE ---
 
@@ -91,7 +110,6 @@ if __name__ == "__main__":
     h_fairing = 13.1  # https://www.spacex.com/vehicles/falcon-heavy/
 
     # --- COMMS ---
-    k = 1.38 * 10 ** (-23)  # boltzmann constant
     c = 300000000  # speed of light in m/s
     earthRadius = 6371000.  # radius Earth in m
     L_a = -0.5  # atmospheric attenuation in dB
@@ -115,4 +133,17 @@ if __name__ == "__main__":
     mass_RTG = 55.9  # mass of one GPHS-RTG in kg
     costRTG1 = 145699633.36  # cost of one GPHS-RTG in FY$2022, This is the highest value. It could be around 130 million as well
 
-
+    # --- THERMAL ---
+    planets_list = {'Uranus': [2872500000, 51118 / 2, 0.51, 58.2],
+                    'Venus': [108200000, 12104 / 2, 0.65, 227, 200],
+                    'Earth': [149600000, 12756 / 2, 0.44, 255, 200],
+                    'Mars': [227900000, 6792 / 2, 0.15, 210.1, 200],
+                    'Jupiter': [778600000, 142984 / 2, 0.52, 109.5, 200]}
+    r_orbit = 200  # From Mission Timeline Tool
+    alpha = 0.09  # Absorptivity (Aluminized Kapton foil from SMAD or ADSEE I reader)
+    epsilon = 0.8  # Emissivity (Aluminized Kapton foil from SMAD or ADSEE I reader)
+    l_rtg = 1.14
+    w_rtg = 0.422
+    A_rtg = np.pi * w_rtg * l_rtg
+    p_rtg_tot = 4500
+    A_single_l = 0.05 * w_rtg * np.pi

@@ -1,1 +1,1 @@
-from main import *
+from Orbiter.thermal.main import *
