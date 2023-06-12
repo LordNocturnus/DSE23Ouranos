@@ -155,7 +155,7 @@ def simulate_entry_heating(mass, drag_coefficient, diameter, alt, lat, lon, spee
         limit_value=limit_altitude,
         use_as_lower_limit=True)
     dependent_variables_array = entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_path_angle,
-                                          heading_angle, acc=1)
+                                          heading_angle, [termination_altitude_settings], acc=1)
     gram = GRAM()
     gram.altitudes = dependent_variables_array[:, 1] / 1000
     gram.time = dependent_variables_array[:, 0]
@@ -177,8 +177,8 @@ def itterate_heatshield(plmass, structuremass, drag_coefficient, diameter, alt, 
                         heading_angle, acc=1, steps=5):
     hmass = 0
     for _ in range(0, steps):
-        h, q, _ = entry_sim(plmass + structuremass + hmass, drag_coefficient, diameter, alt, lat, lon, speed,
-                            flight_path_angle, heading_angle, acc)
+        h, q = simulate_entry_heating(plmass + structuremass + hmass, drag_coefficient, diameter, alt, lat, lon,
+                                      speed, flight_path_angle, heading_angle, 25000, acc)
         hmass = heatshield_sizing(diameter, h, speed, q)
         print(hmass)
 
