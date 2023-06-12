@@ -56,7 +56,7 @@ class orbital_trajectory:
 
         #setting up basic properties of the orbital simulation as part of the class
         self.global_frame_origin = "Uranus"
-        self.global_frame_orientation = "J2000"
+        self.global_frame_orientation = "IAU_URANUS"
         self.radiusUranus = 25362000
         body_settings = environment_setup.get_default_body_settings(
             bodies_to_create, self.global_frame_origin, self.global_frame_orientation)
