@@ -308,7 +308,7 @@ if __name__ == "__main__":
     # print(test.x.shape)
     # print(test.u.shape)
     print(test.Period[])
-    #print(test.T_half)
+    print(test.T_half)
     #print(test.damping_ratio)
     #print(test.nat_freq)
     #print(test.eigen_vector)
