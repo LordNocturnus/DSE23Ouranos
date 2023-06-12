@@ -6,25 +6,28 @@ import scipy as sp
 import pandas as pd
 import math
 
-# Load tudatpy modules
-from tudatpy.kernel.interface import spice
-from tudatpy.kernel import numerical_simulation
-from tudatpy.kernel.numerical_simulation import environment_setup, environment, propagation_setup, propagation
-from tudatpy.kernel.astro import element_conversion
-from tudatpy.kernel import constants
-from tudatpy.util import result2array
+from tudatpy.kernel.numerical_simulation import propagation_setup
 
-from atmospheric_model import GRAM
-
-_path = os.path.dirname(__file__)
-
-spice.load_standard_kernels()
-spice.load_kernel(_path + '/../../../atmospheric_model/GRAM/GRAM_Suite_1_5/SPICE/spk/satellites/ura116xl.bsp')
+from atmospheric_model.Entry_model import entry_sim
 
 
 def decelerator_sizing(target_time, totalmass, heatshieldmass, capsule_drag_coefficient, diameter, alt, lat, lon, speed,
                        flight_path_angle, heading_angle, acc=1, steps=5):
-    pass
+    termination_altitude_settings = propagation_setup.propagator.dependent_variable_termination(
+        dependent_variable_settings=propagation_setup.dependent_variable.altitude("Capsule", "Uranus"),
+        limit_value=0.0,
+        use_as_lower_limit=True)
+
+    dep_vars = entry_sim(totalmass, capsule_drag_coefficient, diameter, alt, lat, lon, speed, flight_path_angle,
+                         heading_angle, [termination_altitude_settings], acc=1)
+
+    plt.plot(dep_vars[:, 0], dep_vars[:, 10])
+    plt.grid()
+    plt.show()
+    plt.plot(dep_vars[:, 1], dep_vars[:, 10])
+    plt.grid()
+    plt.show()
+
 
 if __name__ == "__main__":
     decelerator_sizing(2 * 3600, 500, 250, 1.53, 4.5, 3.02877105e+07, -6.40748300e-02, -1.63500310e+00 + 2 * np.pi,
