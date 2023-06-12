@@ -199,7 +199,7 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
     q = k * dependent_variables_array[:, 4] ** 3 * np.sqrt(np.asarray(gram.data.Density_kgm3) / (np.pi * 2.25 ** 2))
 
     q_func = sp.interpolate.interp1d(dependent_variables_array[:, 0], q)
-    h = sp.integrate.quad(lambda x: q_func(x) / 10000, dependent_variables_array[0, 0],
+    h = sp.integrate.quad(lambda x: q_func(x), dependent_variables_array[0, 0],
                           dependent_variables_array[-1, 0])[0]
 
     return h, max(q), dependent_variables_array
