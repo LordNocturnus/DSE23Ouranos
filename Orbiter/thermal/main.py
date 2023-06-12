@@ -3,8 +3,19 @@ derived from the orbiter structure tool.
 """
 import numpy as np
 
+# Constants
+boltzman = 5.67 * 10 ** (-8)
 
-def solar_intensity(r, planet):
+# Planet list [Sun distance, radius, albedo factor, radiating temperature, *closest approach during gravity assist]
+# Radius and distance to sun https://www.jpl.nasa.gov/edu/pdfs/scaless_reference.pdf
+# Albedo and Temperature  ADSEE reader --> ECSS-S standards
+planets_list = {'Uranus': [2872500000, 51118 / 2, 0.51, 58.2],
+                'Venus': [108200000, 12104 / 2, 0.65, 227, 200],
+                'Earth': [149600000, 12756 / 2, 0.44, 255, 200],
+                'Mars': [227900000, 6792 / 2, 0.15, 210.1, 200],
+                'Jupiter': [778600000, 142984 / 2, 0.52, 109.5, 200]}
+
+def solar_intensity(r, planet, planet_list=planets_list):
     """
     Function to calculate the solar radiation on the spacecraft. Power of sun and distance of Uranus
     are taken, respectively, from SMAD and online research.
@@ -12,11 +23,11 @@ def solar_intensity(r, planet):
     :param planet: Chosen planet where to calculate the solar intensity
     :return: Solar intensity J at Uranus
     """
+    J_sun = 3.856 * 10**26 / (4 * np.pi * (planet_list[planet][0] * 1000 + r * 1000)**2)
+    return J_sun
 
-    return 3.856 * 10**26 / (4 * np.pi * (planets_list[planet][0] * 1000 + r * 1000)**2)
 
-
-def albedo(J, r, planet):
+def albedo(J, r, planet, planet_list=planets_list):
     """
     Function to calculate the albedo flux received by the spacecraft in orbit. The albedo factor and radius of
     Uranus are derived, respectively, from ECSS-E-ST-10-04C and online research
@@ -25,11 +36,12 @@ def albedo(J, r, planet):
     :param planet: Chosen planet where to calculate the albedo radiations
     :return: Albedo flux on orbiter
     """
-    F = (planets_list[planet][1] / (r + planets_list[planet][1]))**2
-    return planets_list[planet][2] * J * F
+    F = (planet_list[planet][1] / (r + planet_list[planet][1]))**2
+    J_albedo = planet_list[planet][2] * J * F
+    return J_albedo
 
 
-def power_absorbed(r, A_rec, alpha, epsilon, planet, solar=True):
+def power_absorbed(r, A_rec, alpha, epsilon, planet, planet_list=planets_list, solar=True):
     """
     Function to compute the total power received by the orbiter. It is assumed the worst case scenario,
     therefore all radiations are present (solar, albedo, IR)
@@ -41,14 +53,20 @@ def power_absorbed(r, A_rec, alpha, epsilon, planet, solar=True):
     :param solar: bool to determine if solar radiations should be taken into account or not
     :return: Total received heat
     """
-    F = (planets_list[planet][1] / (r + planets_list[planet][1])) ** 2
-    J_s = solar_intensity(r, planet)
-    J_a = albedo(J_s, r, planet)
-    J_ir = 5.67 * 10**(-8) * planets_list[planet][3]**4 * F  # ECSS
+    F = (planet_list[planet][1] / (r + planet_list[planet][1])) ** 2
+    J_s = solar_intensity(r, planet, planet_list)
+    J_a = albedo(J_s, r, planet, planet_list)
+    J_ir = 5.67 * 10**(-8) * planet_list[planet][3]**4 * F  # ECSS
+
+    P_s = alpha * J_s * A_rec
+    P_a = alpha * J_a * A_rec
+    P_ir = epsilon * J_ir * A_rec
     if solar:
-        return alpha * J_s * A_rec + alpha * J_a * A_rec + epsilon * J_ir * A_rec
+        P_abs = P_s + P_a + P_ir
+        return P_abs
     else:
-        return alpha * J_a * A_rec + epsilon * J_ir * A_rec
+        P_abs = P_a + P_ir
+        return P_abs
 
 
 def power_emitted(A_emit, epsilon, T_op):
@@ -59,7 +77,8 @@ def power_emitted(A_emit, epsilon, T_op):
     :param T_op: Operational temperature of the payload on board in K
     :return: Total orbiter emitted power
     """
-    return epsilon * A_emit * (T_op**4) * 5.67 * 10**(-8)
+    P_emit = epsilon * A_emit * (T_op**4) * 5.67 * 10**(-8)
+    return P_emit
 
 
 def power_dissipated(power_em, power_abs):
@@ -71,7 +90,8 @@ def power_dissipated(power_em, power_abs):
     :param power_abs: Orbiter absorbed power
     :return: Orbiter dissipated power
     """
-    return power_abs - power_em
+    P_diss = power_abs - power_em
+    return P_diss
 
 def distance_rtg(n_rtg, p_rtg, p_diss, A_rec, alpha):
     """
@@ -84,8 +104,8 @@ def distance_rtg(n_rtg, p_rtg, p_diss, A_rec, alpha):
     :param alpha: absorptivity
     :return: Value for the S/C to RTG distance
     """
-    return np.sqrt(A_rec * alpha * p_rtg * n_rtg / (4 * np.pi * (-1 * p_diss)))
-
+    d_rtg = np.sqrt(A_rec * alpha * p_rtg * n_rtg / (4 * np.pi * (-1 * p_diss)))
+    return d_rtg
 
 def louvres_area(p_diss, A_rec, alpha, d_rtg_uranus, A_rtg, p_rtg_tot, n_rtg, A_single_l):
     """
@@ -104,11 +124,11 @@ def louvres_area(p_diss, A_rec, alpha, d_rtg_uranus, A_rtg, p_rtg_tot, n_rtg, A_
     J_rtg_venus = - p_diss / (A_rec * alpha)
     p_rtg_venus = J_rtg_venus * 4 * np.pi * d_rtg_uranus**2
     a_tot_lv = A_rtg * p_rtg_venus / p_rtg_tot
-    n_lv = np.ceil((A_rtg * n_rtg - A_rtg * p_rtg_venus / p_rtg_tot) / A_single_l)
+    n_lv = np.ceil((A_rtg * n_rtg - a_tot_lv) / A_single_l)
     return n_lv
 
 
-def power_phases(planet_list, r_orbit, A_rec, A_emit, alpha, epsilon, n_rtg, p_rtg_tot, A_single_l):
+def power_phases(planet_list, r_orbit, A_rec, A_emit, alpha, epsilon, n_rtg, p_rtg_tot, A_single_l, T_operational, A_rtg):
     """
     Function that determines the rtg distance at Uranus and the number of closed louvres cells for the
     different mission phases. RTG distance is only computed for Uranus because this is the driving
@@ -129,7 +149,7 @@ def power_phases(planet_list, r_orbit, A_rec, A_emit, alpha, epsilon, n_rtg, p_r
     for planet in planet_list:
         r = r_orbit if planet == 'Uranus' else planet_list[planet][4]
         solar = False if planet == 'Venus' else True
-        power_abs = power_absorbed(r, A_rec, alpha, epsilon, planet, solar)
+        power_abs = power_absorbed(r, A_rec, alpha, epsilon, planet, planet_list, solar=solar)
         power_em = power_emitted(A_emit, epsilon, T_operational)
         power_diss = power_dissipated(power_em, power_abs)
         if planet == 'Uranus':
@@ -142,17 +162,7 @@ def power_phases(planet_list, r_orbit, A_rec, A_emit, alpha, epsilon, n_rtg, p_r
 
 
 if __name__ == "__main__":
-    # Constants
-    boltzman = 5.67 * 10**(-8)
 
-    # Planet list [Sun distance, radius, albedo factor, radiating temperature, *closest approach during gravity assist]
-    # Radius and distance to sun https://www.jpl.nasa.gov/edu/pdfs/scaless_reference.pdf
-    # Albedo and Temperature  ADSEE reader --> ECSS-S standards
-    planets_list = {'Uranus': [2872500000, 51118 / 2, 0.51, 58.2],
-                    'Venus': [108200000, 12104 / 2, 0.65, 227, 200],
-                    'Earth': [149600000, 12756 / 2, 0.44, 255, 200],
-                    'Mars': [227900000, 6792 / 2, 0.15, 210.1, 200],
-                    'Jupiter': [778600000, 142984 / 2, 0.52, 109.5, 200]}
 
     # Inputs
     r_orbit = 200  # Radius of orbit at Uranus in km (smallest possible)
@@ -175,6 +185,7 @@ if __name__ == "__main__":
     mass_louvres = 0.001 * np.pi * n_rtg * l_rtg * w_rtg * 2700  # Assumed to be an alluminum plate https://ntrs.nasa.gov/api/citations/20190028943/downloads/20190028943.pdf
                                                                  # Alluminum properties https://material-properties.org/aluminium-thermal-properties-melting-point-thermal-conductivity-expansion/
 
-    d_rtg, areas = power_phases(planets_list, r_orbit, A_rec, A_emit, alpha, epsilon, n_rtg, p_rtg_tot, A_single_l)
+    d_rtg, areas = power_phases(planets_list, r_orbit, A_rec, A_emit, alpha, epsilon, n_rtg, p_rtg_tot, A_single_l, T_operational, A_rtg)
+
 
 
