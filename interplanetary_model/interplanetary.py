@@ -20,7 +20,7 @@ def convert_trajectory_parameters (transfer_trajectory_object: tudatpy.kernel.tr
     # Declare lists of transfer parameters
     node_times = list()
     leg_free_parameters = list()
-    node_free_parameters = list()
+    node_free_parameters = []
 
     # Extract from trajectory parameters the lists with each type of parameters
     departure_time = trajectory_parameters[0]
@@ -156,8 +156,8 @@ bodies = environment_setup.create_simplified_system_of_bodies()
 # Define the trajectory settings for both the legs and at the nodes
 transfer_leg_settings, transfer_node_settings = transfer_trajectory.mga_settings_unpowered_unperturbed_legs(
     transfer_body_order,
-    departure_orbit=(departure_semi_major_axis, departure_eccentricity),
-    arrival_orbit=(arrival_semi_major_axis, arrival_eccentricity))
+    departure_orbit=(departure_semi_major_axis, departure_eccentricity),minimum_pericenters = {'Earth': 6678000.0, 'Jupiter': 600000000.0, 'Mars': 3689000.0, 'Mercury': 2740000.0, 'Saturn': 70000000.0, 'Venus': 6351800.0, 'Uranus':25362000})
+#    arrival_orbit=(arrival_semi_major_axis, arrival_eccentricity))
 
 # Create the transfer calculation object
 transfer_trajectory_object = transfer_trajectory.create_transfer_trajectory(
