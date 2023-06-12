@@ -137,7 +137,7 @@ if __name__ == "__main__":
     delta_T = 100
 
     # Mass Budget
-    m_thermal = 1100
+    m_thermal = 220
     m_glider = 114
 
 
