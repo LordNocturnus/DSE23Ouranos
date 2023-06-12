@@ -113,7 +113,9 @@ def final_architecture(material, propellant, margin, m_subsystems):
     """
     m_tank_o, l_o, r_o, t_caps_o, t_cylind_o = geometry_mass(material, propellant[0], margin, False)
     m_tank_f, l_f, r_f, t_caps_f, t_cylind_f = geometry_mass(material, propellant[1], margin, False)
-    m_tot_structure = m_tank_o + m_tank_f
+    m_tot_structure = m_tank_o + m_tank_f + ((r_o + r_f) * max(t_cylind_f, t_cylind_o) * 2 + 4 * r_o**2 * t_cylind_o +
+                                             4 * r_f**2 * t_cylind_f + 4 * max(r_f, r_o)**2 * 2 * t_cylind_f)\
+                                             * material[0] # Calculating the total mass of all metal surfaces on the orbiter
     l_tot = l_o + l_f + r_f * 2 + r_o * 2
     m_total = m_subsystems + m_tot_structure
 

@@ -68,7 +68,7 @@ class Orb:
                                         g, self.Isp)[2]
         self.m_fuel = self.prop_mass / (1 + self.mixture_ratio)
         self.m_ox = self.prop_mass - self.m_fuel
-        self.prop_properties = [(1 * 10 ** 6, self.m_ox, 1431), (1 * 10 ** 6, self.m_fuel, 874)]
+        self.prop_properties = [(3 * 10 ** 6, self.m_ox, 1431), (3 * 10 ** 6, self.m_fuel, 874)]
         self.wet_mass = m_dry + self.prop_mass
         self.l_tanks, self.r_tanks, self.m_structure = strt.final_architecture(self.material, self.prop_properties,
                                                                               margin, self.wet_mass)
@@ -94,7 +94,7 @@ class Orb:
             self.P_req = 500
             self.power()
             self.thermal()
-            new_orbiter_mass = self.m_structure + self.m_power + self.m_thermal + self.m_payload + self.m_dh + self.m_comms + self.m_adcs
+            new_orbiter_mass = 1.1 * (self.m_structure + self.m_power + self.m_thermal + self.m_payload + self.m_dh + self.m_comms + self.m_adcs)  # 1.1 is 10% margin based on smad page 316
             self.P_req = self.P_comms + self.P_pw + self.P_dh + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop
             diff = abs(new_orbiter_mass - self.mass)
             self.mass = new_orbiter_mass
@@ -105,7 +105,14 @@ class Orb:
                f'Total Dry Mass: {self.total_dry_mass}\n' \
                f'Orbiter Wet Mass: {self.total_wet_mass}\n' \
                f'Propellant Mass: {self.prop_mass}\n' \
-               f'Atmospheric Vehicle Mass: {self.mass_AV}'
+               f'Atmospheric Vehicle Mass: {self.mass_AV}\n' \
+               f'Structure Mass: {self.m_structure}\n' \
+               f'Comms Mass: {self.m_comms}\n' \
+               f'Payload Mass: {self.m_payload}\n' \
+               f'DH Mass: {self.m_dh}\n' \
+               f'ADCS Mass: {self.m_adcs}\n' \
+               f'Power Mass: {self.m_power}\n' \
+               f'Thermal Mass: {self.m_thermal}'
 
 if __name__ == "__main__":
     g = 9.81
