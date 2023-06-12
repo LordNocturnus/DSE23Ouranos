@@ -60,20 +60,14 @@ def decelerator_sizing(target_time, target_pressure, totalmass, heatshieldmass, 
         parachute_diameter[-1] *= target_time / (dep_vars[-1, 0] - 6000)
         print(parachute_diameter)
 
-    gram.time = dep_vars[:, 0]
-    gram.altitudes = dep_vars[:, 1] / 1000
-    gram.lat = np.rad2deg(dep_vars[:, 2])
-    gram.long = np.rad2deg((dep_vars[:, 3] + 2 * np.pi) % 2 * np.pi)
-    gram.run()
-
-    plt.plot(dep_vars[:, 9], dep_vars[:, 1], label="exp")
-    plt.plot(gram.data.Density_kgm3, dep_vars[:, 1], label="gram")
+    plt.plot(ballistic_dep_vars[:, 0][ballistic_dep_vars[:, 4] <= 250],
+             ballistic_dep_vars[:, -4][ballistic_dep_vars[:, 4] <= 250])
     plt.grid()
     plt.legend()
     plt.show()
 
 
 if __name__ == "__main__":
-    decelerator_sizing(2 * 3600, 20*10**5, 500, 250, 1.53, np.asarray([0.5]), np.asarray([1.3]), 4.5, 3.02877105e+07,
+    decelerator_sizing(4 * 3600, 20*10**5, 500, 250, 1.53, np.asarray([0.5]), np.asarray([1.3]), 4.5, 3.02877105e+07,
                        -6.40748300e-02, -1.63500310e+00 + 2 * np.pi, 1.93919454e+04, np.deg2rad(-30), -2.35413606e+00,
-                       steps=1)
+                       steps=3)
