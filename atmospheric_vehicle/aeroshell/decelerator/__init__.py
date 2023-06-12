@@ -1,1 +1,1 @@
-from main import *
+from atmospheric_vehicle.aeroshell.decelerator.main import *
