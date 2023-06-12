@@ -1,8 +1,10 @@
 from matplotlib import pyplot as plt
+from tudatpy.kernel.numerical_simulation import propagation_setup
 import numpy as np
 import scipy as sp
 
 from atmospheric_model.Entry_model import entry_sim
+from atmospheric_model.GRAM import GRAM
 
 _dia = 4.5
 _radius1 = 1.125
@@ -144,6 +146,31 @@ def s3(x, d, r1, r2, a1, a2, dia):
     x -= (dia / 2 - r2 + (r2 - d) * np.cos(np.pi / 2 - a1) -
           (r1 - d) / np.sin(a1)) / np.tan(np.pi / 2 - a1) + (r2 - d) * np.sin(np.pi / 2 - a1)
     return dia / 2 - r2 + (r2 - d) * np.cos(np.arcsin(x / (r2 - d)))
+
+
+def simulate_entry_heating(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_path_angle, heading_angle,
+                           limit_altitude, acc=1):
+    termination_altitude_settings = propagation_setup.propagator.dependent_variable_termination(
+        dependent_variable_settings=propagation_setup.dependent_variable.altitude("Capsule", "Uranus"),
+        limit_value=limit_altitude,
+        use_as_lower_limit=True)
+    dependent_variables_array = entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_path_angle,
+                                          heading_angle, acc=1)
+    gram = GRAM()
+    gram.altitudes = dependent_variables_array[:, 1] / 1000
+    gram.time = dependent_variables_array[:, 0]
+    gram.lat = np.rad2deg(dependent_variables_array[:, 2])
+    gram.long = np.rad2deg((dependent_variables_array[:, 3] + 2 * np.pi) % (2 * np.pi))
+    gram.run()
+
+    k = 1 / (np.asarray(gram.data.H2mass_pct) / 0.0395 + np.asarray(gram.data.Hemass_pct) / 0.0797)
+    q = k * dependent_variables_array[:, 4] ** 3 * np.sqrt(np.asarray(gram.data.Density_kgm3) / (np.pi * 2.25 ** 2))
+
+    q_func = sp.interpolate.interp1d(dependent_variables_array[:, 0], q)
+    h = sp.integrate.quad(lambda x: q_func(x), dependent_variables_array[0, 0],
+                          dependent_variables_array[-1, 0])[0]
+
+    return h, max(q)
 
 
 def itterate_heatshield(plmass, structuremass, drag_coefficient, diameter, alt, lat, lon, speed, flight_path_angle,
