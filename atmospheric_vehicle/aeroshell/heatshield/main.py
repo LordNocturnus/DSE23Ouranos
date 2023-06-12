@@ -13,34 +13,46 @@ def heatshield_sizing(diameter, heat_load, interface_velocity, peak_heat_flux):
     radius1 = _radius1 / _dia * diameter
     radius2 = _radius2 / _dia * diameter
 
-    PICA_thickness = 1.8686 * (heat_load / 10000 / (interface_velocity / 1000)) ** 0.1879 / 100
+    heat_load = heat_load / 10000 # convert to J/cm**2
+    interface_velocity = interface_velocity / 1000 # convert to km/s
+    peak_heat_flux = peak_heat_flux / 10000 # convert to W/cm**2
+
+    PICA_thickness = 1.8686 * (heat_load / (interface_velocity ** 2)) ** 0.1879 / 100
     PICA_density = 0.352 * 100**3 / 1000  # 0.352 - 0.701 g/cm^3
-    CP_thickness = 1.1959 * (heat_load / 10000 / (interface_velocity / 1000)) ** 0.2102 / 100
+
+    if 3.27 / 100 <= PICA_thickness:
+        PICA_thickness = 3.27 / 100
+    PICA_volume = volume(diameter, radius1, radius2, 0.0, PICA_thickness)
+    PICA_weight = PICA_volume * PICA_density
+
+    CP_thickness = 1.1959 * (heat_load / (interface_velocity ** 2)) ** 0.2102 / 100
     CP_density = 1.31 * 100**3 / 1000  # 1.31 - 1.55 g/cm^3
     HT_424_thickness = 0.0381 / 100
     HT_424_density = 0.66 / HT_424_thickness
     ACC6_thickness = 0.25 / 100
     ACC6_density = 1.6 * 100**3 / 1000  # 1.6 - 2.1 g/cm^3
 
+    if 2.266 / 100 <= CP_thickness:
+        CP_thickness = 2.266 / 100
+
+    CP_volume = volume(diameter, radius1, radius2, 0.0, CP_thickness)
+    HT_424_volume = volume(diameter, radius1, radius2, CP_thickness, HT_424_thickness)
+    ACC6_volume = volume(diameter, radius1, radius2, CP_thickness + HT_424_thickness, ACC6_thickness)
+    CP_weight = CP_volume * CP_density
+    HT_424_weight = HT_424_volume * HT_424_density
+    ACC6_weight = ACC6_volume * ACC6_density
+    CP_total_weight = CP_weight + HT_424_weight + ACC6_weight
+
     PICA = False
     CP = False
-    if peak_heat_flux <= 1200 and 3.27 / 100 <= PICA_thickness <= radius2:
+    if peak_heat_flux <= 1200 and PICA_thickness <= radius2:
         PICA = True
-        PICA_volume = volume(diameter, radius1, radius2, 0.0, PICA_thickness)
-        PICA_weight = PICA_volume * PICA_density
 
-    if 2.266 / 100 <= CP_thickness and CP_thickness + HT_424_thickness + ACC6_thickness <= radius2:
+    if CP_thickness + HT_424_thickness + ACC6_thickness <= radius2:
         CP = True
-        CP_volume = volume(diameter, radius1, radius2, 0.0, CP_thickness)
-        HT_424_volume = volume(diameter, radius1, radius2, CP_thickness, HT_424_thickness)
-        ACC6_volume = volume(diameter, radius1, radius2, CP_thickness + HT_424_thickness, ACC6_thickness)
-        CP_weight = CP_volume * CP_density
-        HT_424_weight = HT_424_volume * HT_424_density
-        ACC6_weight = ACC6_volume * ACC6_density
-        CP_total_weight = CP_weight + HT_424_weight + ACC6_weight
 
     if CP and PICA:
-        if CP_total_weight < PICA_weight:
+        if CP_total_weight > PICA_weight:
             print("choose PICA")
             return PICA_weight
         else:
@@ -92,7 +104,7 @@ def volume(diameter, radius1, radius2, depth, thickness):
     edge = s3(l3, depth, radius1, radius2, _bottom_angle, _top_angle, diameter)
     edged = s3(l3d, depth + thickness, radius1, radius2, _bottom_angle, _top_angle, diameter)
     vneg += sp.integrate.quad(lambda x: np.pi * ((edge - edged) / (l3 - l3d) * (-l3 + x) + edge) ** 2, l3d, l3)[0]
-    print(vpos, vneg)
+    """print(vpos, vneg)
 
     plt.plot(np.linspace(l0, l1, 1000), s1(np.linspace(l0, l1, 1000), depth, radius1, radius2, _bottom_angle,
                                            _top_angle, diameter))
@@ -113,7 +125,7 @@ def volume(diameter, radius1, radius2, depth, thickness):
     plt.grid()
     plt.xlim(-2.5, 3)
     plt.ylim(-0.5, 5)
-    plt.show()
+    plt.show() #"""
 
     return vpos - vneg
 
