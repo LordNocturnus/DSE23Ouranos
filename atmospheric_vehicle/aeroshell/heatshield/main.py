@@ -2,6 +2,8 @@ from matplotlib import pyplot as plt
 import numpy as np
 import scipy as sp
 
+from atmospheric_model.Entry_model import entry_sim
+
 _dia = 4.5
 _radius1 = 1.125
 _radius2 = 0.126
@@ -144,5 +146,18 @@ def s3(x, d, r1, r2, a1, a2, dia):
     return dia / 2 - r2 + (r2 - d) * np.cos(np.arcsin(x / (r2 - d)))
 
 
+def itterate_heatshield(plmass, structuremass, drag_coefficient, diameter, alt, lat, lon, speed, flight_path_angle,
+                        heading_angle, acc=1, steps=5):
+    hmass = 0
+    for _ in range(0, steps):
+        h, q, _ = entry_sim(plmass + structuremass + hmass, drag_coefficient, diameter, alt, lat, lon, speed,
+                            flight_path_angle, heading_angle, acc)
+        hmass = heatshield_sizing(diameter, h, speed, q)
+        print(hmass)
+
+    return hmass
+
+
 if __name__ == "__main__":
-    print(heatshield_sizing(4.5, 10**8, 20000, 1100))
+    itterate_heatshield(125, 75, 1.53, 4.5, 3.02877105e+07, -6.40748300e-02, -1.63500310e+00 + 2 * np.pi,
+                        1.93919454e+04, np.deg2rad(-30), -2.35413606e+00, 1, 10)
