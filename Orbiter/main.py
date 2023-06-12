@@ -36,7 +36,7 @@ class Orb:
         self.DR = 8000
         self.EbN0_dl = comms.downlink(self.P_comms, L_l, L_r, L_a, self.DR, Tnoisedown, k)
         self.EBN0_ul = comms.uplink(self.f_ul, P_gs, L_l, L_r, L_a, DR_ul, Tnoiseup, k)
-        self.m_comms = 80
+        self.m_comms = 120
 
         # Structure and Prop
         self.mass = 2427  # Orbiter dry mass
@@ -75,7 +75,7 @@ class Orb:
 
     def power(self):
         self.n_rtg = pwr.numberRTG(self.P_req, self.t_mission)
-        self.m_power = pwr.massRTG(mass_RTG, self.P_req, self.t_mission)
+        self.m_power = 1.2 * (pwr.massRTG(mass_RTG, self.P_req, self.t_mission) + 25)  # 25 kg is an estimate for PDU and regulators
         self.cost_rtg = pwr.costRTG(costRTG1, self.P_req, self.t_mission)
 
     def thermal(self):
@@ -83,7 +83,8 @@ class Orb:
         self.A_emit = 2 * np.pi * self.r_tanks * self.l_tanks + np.pi * self.r_tanks ** 2
         self.m_louvres = 0.001 * np.pi * self.n_rtg * l_rtg * w_rtg * 2700
         self.d_rtg, self.n_l_closed = thm.power_phases(self.A_rec, self.A_emit, self.n_rtg)
-        self.m_thermal = self.m_louvres + 50
+        self.m_thermal = self.m_louvres + np.pi * self.r_tanks**2 * 0.1143 * 400  # 0.1143 thickness of shield https://science.nasa.gov/technology/technology-highlights/heat-shield-protect-mission-to-sun
+                                                                                  # 400 is density of carbon phoam https://www.cfoam.com/wp-content/uploads/Carbon-Foams-amp16111p029-3.pdf
 
 
     def iteration(self):
@@ -134,4 +135,5 @@ if __name__ == "__main__":
     w_rtg = 0.422
 
     orbiter = Orb()
+    print(orbiter.r_tanks)
     print(str(orbiter))
