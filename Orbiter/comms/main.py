@@ -1,34 +1,5 @@
 import numpy as np
 
-# constants:
-k = 1.38*10**(-23) # boltzmann constant
-c = 300000000 # speed of light in m/s
-earthRadius = 6371000. # radius Earth in m
-L_a = -0.5 # atmospheric attenuation in dB
-AU = 149597870691 # one AU in m
-d_EarthSC = 20.8 # max distance between SC and Earth in AU
-Tnoisedown = 424 # Noise temperature in K
-Tnoiseup = 763 # Noise temperature in K
-TurnAroundRatio = 3599 / 3344
-
-# antenna spacecraft:
-d_antenna = 5 # antenna diameter in m
-eta_antenna = 0.55
-P = 60 # transmitting power in W
-L_l = 0.9 # loss factor spacecraft
-PointingAccuracy = 0.0572958 # pointing accuracy in deg
-DR = 8000 # downlink data rate in bps
-f = 32 # Downlink frequency in GHz
-wavelengthdown = c / (f * 10 ** 9)
-
-# antenna ground station:
-P_gs = 800 # power ground station in W
-d_gs = 70 # antenna diameter in m
-L_r = 0.75 # loss factor ground station
-uplinkDR = 25000 # uplink data rate in bps
-f_gs = f * TurnAroundRatio # uplink frequency in Ghz
-wavelenghtup = c / (f_gs * 10 ** 9)
-
 
 # calculate space loss:
 def SpaceLoss(wavelength, d, AU):
@@ -74,7 +45,7 @@ def downlink(P, L_l, L_r, L_a, DR, Tnoise, k):
     EbN0 = P + G_t + G_r + L_l + L_r + L_s + L_pr + L_a + DR + Tnoise + k
     Eb = EbN0 - Tnoise - k
     Eb = 10 ** (Eb / 10)
-    return P, G_t, G_r, L_l, L_r, L_s, L_pr, DR, Tnoise, k, EbN0, Eb
+    return EbN0
 
 def uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoise, k):
     P = 10 * np.log10(P_gs)  # in [dB]
@@ -95,10 +66,38 @@ def uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoise, k):
     EbN0 = P + G_t + G_r + L_l + L_r + L_s + L_pr + L_a + DR + Tnoise + k
     Eb = EbN0 - Tnoise - k
     Eb = 10 ** (Eb / 10)
-    return P, G_t, G_r, L_l, L_r, L_s, L_pr, DR, Tnoise, k, EbN0, Eb
+    return EbN0
 
 
 if __name__ == "__main__":
+    # constants:
+    k = 1.38 * 10 ** (-23)  # boltzmann constant
+    c = 300000000  # speed of light in m/s
+    earthRadius = 6371000.  # radius Earth in m
+    L_a = -0.5  # atmospheric attenuation in dB
+    AU = 149597870691  # one AU in m
+    d_EarthSC = 20.8  # max distance between SC and Earth in AU
+    Tnoisedown = 424  # Noise temperature in K
+    Tnoiseup = 763  # Noise temperature in K
+    TurnAroundRatio = 3599 / 3344
+
+    # antenna spacecraft:
+    d_antenna = 5  # antenna diameter in m
+    eta_antenna = 0.55
+    P = 60  # transmitting power in W
+    L_l = 0.9  # loss factor spacecraft
+    PointingAccuracy = 0.0572958  # pointing accuracy in deg
+    DR = 8000  # downlink data rate in bps
+    f = 32  # Downlink frequency in GHz
+    wavelengthdown = c / (f * 10 ** 9)
+
+    # antenna ground station:
+    P_gs = 800  # power ground station in W
+    d_gs = 70  # antenna diameter in m
+    L_r = 0.75  # loss factor ground station
+    uplinkDR = 25000  # uplink data rate in bps
+    f_gs = f * TurnAroundRatio  # uplink frequency in Ghz
+    wavelenghtup = c / (f_gs * 10 ** 9)
     print('**** DOWNLINK ****')
     print('P:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[0])
     print('G_t:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[1])

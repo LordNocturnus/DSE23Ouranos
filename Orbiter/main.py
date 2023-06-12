@@ -3,11 +3,12 @@ Script for the orbiter design tool
 """
 import Orbiter.propulsion as prop
 import Orbiter.structure as str
+import Orbiter.comms as comms
 
 
 class Orb:
 
-    def __init__(self):
+    def __init__(self, P_comms, d_antenna=5):
         self.mass = ...  # Orbiter dry mass
         self.mixture_ratio = 1.65
         self.mass_AV = ...  # Atmospheric vehicle mass (import from AV class)
@@ -26,8 +27,24 @@ class Orb:
         self.mass_iteration()
         self.dry_mass_final = self.mass_combined + self.m_structure
         self.wet_mass_final = self.dry_mass_final + self.prop_mass
-
         self.f_lat, self.f_ax = str.natural_frequency(self.l_tanks, self.r_tanks, self.material, self.mass_final, f_ax_min, f_lat_min)
+
+        # Power
+        
+
+
+
+        # Comms
+        self.d_antenna = d_antenna
+        self.P_comms = P_comms
+        self.DR = ...
+        self.f_dl = ...
+        self.wavelength_dl = c / (self.f_dl * 10**9)
+        self.f_ul = self.f_dl * TurnAroundRatio
+        self.wavelength_ul = c / (self.f_ul * 10**9)
+        self.EbN0_dl = comms.downlink(self.P_comms, L_l, L_r, L_a, self.DR, Tnoisedown, k)
+        self.EBN0_ul = comms.uplink(self.f_ul, P_gs, L_l, L_r, L_a, DR_ul, Tnoiseup, k)
+
 
 
 
@@ -49,6 +66,8 @@ if __name__ == "__main__":
     R = 8.314
     margin = 0.2
 
+    # --- STRUCTURE ---
+
     acc_axial_tension = 6 * 9.81  # https://www.spacex.com/media/falcon-users-guide-2021-09.pdf
     acc_axial_compr = 2 * 9.81  # https://www.spacex.com/media/falcon-users-guide-2021-09.pdf
     acc_lateral = 2 * 9.81  # Same for compression and tension (https://www.spacex.com/media/falcon-users-guide-2021-09.pdf)
@@ -59,3 +78,25 @@ if __name__ == "__main__":
     # Launcher Constraints
     d_fairing = 5.2  # https://www.spacex.com/vehicles/falcon-heavy/
     h_fairing = 13.1  # https://www.spacex.com/vehicles/falcon-heavy/
+
+    # --- COMMS ---
+    k = 1.38 * 10 ** (-23)  # boltzmann constant
+    c = 300000000  # speed of light in m/s
+    earthRadius = 6371000.  # radius Earth in m
+    L_a = -0.5  # atmospheric attenuation in dB
+    AU = 149597870691  # one AU in m
+    d_EarthSC = 20.8  # max distance between SC and Earth in AU
+    Tnoisedown = 424  # Noise temperature in K
+    Tnoiseup = 763  # Noise temperature in K
+    TurnAroundRatio = 3599 / 3344
+
+    eta_antenna = 0.55
+    L_l = 0.9
+    L_r = 0.75
+    PointingAccuracy = 0.0572958
+    P_gs = 800
+    d_gs = 70
+    DR_ul = 25000
+
+
+
