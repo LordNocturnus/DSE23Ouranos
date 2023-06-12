@@ -1,20 +1,6 @@
 import numpy as np
 
-# combined system parameter:
-m_combined = 2898 # total dry mass of both systems in kg
-dV_combined = 1000 # delta V required for the combined system in m/s
 
-# Orbiter system parameters:
-m_orbiter = 2427 # dry mass of only the orbiter in kg
-dV_orbiter = 1000 # delta V required for the orbiter alone in m/s
-
-# Constants
-g = 9.81 # gravitational constant in m/s^2
-
-# Engine parameters:
-I_sp = 321 # specific impulse in sec
-T = 445 # thrust in N
-m_flow = 1 # fuel mass flow in kg/s
 
 # Calculate required propellant mass:
 def mass_prop(m_orbiter, dV_orbiter, m_combined, dV_combined, g, I_sp):
@@ -39,6 +25,21 @@ def burntimeorbiter(T, m_f, dV):
 
 
 if __name__ == "__main__":
+    # combined system parameter:
+    m_combined = 2898  # total dry mass of both systems in kg
+    dV_combined = 1000  # delta V required for the combined system in m/s
+
+    # Orbiter system parameters:
+    m_orbiter = 2427  # dry mass of only the orbiter in kg
+    dV_orbiter = 1000  # delta V required for the orbiter alone in m/s
+
+    # Constants
+    g = 9.81  # gravitational constant in m/s^2
+
+    # Engine parameters:
+    I_sp = 321  # specific impulse in sec
+    T = 445  # thrust in N
+    m_flow = 1  # fuel mass flow in kg/s
     print('total dV: ', mass_prop(m_orbiter, dV_orbiter, m_combined, dV_combined, g, I_sp))
     print(burntimeorbiter(T, m_orbiter, dV_orbiter))
     print(burntimecombined(T, m_combined, dV_combined))
