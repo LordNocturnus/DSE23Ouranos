@@ -134,9 +134,9 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
                                                                                        heading_angle=heading_angle)
 
     # Convert the state from the Earth-fixed frame to the inertial frame
-    earth_rotation_model = bodies.get_body("Uranus").rotation_model
+    uranus_rotation_model = bodies.get_body("Uranus").rotation_model
     initial_state = environment.transform_to_inertial_orientation(initial_uranus_fixed_state,
-                                                                  simulation_start_epoch, earth_rotation_model)
+                                                                  simulation_start_epoch, uranus_rotation_model)
 
     print("Setup initial state")
 
@@ -148,7 +148,10 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
                                    propagation_setup.dependent_variable.total_acceleration("Capsule"),
                                    propagation_setup.dependent_variable.mach_number("Capsule", "Uranus"),
                                    propagation_setup.dependent_variable.density("Capsule", "Uranus"),
-                                   propagation_setup.dependent_variable.dynamic_pressure("Capsule"),]
+                                   propagation_setup.dependent_variable.dynamic_pressure("Capsule"),
+                                   propagation_setup.dependent_variable.flight_path_angle("Capsule", "Uranus"),
+                                   propagation_setup.dependent_variable.heading_angle("Capsule", "Uranus"),
+                                   propagation_setup.dependent_variable.relative_distance("Capsule", "Uranus"),]
 
     print("Setup dependent vars")
 
@@ -184,9 +187,8 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
 
 if __name__ == "__main__":
     angle = -30
-    h, q, dependent_variables_array = entry_sim(1550, 1.53, 4.5, 3.02877105e+07, -6.40748300e-02,
-                                                -1.63500310e+00 + 2 * np.pi, 1.93919454e+04, np.deg2rad(angle),
-                                                -2.35413606e+00)
+    dependent_variables_array = entry_sim(1550, 1.53, 4.5, 3.02877105e+07, -6.40748300e-02, -1.63500310e+00 + 2 * np.pi,
+                                          1.93919454e+04, np.deg2rad(angle), -2.35413606e+00)
     print(h)
 
     print("finished")
