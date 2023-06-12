@@ -1,1 +1,1 @@
-from main import *
+from Orbiter.structure.main import *
