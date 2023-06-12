@@ -133,7 +133,7 @@ def thermal_loads(alpha, delta_T, E, sigma_y):
 if __name__ == "__main__":
     # Loads values
     load_peak = 100 * 9.81
-    p_load = 1 * 10**6
+    p_load = 2 * 10**6
     delta_T = 100
 
     # Mass Budget
