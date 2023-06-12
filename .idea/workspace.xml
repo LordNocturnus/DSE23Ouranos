@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="947a63f8-0000-47da-948f-b1f54b99ab6e" name="Changes" comment="started writing some propellant mass calculations but not sure if they are correct so still needs a lot of work">
+      <change afterPath="$PROJECT_DIR$/Orbiter/propulsion/test_main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Orbiter/propulsion/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Orbiter/propulsion/main.py" afterDir="false" />
     </list>
@@ -30,7 +34,7 @@
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;
   }
 }</component>
-  <component name="RunManager" selected="Python.main (1)">
+  <component name="RunManager" selected="Python tests.Python tests for test_main.Test.test_burntimeorbiter">
     <configuration name="main (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="DSE23Oreanos" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -75,8 +79,53 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="Python tests for test_main.Test.test_burntimecombined" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="DSE23Ouranos" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Orbiter/propulsion" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_main.Test.test_burntimecombined&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Python tests for test_main.Test.test_burntimeorbiter" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="DSE23Ouranos" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Orbiter/propulsion" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_main.Test.test_burntimeorbiter&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Python tests for test_main.Test.test_mass_prop" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="DSE23Ouranos" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Orbiter/propulsion" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_main.Test.test_mass_prop&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python tests.Python tests for test_main.Test.test_burntimeorbiter" />
+        <item itemvalue="Python tests.Python tests for test_main.Test.test_burntimecombined" />
+        <item itemvalue="Python tests.Python tests for test_main.Test.test_mass_prop" />
         <item itemvalue="Python.main (1)" />
         <item itemvalue="Python.main" />
       </list>
@@ -147,10 +196,5 @@
     <MESSAGE value="Just a small lay-out update" />
     <MESSAGE value="started writing some propellant mass calculations but not sure if they are correct so still needs a lot of work" />
     <option name="LAST_COMMIT_MESSAGE" value="started writing some propellant mass calculations but not sure if they are correct so still needs a lot of work" />
-  </component>
-  <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/DSE23Oreanos$main__2_.coverage" NAME="main (2) Coverage Results" MODIFIED="1686237571394" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Orbiter/comms" />
-    <SUITE FILE_PATH="coverage/DSE23Oreanos$main__1_.coverage" NAME="main (1) Coverage Results" MODIFIED="1686297487424" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Orbiter/propulsion" />
-    <SUITE FILE_PATH="coverage/DSE23Oreanos$main.coverage" NAME="main Coverage Results" MODIFIED="1686150908489" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Orbiter/power" />
   </component>
 </project>
