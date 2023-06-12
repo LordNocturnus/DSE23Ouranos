@@ -62,10 +62,23 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
     atmos = pd.DataFrame(atmos, dtype=float)
     # atmos.to_csv(_path + "/atmos_data.csv", index=False)
 
-    body_settings.get("Uranus").atmosphere_settings = environment_setup.atmosphere.exponential(
+    def density(h):
+        return np.asarray(gram.data.Density_kgm3[gram.data.Height_km <= h / 1000])[0]
+
+    constant_temperature = np.asarray(gram.data.Density_kgm3[gram.data.Height_km <= 0.0])[0]
+    specific_gas_constant = np.asarray(gram.data.Density_kgm3[gram.data.Height_km <= 0.0])[0]
+    ratio_of_specific_heats = np.asarray(gram.data.Density_kgm3[gram.data.Height_km <= 0.0])[0]
+
+    body_settings.get("Uranus").atmosphere_settings = environment_setup.atmosphere.custom_constant_temperature(
+        density,
+        constant_temperature,
+        specific_gas_constant,
+        ratio_of_specific_heats)
+
+    """body_settings.get("Uranus").atmosphere_settings = environment_setup.atmosphere.exponential(
         40.061 * 1000, 3.788e-01, 76.4, 3456.0, 1.632)
 
-    """body_settings.get("Uranus").atmosphere_settings = environment_setup.atmosphere.tabulated(
+    body_settings.get("Uranus").atmosphere_settings = environment_setup.atmosphere.tabulated(
         _path + "/atmos_data.csv", [environment_setup.atmosphere.AtmosphereDependentVariables.tabulated_density,
                                     environment_setup.atmosphere.AtmosphereDependentVariables.tabulated_pressure,
                                     environment_setup.atmosphere.AtmosphereDependentVariables.tabulated_temperature,
@@ -183,8 +196,31 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
 
 
 if __name__ == "__main__":
-    angle = -30
-    dependent_variables_array = entry_sim(1550, 1.53, 4.5, 3.02877105e+07, -6.40748300e-02,
-                                          -1.63500310e+00 + 2 * np.pi, 1.93919454e+04, np.deg2rad(angle),
-                                          -2.35413606e+00)
+    angle = -45
+
+    termination_altitude_settings = propagation_setup.propagator.dependent_variable_termination(
+        dependent_variable_settings=propagation_setup.dependent_variable.altitude("Capsule", "Uranus"),
+        limit_value=-150000,
+        use_as_lower_limit=True)
+
+    dependent_variables_array = entry_sim(500, 1.53, 4.5, 3.02877105e+07, -6.40748300e-02, -1.63500310e+00 + 2 * np.pi,
+                                          1.93919454e+04, np.deg2rad(angle), -2.35413606e+00,
+                                          [termination_altitude_settings])
+
+    plt.plot(dependent_variables_array[:, 0], dependent_variables_array[:, 1])
+    plt.show()
+
+    gram = GRAM.GRAM()
+    gram.time = dependent_variables_array[:, 0]
+    gram.altitudes = dependent_variables_array[:, 1] / 1000
+    gram.lat = np.rad2deg(dependent_variables_array[:, 2])
+    gram.long = np.rad2deg((dependent_variables_array[:, 2] + 2 * np.pi) % (2 * np.pi))
+    gram.run()
+
+    plt.plot(np.log(dependent_variables_array[:, -2]), dependent_variables_array[:, 1], label="exp")
+    plt.plot(np.log(gram.data.Density_kgm3), dependent_variables_array[:, 1], label="gram")
+    plt.grid()
+    plt.legend()
+    plt.show()
+
     print("finished")
