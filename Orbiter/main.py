@@ -18,7 +18,7 @@ class Orb:
         self.m_payload = 26.77
         
         # Data Handling
-        self.m_dh = 0
+        self.m_dh = 20
 
         # Power
         self.t_mission = 25  # Mission Timeline Tool
@@ -41,7 +41,7 @@ class Orb:
         # Structure and Prop
         self.mass = 2427  # Orbiter dry mass
         self.mixture_ratio = 1.65
-        self.mass_AV = 471  # Atmospheric vehicle mass (import from AV class)
+        self.mass_AV = 500  # Atmospheric vehicle mass (import from AV class)
         self.mass_combined = self.mass + self.mass_AV  # Mass of combined systems
         self.deltaV_transfer = 1000  # Combined systems deltaV
         self.deltaV_insertion = 1000  # Delta V after splitting up at Uranus
@@ -50,15 +50,15 @@ class Orb:
         self.material = [4430, 880 * 10**6, 970 * 10**6, 113.8 * 10**9]
 
         # ADCS
-        self.m_adcs = 0
+        self.m_adcs = 30
 
         # Iteration
         self.iteration()
         self.total_dry_mass = self.mass_combined
         self.total_wet_mass = self.total_dry_mass + self.prop_mass
-        self.burn_transfer = prop.burntimecombined(self.T, self.orbiter_mass, self.deltaV_insertion, self.total_dry_mass, self.deltaV_transfer)
-        self.burn_insertion = prop.burntimeorbiter(self.T, self.mass, self.deltaV_insertion)
-        self.f_lat, self.f_ax = strt.natural_frequency(self.l_tanks, self.r_tanks, self.material, self.wet_mass_final, f_ax_min, f_lat_min)
+        self.burn_transfer = prop.burntimecombined(self.T, self.mass, self.deltaV_insertion, self.total_dry_mass, self.deltaV_transfer)
+        self.burn_insertion = prop.burntimeorbiter(self.T, self.mass, self.deltaV_insertion, self.total_dry_mass, self.deltaV_transfer)
+        self.f_lat, self.f_ax = strt.natural_frequency(self.l_tanks, self.r_tanks, self.material, self.total_wet_mass)
 
 
 
@@ -74,32 +74,37 @@ class Orb:
                                                                               margin, self.wet_mass)
 
     def power(self):
-        self.n_rtg = pwr.numberRTG(self.P_req)
-        self.m_power = pwr.massRTG(mass_RTG)
-        self.cost_rtg = pwr.costRTG(costRTG1)
+        self.n_rtg = pwr.numberRTG(self.P_req, self.t_mission)
+        self.m_power = pwr.massRTG(mass_RTG, self.P_req, self.t_mission)
+        self.cost_rtg = pwr.costRTG(costRTG1, self.P_req, self.t_mission)
 
     def thermal(self):
         self.A_rec = np.pi * self.l_tanks * self.r_tanks
         self.A_emit = 2 * np.pi * self.r_tanks * self.l_tanks + np.pi * self.r_tanks ** 2
         self.m_louvres = 0.001 * np.pi * self.n_rtg * l_rtg * w_rtg * 2700
-        self.d_rtg, self.n_l_closed = thm.power_phases(planets_list, r_orbit, self.A_rec, self.A_emit, alpha, epsilon,
-                                                       self.n_rtg, p_rtg_tot, A_single_l)
+        self.d_rtg, self.n_l_closed = thm.power_phases(self.A_rec, self.A_emit, self.n_rtg)
         self.m_thermal = self.m_louvres + 50
 
 
     def iteration(self):
         diff = 1000
         while diff > 1:
-            self.mass_prop(self.mass_combined)
+            self.mass_prop(self.mass)
             self.P_req = 500
             self.power()
             self.thermal()
-            self.orbiter_mass = self.m_structure + self.m_power + self.m_thermal + self.m_payload + self.m_dh + self.m_comms + self.m_adcs
-            new_mass_combined = self.mass_AV + self.orbiter_mass
+            new_orbiter_mass = self.m_structure + self.m_power + self.m_thermal + self.m_payload + self.m_dh + self.m_comms + self.m_adcs
             self.P_req = self.P_comms + self.P_pw + self.P_dh + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop
-            diff = abs(new_mass_combined - self.mass_combined)
-            print(diff)
-            self.mass_combined = new_mass_combined
+            diff = abs(new_orbiter_mass - self.mass)
+            self.mass = new_orbiter_mass
+        self.mass_combined = self.mass + self.mass_AV
+
+    def __str__(self):
+        return f'Orbiter Dry Mass: {self.mass}\n' \
+               f'Total Dry Mass: {self.total_dry_mass}\n' \
+               f'Orbiter Wet Mass: {self.total_wet_mass}\n' \
+               f'Propellant Mass: {self.prop_mass}\n' \
+               f'Atmospheric Vehicle Mass: {self.mass_AV}'
 
 if __name__ == "__main__":
     g = 9.81
@@ -107,19 +112,6 @@ if __name__ == "__main__":
     margin = 0.2
     boltzman = 5.67 * 10 ** (-8)  # Boltzamn constant for thermal
     k = 1.38 * 10 ** (-23)  # boltzmann constant for comms
-
-    # --- STRUCTURE ---
-
-    # acc_axial_tension = 6 * 9.81  # https://www.spacex.com/media/falcon-users-guide-2021-09.pdf
-    # acc_axial_compr = 2 * 9.81  # https://www.spacex.com/media/falcon-users-guide-2021-09.pdf
-    # acc_lateral = 2 * 9.81  # Same for compression and tension (https://www.spacex.com/media/falcon-users-guide-2021-09.pdf)
-    # acc_shock = 1000 * 9.81  # https://www.spacex.com/media/falcon-users-guide-2021-09.pdf
-    # f_lat_min = 10  # Falcon Heavy user manual
-    # f_ax_min = 25  # Falcon Heavy user manual
-
-    # Launcher Constraints
-    # d_fairing = 5.2  # https://www.spacex.com/vehicles/falcon-heavy/
-    # h_fairing = 13.1  # https://www.spacex.com/vehicles/falcon-heavy/
 
     # --- COMMS ---
     L_a = -0.5  # atmospheric attenuation in dB
@@ -138,18 +130,8 @@ if __name__ == "__main__":
     costRTG1 = 145699633.36  # cost of one GPHS-RTG in FY$2022, This is the highest value. It could be around 130 million as well
 
     # --- THERMAL ---
-    planets_list = {'Uranus': [2872500000, 51118 / 2, 0.51, 58.2],
-                    'Venus': [108200000, 12104 / 2, 0.65, 227, 200],
-                    'Earth': [149600000, 12756 / 2, 0.44, 255, 200],
-                    'Mars': [227900000, 6792 / 2, 0.15, 210.1, 200],
-                    'Jupiter': [778600000, 142984 / 2, 0.52, 109.5, 200]}
-    r_orbit = 200  # From Mission Timeline Tool
-    alpha = 0.09  # Absorptivity (Aluminized Kapton foil from SMAD or ADSEE I reader)
-    epsilon = 0.8  # Emissivity (Aluminized Kapton foil from SMAD or ADSEE I reader)
     l_rtg = 1.14
     w_rtg = 0.422
-    A_rtg = np.pi * w_rtg * l_rtg
-    p_rtg_tot = 4500
-    A_single_l = 0.05 * w_rtg * np.pi
 
     orbiter = Orb()
+    print(str(orbiter))

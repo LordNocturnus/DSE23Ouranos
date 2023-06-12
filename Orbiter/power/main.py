@@ -1,5 +1,10 @@
 import numpy as np
 
+P_0 = 300  # Begin of life power one GPHS-RTG in W
+tau1 = 87.7  # half life fuel in years
+mass_RTG = 55.9  # mass of one GPHS-RTG in kg
+costRTG1 = 145699633.36  # cost of one GPHS-RTG in FY$2022, This is the highest value. It could be around 130 million as well
+
 
 # Power at the end of life of one RTG calculations:
 def powerdecay(P_0, tau, t):
@@ -8,18 +13,18 @@ def powerdecay(P_0, tau, t):
 
 # Calculate the number of RTGs needed:
 # 0.85 is path efficiency coming from SMAD
-def numberRTG(P_req):
+def numberRTG(P_req, missiontime):
     M = P_req / (powerdecay(P_0, tau1, missiontime) * 0.85)
     N = np.ceil(M)
     return N
 
 # Calculate mass of RTGs:
-def massRTG(m_RTG):
-    m_RTGs = m_RTG * numberRTG(P_req)
+def massRTG(m_RTG, P_req, missiontime):
+    m_RTGs = m_RTG * numberRTG(P_req, missiontime)
     return m_RTGs
 
-def costRTG(costRTG1):
-    cost_RTG = costRTG1 * numberRTG(P_req)
+def costRTG(costRTG1, P_req, missiontime):
+    cost_RTG = costRTG1 * numberRTG(P_req, missiontime)
     return cost_RTG
 
 
@@ -29,12 +34,7 @@ if __name__ == "__main__":
     # https://ebookcentral-proquest-com.tudelft.idm.oclc.org/lib/delft/reader.action?docID=693314
     # Cost: https://inldigitallibrary.inl.gov/sites/sti/sti/7267852.pdf
 
-    P_0 = 300  # Begin of life power one GPHS-RTG in W
-    tau1 = 87.7  # half life fuel in years
-    mass_RTG = 55.9  # mass of one GPHS-RTG in kg
-    costRTG1 = 145699633.36  # cost of one GPHS-RTG in FY$2022, This is the highest value. It could be around 130 million as well
-    missiontime = 20  # in years
-    P_req = 500  # total power required for all subsystems in W
+
 
     print("Power at end of life of one RTG=", powerdecay(P_0, tau1, missiontime), "W")
     print("number of RTGS unrounded =", numberRTG(P_req)[0])

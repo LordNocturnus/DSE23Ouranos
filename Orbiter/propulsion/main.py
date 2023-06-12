@@ -33,7 +33,7 @@ def burntimecombined(T, m_orbiter, dV_orbiter, m_combined, dV_combined):
 
 # Calculate required burn time for orbiter manoeuvers in hours:
 def burntimeorbiter(T, m_orbiter, dV_orbiter, m_combined, dV_combined):
-    a = T / (m_orbiter + mass_prop(m_orbiter, dV_orbiter, m_combined, dV_combined)[0])
+    a = T / (m_orbiter + mass_prop(m_orbiter, dV_orbiter, m_combined, dV_combined, g, I_sp)[0])
     t_b = dV_orbiter / a
     t_b = t_b / 60 / 60
     return t_b
