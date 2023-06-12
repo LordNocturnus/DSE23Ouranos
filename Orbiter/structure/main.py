@@ -72,7 +72,7 @@ def geometry_mass(material, propellant, margin, plot=True):
     and cylindrical sections
     """
 
-    # Calculate volume to store in the cylindrical part of the tank
+    # Calculate volume to store in the tanks
     v_tot = propellant[1] / propellant[2]
 
     # Generate range of possible value for radius to use for calculations
@@ -91,12 +91,10 @@ def geometry_mass(material, propellant, margin, plot=True):
 
     # Possibility to plot radius vs mass or radius vs length
     if plot:
-        plt.subplot(131)
+        plt.subplot(121)
         plt.plot(r, m_structure)
-        plt.subplot(132)
+        plt.subplot(122)
         plt.plot(r, l)
-        plt.subplot(133)
-        plt.plot(r, m_structure)
         plt.show()
 
     return m_structure[-1], l[-1], r[-1], max(t_caps[-1], 1 * 10**(-3)), max(t_cylind[-1], 1 * 10**(-3))

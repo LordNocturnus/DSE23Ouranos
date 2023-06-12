@@ -112,7 +112,9 @@ class Orb:
                f'DH Mass: {self.m_dh}\n' \
                f'ADCS Mass: {self.m_adcs}\n' \
                f'Power Mass: {self.m_power}\n' \
-               f'Thermal Mass: {self.m_thermal}'
+               f'Thermal Mass: {self.m_thermal}\n' \
+               f'Length Tanks: {self.l_tanks}\n' \
+               f'Radius Tanks: {self.r_tanks}'
 
 if __name__ == "__main__":
     g = 9.81
