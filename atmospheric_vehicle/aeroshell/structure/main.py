@@ -123,6 +123,7 @@ def aeroshell_geometry(peak_load, p_load, sigma_y, E, taper, r_thermal, h_glider
               f'Backshell volume: {volume_bottom + volume_top}\n'
               f'Backshell mass: {mass_backshell}\n'
               f'Thermal stress check: {thermal_loads(alpha, delta_t, E, sigma_y)}')
+        return r_top_small, r_top_big, r_bottom_small, r_bottom_big, mass_backshell, t_top, t_bottom, rho_backshell
     else:
         print(f'Buckling requirements is not satisfied')
 
