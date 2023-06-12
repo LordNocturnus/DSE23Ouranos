@@ -1,7 +1,7 @@
 #Library imports
 import numpy as np
 from numpy.linalg import eig
-
+import matplotlib.pyplot as plt
 
 class Reentry():
     def __init__(self):
@@ -48,6 +48,7 @@ class Reentry():
         self.u_matrix_entries()
         self.state_space_matrices()
         self.eigen_estimation()
+        self.eigenvalue_plot()
 
         #Individual components of State Space Matrix:
     def A_matrix_entries(self):
@@ -289,26 +290,48 @@ class Reentry():
         self.nat_freq = []
 
         for i in range(len(self.eigen_value)):
-            if self.eigen_value[i].imag == True:
-                self.damping_ratio.append(-self.eigen_value[i].real / (np.sqrt(self.eigen_value[i].real ** 2 + self.eigen_value[i].imag ** 2)))
-                self.nat_freq.append(np.sqrt(self.eigen_value[i].real ** 2 + self.eigen_value[i].imag ** 2))
-                self.Period.append(2*np.pi/(self.eigen_value[i].imag))
-                self.T_half.append(np.log(0.5)/(self.eigen_value[i].real))
-            else:
+            if self.eigen_value[i].imag == 0:
                 self.T_half.append(np.log(0.5) / (self.eigen_value[i].real))
+                #print(self.T_half)
                 self.damping_ratio.append(-1.00)
+                #print(self.damping_ratio)
                 self.nat_freq.append(self.eigen_value[i].real)
+                #print(self.nat_freq)
+                self.Period.append(0.00)
+            else:
+                self.damping_ratio.append(-self.eigen_value[i].real / (np.sqrt(self.eigen_value[i].real ** 2 + self.eigen_value[i].imag ** 2)))
+                #print(self.damping_ratio)
+                self.nat_freq.append(np.sqrt(self.eigen_value[i].real ** 2 + self.eigen_value[i].imag ** 2))
+                #print(self.nat_freq)
+                self.Period.append(2*np.pi/(self.eigen_value[i].imag))
+                #print(self.Period)
+                self.T_half.append(np.log(0.5)/(self.eigen_value[i].real))
+                #print(self.T_half)
+    def eigenvalue_plot(self):
+        x = self.eigen_value.real
+        y= self.eigen_value.imag
+        plt.plot(x,y,"ro")
+        plt.grid(True)
+        plt.title("Root Locus Plot")
+        plt.xlabel("Real")
+        plt.ylabel("Imaginary")
+        plt.show()
+
+
 
 if __name__ == "__main__":
     print("Hello World")
     test = Reentry()
+    #test.eigen_estimation()
+    print(test.Period)
+    #print(test.eigen_value)
     # print(test.A.shape)
     # print(test.B.shape)
-    #
+
     # print(test.x.shape)
     # print(test.u.shape)
-    print(test.Period[])
-    print(test.T_half)
+    #print(test.Period)
+    #print(test.T_half)
     #print(test.damping_ratio)
     #print(test.nat_freq)
     #print(test.eigen_vector)
