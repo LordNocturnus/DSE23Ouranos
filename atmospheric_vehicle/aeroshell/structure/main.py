@@ -5,6 +5,7 @@ the top surface of the backshell due to parachute deployment.
 """
 import numpy as np
 import matplotlib.pyplot as plt
+import atmospheric_vehicle.aeroshell.heatshield as heat_sh
 
 def angle_cone(r_big, r_small, height):
     """
@@ -79,7 +80,7 @@ def aeroshell_geometry(peak_load, p_load, sigma_y, E, taper, r_thermal, h_glider
     :param h_glider: Height of the glider in the folded configuration
     :param h_parachute: Height of the parachute in the folded configuration
     :param r_parachute: Radius of the parachute in the folded configuration
-    :return: ????
+    :return: Backshell mass !!!! ADD MASS OF THERMAL SHIELD SUPPORTING STRUCTURE !!!!! (Use volume function from heatshild code)
     """
 
     # Calculate the big and small radius of the top truncated cone. Limit case is the parachute radius
@@ -115,16 +116,9 @@ def aeroshell_geometry(peak_load, p_load, sigma_y, E, taper, r_thermal, h_glider
 
         # Calculate backshell mass
         mass_backshell = (volume_top + volume_bottom) * rho_backshell
-
-        print(f'Backshell top radiuses: {r_top_big} m, {r_top_small} m\n'
-              f'Backshell top thickness: {t_top * 1000} mm\n'
-              f'Backshell bottom radiuses: {r_bottom_big} m, {r_bottom_small} m\n'
-              f'Backshell bottom thickness: {t_bottom * 1000} mm\n'
-              f'Backshell volume: {volume_bottom + volume_top}\n'
-              f'Backshell mass: {mass_backshell}\n'
-              f'Thermal stress check: {thermal_loads(alpha, delta_t, E, sigma_y)}')
     else:
         print(f'Buckling requirements is not satisfied')
+    return mass_backshell
 
 
 def thermal_loads(alpha, delta_T, E, sigma_y):
@@ -146,6 +140,8 @@ if __name__ == "__main__":
     h_parachute = 0.5
     r_thermal = 4.5
     r_parachute = 0.25
+    _radius1 = 1.125
+    _radius2 = 0.126
 
     # Capsule Properties
     # cd_capsule = 1.3
