@@ -25,12 +25,9 @@ spice.load_kernel(_path + '/../GRAM/GRAM_Suite_1_5/SPICE/spk/satellites/ura116xl
 # spice.load_kernel(_path+'/Gravity.tpc')
 
 
-def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_path_angle, heading_angle, acc=1):
-    # Set simulation start epoch
-    simulation_start_epoch = 6000.0
-
-    # Set the maximum simulation time (avoid very long skipping re-entry)
-    max_simulation_time = 1 * constants.JULIAN_DAY
+def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_path_angle, heading_angle,
+              termination_settings, simulation_start_epoch=6000.0, max_simulation_time=1 * constants.JULIAN_DAY,
+              acc=1):
 
     # define bodies in simulation
     bodies_to_create = ["Uranus"]
@@ -155,17 +152,12 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
 
     print("Setup dependent vars")
 
-    # Define a termination conditions to stop once altitude goes below 25 km
-    termination_altitude_settings = propagation_setup.propagator.dependent_variable_termination(
-        dependent_variable_settings=propagation_setup.dependent_variable.altitude("Capsule", "Uranus"),
-        limit_value=25.0e3,
-        use_as_lower_limit=True)
     # Define a termination condition to stop after a given time (to avoid an endless skipping re-entry)
     termination_time_settings = propagation_setup.propagator.time_termination(
         simulation_start_epoch + max_simulation_time)
     # Combine the termination settings to stop when one of them is fulfilled
     combined_termination_settings = propagation_setup.propagator.hybrid_termination(
-        [termination_altitude_settings, termination_time_settings], fulfill_single_condition=True)
+        [termination_time_settings] + termination_settings, fulfill_single_condition=True)
 
     print("Setup termination")
 
@@ -187,22 +179,7 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
     # Extract the resulting simulation dependent variables
     dependent_variables = dynamics_simulator.dependent_variable_history
     # Convert the dependent variables from a dictionary to a numpy array
-    dependent_variables_array = result2array(dependent_variables)
-
-    gram.altitudes = dependent_variables_array[:, 1] / 1000
-    gram.time = dependent_variables_array[:, 0]
-    gram.lat = np.rad2deg(dependent_variables_array[:, 2])
-    gram.long = np.rad2deg((dependent_variables_array[:, 3] + 2 * np.pi) % (2 * np.pi))
-    gram.run()
-
-    k = 1 / (np.asarray(gram.data.H2mass_pct) / 0.0395 + np.asarray(gram.data.Hemass_pct) / 0.0797)
-    q = k * dependent_variables_array[:, 4] ** 3 * np.sqrt(np.asarray(gram.data.Density_kgm3) / (np.pi * 2.25 ** 2))
-
-    q_func = sp.interpolate.interp1d(dependent_variables_array[:, 0], q)
-    h = sp.integrate.quad(lambda x: q_func(x) / 10000, dependent_variables_array[0, 0],
-                          dependent_variables_array[-1, 0])[0]
-
-    return h, max(q), dependent_variables_array
+    return result2array(dependent_variables)
 
 
 if __name__ == "__main__":
