@@ -2,8 +2,9 @@
 Script for the orbiter design tool
 """
 import Orbiter.propulsion as prop
-import Orbiter.structure as str
+import Orbiter.structure as strt
 import Orbiter.comms as comms
+import Orbiter.power as pwr
 
 
 class Orb:
@@ -27,16 +28,26 @@ class Orb:
         self.mass_iteration()
         self.dry_mass_final = self.mass_combined + self.m_structure
         self.wet_mass_final = self.dry_mass_final + self.prop_mass
-        self.f_lat, self.f_ax = str.natural_frequency(self.l_tanks, self.r_tanks, self.material, self.mass_final, f_ax_min, f_lat_min)
+        self.f_lat, self.f_ax = strt.natural_frequency(self.l_tanks, self.r_tanks, self.material, self.mass_final, f_ax_min, f_lat_min)
 
         # Power
-        
+        self.t_mission = ...  # Mission Timeline Tool
+        self.P_comms = P_comms
+        self.P_prop = ...
+        self.P_adcs = ...
+        self.P_dh = ...
+        self.P_payload = ...
+        self.P_thermal = 0
+        self.P_pw = ...
+        self.P_req = self.P_comms + self.P_pw + self.P_dh + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop
+        self.n_rtg = pwr.numberRTG(self.P_req)
+        self.m_rtg = pwr.massRTG(mass_RTG)
+        self.cost_rtg = pwr.costRTG(costRTG1)
 
 
 
         # Comms
         self.d_antenna = d_antenna
-        self.P_comms = P_comms
         self.DR = ...
         self.f_dl = ...
         self.wavelength_dl = c / (self.f_dl * 10**9)
@@ -55,7 +66,7 @@ class Orb:
             self.prop_mass = prop.mass_prop(self.mass + m_structure, self.deltaV_insertion, self.mass_combined, self.deltaV_transfer,
                                             g, self.Isp)
             self.wet_mass = self.mass_combined + m_structure + self.prop_mass
-            self.l_tanks, self.r_tanks, self.m_structure = str.final_architecture(self.material, self.prop_properties,
+            self.l_tanks, self.r_tanks, self.m_structure = strt.final_architecture(self.material, self.prop_properties,
                                                                                   margin, self.wet_mass)
             diff = abs(m_structure - self.m_structure)
             m_structure = self.m_structure
@@ -98,5 +109,10 @@ if __name__ == "__main__":
     d_gs = 70
     DR_ul = 25000
 
+    # --- POWER ---
+    P_0 = 300  # Begin of life power one GPHS-RTG in W
+    tau1 = 87.7  # half life fuel in years
+    mass_RTG = 55.9  # mass of one GPHS-RTG in kg
+    costRTG1 = 145699633.36  # cost of one GPHS-RTG in FY$2022, This is the highest value. It could be around 130 million as well
 
 

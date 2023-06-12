@@ -1,1 +1,1 @@
-from main import *
+from Orbiter.power.main import *
