@@ -2,6 +2,43 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Constants
+g_earth = 9.81
+R = 8.314
+margin = 0.2
+
+# Mass Budget
+m_prop = 2250
+m_subsystems = m_prop + 550 * 1.3
+
+# Propellant Characteristics
+mixture_ratio = 1.65
+m_fuel = 2570 / (1 + mixture_ratio)
+m_ox = m_prop - m_fuel
+
+# Propellant Properties
+propellant = [(1 * 10 ** 6, m_ox, 1431),
+              (1 * 10 ** 6, m_fuel, 874)]  # propellant = [(p_prop1, mass1, density1), (p_prop2, ...)]
+
+# Material Properties (https://www.space-propulsion.com/spacecraft-propulsion/hydrazine-tanks/index.html) (https://propulsion-skrishnan.com/pdf/N2O4-MMH%20Upper%20Stage%20Thruster.pdf)
+density = {'Ti-6Al-4V': 4430, 'Aluminium 7075': 2810}
+sigma_y_tens = {'Ti-6Al-4V': 880 * 10 ** 6, 'Aluminium 7075': 570 * 10 ** 6}
+sigma_y_compr = {'Ti-6Al-4V': 970 * 10 ** 6, 'Aluminium 7075': 505 * 10 ** 6}
+E = {'Ti-6Al-4V': 113.8 * 10 ** 9, 'Aluminium 7075': 72 * 10 ** 9}
+material = [4430, 880 * 10 ** 6, 970 * 10 ** 6, 113.8 * 10 ** 9]
+
+# Launch Loads
+acc_axial_tension = 6 * 9.81  # https://www.spacex.com/media/falcon-users-guide-2021-09.pdf
+acc_axial_compr = 2 * 9.81  # https://www.spacex.com/media/falcon-users-guide-2021-09.pdf
+acc_lateral = 2 * 9.81  # Same for compression and tension (https://www.spacex.com/media/falcon-users-guide-2021-09.pdf)
+acc_shock = 1000 * 9.81  # https://www.spacex.com/media/falcon-users-guide-2021-09.pdf
+f_lat_min = 10  # Falcon Heavy user manual
+f_ax_min = 25  # Falcon Heavy user manual
+
+# Launcher Constraints
+d_fairing = 5.2  # https://www.spacex.com/vehicles/falcon-heavy/
+h_fairing = 13.1  # https://www.spacex.com/vehicles/falcon-heavy/
+
 
 def axial_loads(axial, sigma_y, r):
     """
@@ -142,48 +179,8 @@ def natural_frequency(l_tot, r, material, m_tot, f_ax_min, f_lat_min):
 
 
 if __name__ == '__main__':
-    # Constants
-    g_earth = 9.81
-    R = 8.314
-    margin = 0.2
-
-    # Mass Budget
-    m_prop = 2250
-    m_subsystems = m_prop + 550 * 1.3
-
-    # Propellant Characteristics
-    mixture_ratio = 1.65
-    m_fuel = 2570 / (1 + mixture_ratio)
-    m_ox = m_prop - m_fuel
-
-    # Propellant Properties
-    propellant = [(1 * 10**6, m_ox, 1431), (1 * 10**6, m_fuel, 874)]  # propellant = [(p_prop1, mass1, density1), (p_prop2, ...)]
-
-    # Material Properties (https://www.space-propulsion.com/spacecraft-propulsion/hydrazine-tanks/index.html) (https://propulsion-skrishnan.com/pdf/N2O4-MMH%20Upper%20Stage%20Thruster.pdf)
-    density = {'Ti-6Al-4V': 4430, 'Aluminium 7075': 2810}
-    sigma_y_tens = {'Ti-6Al-4V': 880 * 10**6, 'Aluminium 7075': 570 * 10**6}
-    sigma_y_compr = {'Ti-6Al-4V': 970 * 10**6, 'Aluminium 7075': 505 * 10**6}
-    E = {'Ti-6Al-4V': 113.8 * 10**9, 'Aluminium 7075': 72 * 10**9}
-    material = [4430, 880 * 10 ** 6, 970 * 10 ** 6, 113.8 * 10 ** 9]
-
-    # Launch Loads
-    acc_axial_tension = 6 * 9.81  # https://www.spacex.com/media/falcon-users-guide-2021-09.pdf
-    acc_axial_compr = 2 * 9.81  # https://www.spacex.com/media/falcon-users-guide-2021-09.pdf
-    acc_lateral = 2 * 9.81  # Same for compression and tension (https://www.spacex.com/media/falcon-users-guide-2021-09.pdf)
-    acc_shock = 1000 * 9.81 # https://www.spacex.com/media/falcon-users-guide-2021-09.pdf
-    f_lat_min = 10  # Falcon Heavy user manual
-    f_ax_min = 25  # Falcon Heavy user manual
-
-
-    # Launcher Constraints
-    d_fairing = 5.2  # https://www.spacex.com/vehicles/falcon-heavy/
-    h_fairing = 13.1  # https://www.spacex.com/vehicles/falcon-heavy/
-
     l_structure, r_structure, m_structure = final_architecture(material, propellant, margin, m_subsystems)
     f_lat, f_ax = natural_frequency(l_structure, r_structure, material, m_subsystems + m_structure, f_ax_min, f_lat_min)
-
-
-
 
 
 

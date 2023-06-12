@@ -1,5 +1,23 @@
 import numpy as np
 
+# constants:
+c = 300000000  # speed of light in m/s
+earthRadius = 6371000.  # radius Earth in m
+AU = 149597870691  # one AU in m
+d_EarthSC = 20.8  # max distance between SC and Earth in AU
+TurnAroundRatio = 3599 / 3344
+
+# antenna spacecraft:
+d_antenna = 5  # antenna diameter in m
+eta_antenna = 0.55
+PointingAccuracy = 0.0572958  # pointing accuracy in deg
+f = 32  # Downlink frequency in GHz
+wavelengthdown = c / (f * 10 ** 9)
+
+# antenna ground station:
+d_gs = 70  # antenna diameter in m
+f_gs = f * TurnAroundRatio  # uplink frequency in Ghz
+wavelenghtup = c / (f_gs * 10 ** 9)
 
 # calculate space loss:
 def SpaceLoss(wavelength, d, AU):
@@ -70,58 +88,31 @@ def uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoise, k):
 
 
 if __name__ == "__main__":
-    # constants:
-    k = 1.38 * 10 ** (-23)  # boltzmann constant
-    c = 300000000  # speed of light in m/s
-    earthRadius = 6371000.  # radius Earth in m
-    L_a = -0.5  # atmospheric attenuation in dB
-    AU = 149597870691  # one AU in m
-    d_EarthSC = 20.8  # max distance between SC and Earth in AU
-    Tnoisedown = 424  # Noise temperature in K
-    Tnoiseup = 763  # Noise temperature in K
-    TurnAroundRatio = 3599 / 3344
-
-    # antenna spacecraft:
-    d_antenna = 5  # antenna diameter in m
-    eta_antenna = 0.55
-    P = 60  # transmitting power in W
-    L_l = 0.9  # loss factor spacecraft
-    PointingAccuracy = 0.0572958  # pointing accuracy in deg
-    DR = 8000  # downlink data rate in bps
-    f = 32  # Downlink frequency in GHz
-    wavelengthdown = c / (f * 10 ** 9)
-
-    # antenna ground station:
-    P_gs = 800  # power ground station in W
-    d_gs = 70  # antenna diameter in m
-    L_r = 0.75  # loss factor ground station
-    uplinkDR = 25000  # uplink data rate in bps
-    f_gs = f * TurnAroundRatio  # uplink frequency in Ghz
-    wavelenghtup = c / (f_gs * 10 ** 9)
-    print('**** DOWNLINK ****')
-    print('P:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[0])
-    print('G_t:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[1])
-    print('G_r:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[2])
-    print('L_l:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[3])
-    print('L_r:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[4])
-    print('L_s:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[5])
-    print('L_pr:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[6])
-    print('DR:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[7])
-    print('Tnoise:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[8])
-    print('k:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[9])
-    print('EbN0:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[10])
-    print('Eb:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[11])
-    print()
-    print('**** UPLINK ****')
-    print('P:', uplink(f_gs, P_gs, L_l, L_r, L_a,uplinkDR, Tnoiseup, k)[0])
-    print('G_t:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[1])
-    print('G_r:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[2])
-    print('L_l:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[3])
-    print('L_r:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[4])
-    print('L_s:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[5])
-    print('L_pr:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[6])
-    print('DR:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[7])
-    print('Tnoise:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[8])
-    print('k:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[9])
-    print('EbN0:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[10])
-    print('Eb:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[11])
+    ...
+    # print('**** DOWNLINK ****')
+    # print('P:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[0])
+    # print('G_t:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[1])
+    # print('G_r:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[2])
+    # print('L_l:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[3])
+    # print('L_r:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[4])
+    # print('L_s:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[5])
+    # print('L_pr:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[6])
+    # print('DR:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[7])
+    # print('Tnoise:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[8])
+    # print('k:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[9])
+    # print('EbN0:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[10])
+    # print('Eb:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[11])
+    # print()
+    # print('**** UPLINK ****')
+    # print('P:', uplink(f_gs, P_gs, L_l, L_r, L_a,uplinkDR, Tnoiseup, k)[0])
+    # print('G_t:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[1])
+    # print('G_r:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[2])
+    # print('L_l:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[3])
+    # print('L_r:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[4])
+    # print('L_s:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[5])
+    # print('L_pr:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[6])
+    # print('DR:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[7])
+    # print('Tnoise:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[8])
+    # print('k:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[9])
+    # print('EbN0:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[10])
+    # print('Eb:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[11])
