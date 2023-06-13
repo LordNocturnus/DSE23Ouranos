@@ -165,7 +165,6 @@ def power_phases(A_rec, A_emit, n_rtg, planet_list=planets_list, r=r_orbit, alph
     """
     areas = []
     d_rtg = 0
-    print(r)
     for planet in planet_list:
         r = r if planet == 'Uranus' else planet_list[planet][4]
         solar = False if planet == 'Venus' else True

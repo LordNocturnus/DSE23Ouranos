@@ -16,6 +16,8 @@ f_ax_min = 25  # Falcon Heavy user manual
 d_fairing = 5.2  # https://www.spacex.com/vehicles/falcon-heavy/
 h_fairing = 13.1  # https://www.spacex.com/vehicles/falcon-heavy/
 
+rho_helium = 0.2
+
 
 def axial_loads(axial, sigma_y, r):
     """
@@ -24,9 +26,16 @@ def axial_loads(axial, sigma_y, r):
     :param sigma_y: Yield stress of the selected material
     :return: Required minimum radius to withstand the loads
     """
-    return sigma_y * 0.9 >= axial / (np.pi * r**2)
+    if r > 0 and axial >= 0 and sigma_y >= 0:
+        return sigma_y * 0.9 >= axial / (np.pi * r**2)
+    elif r < 0:
+        raise ValueError(f'The radius needs to be a positive value')
+    elif axial < 0:
+        raise ValueError(f'The Axial force needs to be a positive value')
+    else:
+        raise ValueError(f'The yield strength needs to be a positive value')
 
-def lateral_loads(lateral, sigma_y, r, l):
+def lateral_loads(lateral, sigma_y, l):
     """
     Function to calculate the minimum required length of the orbiter based on launch loads.
     Worst case scenario assumed, with lateral loads fully applied at the tip of the structure.
@@ -35,7 +44,12 @@ def lateral_loads(lateral, sigma_y, r, l):
     :param r: Radius of the orbiter structure
     :return: Minimum required length to withstand lateral loads
     """
-    return sigma_y * 0.9 >= 6 * lateral / (r * l)
+    if l > 0 and sigma_y >= 0:
+        return sigma_y * 0.9 >= 6 * abs(lateral) / (l * l)
+    elif l < 0:
+        raise ValueError(f'The length of the orbiter has to be a positive value')
+    else:
+        raise ValueError(f'The yield strength of the material needs to be a positive value')
 
 def t_hoop_sphere(p, r, sigma_y, margin):
     """
@@ -73,7 +87,8 @@ def geometry_mass(material, propellant, margin, plot=True):
     """
 
     # Calculate volume to store in the tanks
-    v_tot = propellant[1] / propellant[2]
+    v_prop = propellant[1] / propellant[2]
+    v_tot = v_prop + pressurising_gas(propellant, v_prop)
 
     # Generate range of possible value for radius to use for calculations
     r = np.arange(0.1, 1.5, 0.05)
@@ -97,16 +112,23 @@ def geometry_mass(material, propellant, margin, plot=True):
         plt.plot(r, l)
         plt.show()
 
-    return m_structure[-1], l[-1], r[-1], max(t_caps[-1], 1 * 10**(-3)), max(t_cylind[-1], 1 * 10**(-3))
+    return m_structure[-1], l[-1], r[-1], max(t_caps[-1], 1 * 10**(-3)), max(t_cylind[-1], 1 * 10**(-3)), v_tot
 
 
 def minimum_thickness(m_AV, sigma_y, r):
     return acc_axial_tension * m_AV / (sigma_y * 2 * np.pi * r)
 
 
-def pressurising_gas(propellant, v):
-    v_oxidiser = (0.9 / propellant[0]) * v / (1 - 0.9 / propellant[0])
-    m_ox = v_oxidiser * rho_oxidiser
+def pressurising_gas(propellant, v_o):
+    """
+    Method to calculate the quantity of pressurising gas necessary in the propellant tanks.
+    Formula taken from https://propulsion-skrishnan.com/pdf/N2O4-MMH%20Upper%20Stage%20Thruster.pdf
+    :param propellant: Propellant properties, either the fuel or oxidiser
+    :param v_o: Volume of the propellant, either fuel or oxidiser
+    :return: Total volume of the pressurising gas
+    """
+    v_helium = (0.9 / propellant[0]) * v_o / (1 - 0.9 / propellant[0])
+    return v_helium
 
 
 def final_architecture(material, propellant, margin, m_subsystems, m_AV):
@@ -119,11 +141,10 @@ def final_architecture(material, propellant, margin, m_subsystems, m_AV):
     :param m_subsystems: mass of the subsystems of the orbiter
     :return: prints the final properties of the orbiter structure
     """
-    m_tank_o, l_o, r_o, t_caps_o, t_cylind_o = geometry_mass(material, propellant[0], margin, False)
-    m_tank_f, l_f, r_f, t_caps_f, t_cylind_f = geometry_mass(material, propellant[1], margin, False)
+    m_tank_o, l_o, r_o, t_caps_o, t_cylind_o, v_o = geometry_mass(material, propellant[0], margin, False)
+    m_tank_f, l_f, r_f, t_caps_f, t_cylind_f, v_f = geometry_mass(material, propellant[1], margin, False)
     t_min_o = minimum_thickness(m_AV, material[1], r_o)
     t_min_f = minimum_thickness(m_AV, material[1], r_f)
-    print(t_min_o, t_min_f)
     t_caps_o, t_cylind_o = max(t_caps_o, t_min_o), max(t_cylind_o, t_min_o)
     t_caps_f, t_cylind_f = max(t_caps_f, t_min_f), max(t_cylind_f, t_min_f)
     m_tot_structure = m_tank_o + m_tank_f + ((r_o + r_f) * max(t_cylind_f, t_cylind_o) * 2 + 4 * r_o**2 * t_cylind_o +
@@ -134,14 +155,15 @@ def final_architecture(material, propellant, margin, m_subsystems, m_AV):
 
     axial_check_tens = axial_loads(acc_axial_tension * m_total, material[1], min(r_f, r_o))
     axial_check_compr = axial_loads(acc_axial_compr * m_total, material[1], min(r_f, r_o))
+    lateral_check = lateral_loads(acc_lateral * m_AV, material[1], l_tot)
     axial_shock = axial_loads(acc_shock * m_total, material[2], min(r_f, r_o))
-    if not axial_shock or not axial_check_compr or not axial_check_tens:
+    if not axial_shock or not axial_check_compr or not axial_check_tens or not lateral_check:
         print(f'DANGER! Stress checks not passed:\n'
               f'Axial Tension --> {axial_check_tens}\n'
               f'Axial Compression --> {axial_check_compr}\n'
               f'Axial Shock --> {axial_shock}')
-    # else:
-    #     print(f'Stress checks passed')
+    else:
+        print(f'Stress checks passed')
     #     print(f'----------------------------------\n'
     #           f'Total Mass: {m_tot_structure}\n'
     #           f'Total Length: {l_tot}\n'

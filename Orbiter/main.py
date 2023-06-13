@@ -62,7 +62,6 @@ class Orb:
 
 
 
-
     def mass_prop(self, m_dry):
         self.prop_mass = prop.mass_prop(m_dry, self.deltaV_insertion, self.mass_combined, self.deltaV_transfer,
                                         g, self.Isp)[2]
