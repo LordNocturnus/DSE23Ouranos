@@ -13,6 +13,7 @@ from tudatpy.kernel.interface import spice
 
 # Pygmo imports
 import pygmo as pg
+import os
 
 def convert_trajectory_parameters (transfer_trajectory_object: tudatpy.kernel.trajectory_design.transfer_trajectory.TransferTrajectory,
                                    trajectory_parameters: List[float]
@@ -325,6 +326,10 @@ class interplanetary_trajectory:
         ax.legend(bbox_to_anchor=[1, 1])
         plt.show()
     def output(self,time_difference):
+        spice.load_standard_kernels()
+        path = os.path.dirname(__file__)
+        spice.load_kernel(path+'/ura111.bsp')
+        spice.load_kernel(path+'/Gravity.tpc')
         print("The departure burn will be",self.pop.champion_f[0],'delta v')
         time_of_encounter = self.state_history[-1,0]
         time_of_separation = time_of_encounter-time_difference
@@ -333,12 +338,17 @@ class interplanetary_trajectory:
         while notfound:
             if self.state_history[i,0] > time_of_separation:
                 cartesianstate = self.state_history[i,1:]
-                print (len(cartesianstate))
                 notfound = False
                 position = cartesianstate[:3]
                 velocity = cartesianstate[3:]
-                rotationmatrix = spice.compute_rotation_matrix_between_frames(,'IAU_URANUS',time_of_separation)
-                rotationvelocitymatrix =   spice.compute_rotation_matrix_derivative_between_frames(,'IAU_URANUS'time_of_separation)              
+                position_Uranus = spice.get_body_cartesian_position_at_epoch("Uranus","Sun","ECLIPJ2000","None",time_of_separation)
+                rotationmatrix = spice.compute_rotation_matrix_between_frames('ECLIPJ2000','IAU_URANUS',time_of_separation)
+                rotationvelocitymatrix =   spice.compute_rotation_matrix_derivative_between_frames('ECLIPJ2000','IAU_URANUS',time_of_separation)
+                position -= position_Uranus
+                position_to_Uranus = position @ rotationmatrix     
+                velocity_to_Uranus = velocity @ rotationmatrix - rotationvelocitymatrix @ np.transpose(rotationmatrix) @ velocity         
+                state = np.append(position_to_Uranus,velocity_to_Uranus)
+                return state
 
             else:
                 i += 1
@@ -355,3 +365,4 @@ if __name__ == "__main__":
     trajectory = interplanetary_trajectory(planets,earthorbit,periapsis,launching)
     trajectory.optimize(25)
     trajectory.plot()
+    state = trajectory.output(constants.JULIAN_DAY * 12)
