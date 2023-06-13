@@ -24,7 +24,7 @@ def heatshield_sizing(diameter, heat_load, interface_velocity, peak_heat_flux):
     PICA_thickness = 1.8686 * (heat_load / (interface_velocity ** 2)) ** 0.1879 / 100
     PICA_density = 0.352 * 100**3 / 1000  # 0.352 - 0.701 g/cm^3
 
-    if 3.27 / 100 <= PICA_thickness:
+    if 3.27 / 100 >= PICA_thickness:
         print("PICA thin")
         PICA_thickness = 3.27 / 100
     PICA_volume = volume(diameter, radius1, radius2, 0.0, PICA_thickness)
@@ -37,7 +37,7 @@ def heatshield_sizing(diameter, heat_load, interface_velocity, peak_heat_flux):
     ACC6_thickness = 0.25 / 100
     ACC6_density = 1.6 * 100**3 / 1000  # 1.6 - 2.1 g/cm^3
 
-    if 2.266 / 100 <= CP_thickness:
+    if 2.266 / 100 >= CP_thickness:
         print("CP thin")
         CP_thickness = 2.266 / 100
 
@@ -52,7 +52,7 @@ def heatshield_sizing(diameter, heat_load, interface_velocity, peak_heat_flux):
     PICA = False
     CP = False
     print(peak_heat_flux)
-    if peak_heat_flux <= 1200 and PICA_thickness <= radius2:
+    if PICA_thickness <= radius2:
         PICA = True
 
     if CP_thickness + HT_424_thickness + ACC6_thickness <= radius2:
@@ -168,12 +168,11 @@ def simulate_entry_heating(mass, drag_coefficient, diameter, alt, lat, lon, spee
 
     k = 1 / (np.asarray(gram.data.H2mass_pct) / 0.0395 + np.asarray(gram.data.Hemass_pct) / 0.0797)
     q = k * dependent_variables_array[:, 4] ** 3 * np.sqrt(np.asarray(gram.data.Density_kgm3) /
-                                                           (np.pi * (diameter/2) ** 2)) * 10
+                                                           (np.pi * (diameter/2) ** 2)) * (1 + 436 / 120)
 
     q_func = sp.interpolate.interp1d(dependent_variables_array[:, 0], q)
     h = sp.integrate.quad(lambda x: q_func(x), dependent_variables_array[0, 0],
                           dependent_variables_array[-1, 0])[0]
-
     return h, max(q)
 
 
@@ -190,6 +189,5 @@ def itterate_heatshield(plmass, structuremass, drag_coefficient, diameter, alt, 
 
 
 if __name__ == "__main__":
-    itterate_heatshield(125, 75, 1.53, 4.5, 3.02877105e+07, -6.40748300e-02, -1.63500310e+00 + 2 * np.pi,
-                        1.93919454e+04, np.deg2rad(-30), -2.35413606e+00, 1, 2)
-    print(volume(_dia, _radius1, _radius2, 0.0, 0.0001) / 0.0001)
+    itterate_heatshield(125, 105, 1.53, 4.5, 3.02877105e+07, -6.40748300e-02, -1.63500310e+00 + 2 * np.pi,
+                        1.93919454e+04, np.deg2rad(-45), -2.35413606e+00, 1, 2)
