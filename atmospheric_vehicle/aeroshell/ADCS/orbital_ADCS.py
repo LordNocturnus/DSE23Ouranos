@@ -1,3 +1,4 @@
+from mpl_toolkits import mplot3d
 import matplotlib.pyplot as plt
 import numpy as np
 # from atmospheric_vehicle.aeroshell import Aeroshell
@@ -40,45 +41,85 @@ def adcs_sizing_capsule(r_top_small, r_top_big, r_bottom_small, r_bottom_big, a_
                         [r_top_big, h_bottom]])
     # where can things be placed?
 
+# cyclindrical coordinates
+# x = x
+# y = r*cos(theta)
+# z = r*sin(theta)
 
-def adcs_sizing_orbiter(r, h, com):
 
-    vertices = np.array([[0,]])
-    n = 50
-    points = np.array([0, 0]).reshape(2, 1)
-    for i in range(int(np.size(vertices)/2)-1):
-        x1 = vertices[i][0]
-        x2 = vertices[i+1][0]
-        y1 = vertices[i][1]
-        y2 = vertices[i+1][1]
-        x_range = np.linspace(x1, x2, n)
-        y_range = np.linspace(y1, y2, n)
-        points_new = np.vstack((x_range, y_range))
-        points = np.hstack((points, points_new))
-    x = points[0][:]
-    y = points[1][:]
+def adcs_sizing_orbiter(r, h, com, isp, thrust, thruster_mass, mmoi, mu_planet, a, phi_orbit, theta_orbit,
+                        redundancy=True):
+    """
+    Function that allows the user to determine the sizing of the ADCS system based characteristics of the orbiter, its
+    mission around Uranus, and the expected disturbances encountered in the mission.
+    :param r: The radius of the cylinder
+    :param h: The height of the cylinder
+    :param com: The centre of mass of the spacecraft
+    :param isp: The isp of the ADCS thruster considered
+    :param thrust: The thrust of the ADCS thruster considered
+    :param thruster_mass: Mass of the ADCS thruster considered
+    :param mmoi: The matrix containing the mass moments of inertia of the orbiter in kgm^2
+    :param mu_planet: The gravitational parameter of the orbited planet in m^3/s^2
+    :param a: The semi major axis of the orbit around the planet in meters
+    :param phi_orbit: Phase angle of the orbiter in its orbit in radians
+    :param theta_orbit: True anomaly of the orbiter in its orbit in radians
+    """
+    grav_grad = 3/2 * mu_planet/a**3 * np.array([((mmoi[1][1] - mmoi[2][2])*np.sin(2*phi_orbit)),
+                                                 ((mmoi[0][0] - mmoi[2][2])*np.sin(2*theta_orbit)),
+                                                 0])
+    print(grav_grad)
 
-    print(x, y)
 
-    # print(np.size(points))
-    # print(np.size(points[0, :]))
-    arm_x = points[0, :] - com[0]*np.ones(np.size(points, 1))
-    arm_y = points[1, :] - com[1]*np.ones(np.size(points, 1))
-    arms = np.hstack((arm_x, arm_y))
 
-    print(arms)
-    plt.scatter(x, y)
-    plt.scatter(com[0], com[1], color='red')
+
+
+
+
+    vertices_2d = np.array([[r, 0],
+                            [r, h],
+                            [0, h]])
+    n = 10  # scales to the power 3
+    points = []
+    x = vertices_2d[:, 1]  # radii
+    # print(x)
+    for j in range(len(vertices_2d[:, 0])-1):
+        x_range = np.linspace(vertices_2d[j, 1], vertices_2d[j+1, 1], n)  # 50 heights
+        r_range = np.linspace(vertices_2d[j, 0], vertices_2d[j+1, 0], n)  # 50 radii
+        theta_range = np.linspace(0, 360, n)  # 50 angles
+        for x in x_range:
+            for radius in r_range:
+                for angle in theta_range:
+                    x = x
+                    y = radius*np.cos(np.radians(angle))
+                    z = radius*np.sin(np.radians(angle))
+                    points.append([x, y, z])
+
+
+    # consider possible adcs systems
+    # Hydrazine MMH, N2O4,
+
+    vector = []
+    for point in points:
+        vector.append(point - com)
+    print(vector)
+    points = np.array(points)
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    ax.scatter(points[:, 0], points[:, 1], points[:, 2])
+    ax.scatter(com[0], com[1], com[2], color='red', s=100)
+    # plt.scatter(com[0], com[1], color='red')
     plt.show()
 
 
-adcs_sizing(r_t_small, r_t_big, r_b_small, r_b_big, a_t, a_b, force_x, force_y, force_z, theta_d)
+# adcs_sizing_capsule(r_t_small, r_t_big, r_b_small, r_b_big, a_t, a_b, force_x, force_y, force_z, theta_d)
 
+mmoi = np.array([[1, 0, 0],
+                 [0, 1, 0],
+                 [0, 1, 0]])
+h = 2.13
+d = 1
+r = d/2
+com = np.array([0.5, 0, 0])
+isp = 292
+adcs_sizing_orbiter(r, h, com)
 
-
-
-
-
-
-# Output: number of thrusters,
-# Manouevres: spin stabilisation
