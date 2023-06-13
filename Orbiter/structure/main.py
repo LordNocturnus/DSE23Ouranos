@@ -16,7 +16,7 @@ f_ax_min = 25  # Falcon Heavy user manual
 d_fairing = 5.2  # https://www.spacex.com/vehicles/falcon-heavy/
 h_fairing = 13.1  # https://www.spacex.com/vehicles/falcon-heavy/
 
-rho_helium = 0.2
+cost_kg = 45  # https://www.navstarsteel.com/titanium-grade-5-sheet.html
 
 
 def axial_loads(axial, sigma_y, r):
@@ -253,6 +253,14 @@ def natural_frequency(l_tot, r, t, material, m_orb, m_AV):
         print(f'DANGER! Resonance could occur')
     return f_lat, f_ax
 
+def total_cost(mass_tot):
+    """
+    Method to calcualte the total cost of the structure. Price taken from:
+    :param mass_tot: Total orbiter mass
+    :return: Total cost
+    """
+    return mass_tot * cost_kg
+
 
 
 
@@ -260,9 +268,6 @@ def natural_frequency(l_tot, r, t, material, m_orb, m_AV):
 
 if __name__ == '__main__':
     ...
-    # l, r, m = final_architecture()
-    # l_structure, r_structure, m_structure = final_architecture(material, propellant, margin, m_subsystems)
-    # f_lat, f_ax = natural_frequency(l_structure, r_structure, material, m_subsystems + m_structure, f_ax_min, f_lat_min)
-
+    # Material Properties: https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MTP641
 
 

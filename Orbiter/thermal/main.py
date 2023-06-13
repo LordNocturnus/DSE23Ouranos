@@ -30,6 +30,7 @@ A_single_l = 0.05 * w_rtg * np.pi
 # mass_louvres = 0.001 * np.pi * n_rtg * l_rtg * w_rtg * 2700  # Assumed to be an alluminum plate https://ntrs.nasa.gov/api/citations/20190028943/downloads/20190028943.pdf
 
 # Alluminum properties https://material-properties.org/aluminium-thermal-properties-melting-point-thermal-conductivity-expansion/
+cost_kg = 2.2  # https://markets.businessinsider.com/commodities/aluminum-price
 
 # Constants
 boltzman = 5.67 * 10 ** (-8)
@@ -177,7 +178,8 @@ def power_phases(A_rec, A_emit, n_rtg, planet_list=planets_list, r=r_orbit, alph
             areas.append((f'{planet}', louvres_area(power_diss, A_rec, alpha, d_rtg, A_rtg, p_rtg_tot, n_rtg, A_single_l)))
     return d_rtg, areas
 
-
+def total_cost(m_tot):
+    return m_tot * cost_kg
 
 
 if __name__ == "__main__":

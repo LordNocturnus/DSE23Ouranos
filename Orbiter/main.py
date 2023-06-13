@@ -44,7 +44,7 @@ class Orb:
         self.m_payload = 26.77
         
         # Data Handling
-        self.m_dh = 20
+        self.m_dh = 1
 
         # Power
         self.t_mission = 25  # Mission Timeline Tool
@@ -78,15 +78,20 @@ class Orb:
         # ADCS
         self.m_adcs = 30
 
+        # COST
+        self.cost_str = 0
+        self.cost_rtg = 0
+        self.cost_thermal = 0
+
         # Iteration
         if optimisation:
             self.iteration()
             self.total_dry_mass = self.mass_combined
             self.total_wet_mass = self.total_dry_mass + self.prop_mass
-            self.burn_transfer = prop.burntimecombined(self.T, self.mass, self.deltaV_insertion, self.total_dry_mass, self.deltaV_transfer)
-            self.burn_insertion = prop.burntimeorbiter(self.T, self.mass, self.deltaV_insertion, self.total_dry_mass, self.deltaV_transfer)
+            # self.burn_transfer = prop.burntimecombined(self.T, self.mass, self.deltaV_transfer, self.total_dry_mass, self.deltaV_insertion, self.Isp)
+            self.burn_insertion = prop.burntimeorbiter(self.T, self.mass, self.deltaV_insertion, self.total_dry_mass, self.deltaV_transfer, self.Isp)
             self.f_lat, self.f_ax = strt.natural_frequency(self.l_tanks, self.r_tanks, max(self.t_cy_o, self.t_cy_f), self.material, self.mass, self.mass_AV)
-
+            self.total_cost = (self.cost_str + self.cost_thermal + self.cost_rtg) / (10**6)
 
 
     def mass_prop(self, m_dry):
@@ -100,16 +105,17 @@ class Orb:
                                                                               margin, self.mass_AV)
 
     def power(self):
-        self.n_rtg = pwr.numberRTG(self.P_req, self.t_mission)
-        self.m_power = 1.2 * (pwr.massRTG(mass_RTG, self.P_req, self.t_mission) + 25)  # 25 kg is an estimate for PDU and regulators
-        self.cost_rtg = pwr.costRTG(costRTG1, self.P_req, self.t_mission)
+        self.n_rtg = pwr.numberRTG(self.P_req, self.t_mission)[1]
+        self.m_power = 1.2 * (pwr.massRTG(self.P_req, self.t_mission) + 25)  # 25 kg is an estimate for PDU and regulators
+        self.cost_rtg = pwr.costRTG(self.P_req, self.t_mission)
 
     def thermal(self):
         self.A_rec = self.l_tanks * self.r_tanks
         self.A_emit = 2 * np.pi * self.r_tanks * self.l_tanks + np.pi * self.r_tanks ** 2
         self.m_louvres = 0.001 * np.pi * self.n_rtg * l_rtg * w_rtg * 2700
         self.d_rtg, self.n_l_closed = thm.power_phases(self.A_rec, self.A_emit, self.n_rtg, T_operational=self.T_operational)
-        self.m_thermal = self.m_louvres + np.pi * self.r_tanks**2 * 0.1143 * 400  # 0.1143 thickness of shield https://science.nasa.gov/technology/technology-highlights/heat-shield-protect-mission-to-sun
+        self.m_thermal_shield = np.pi * self.r_tanks**2 * 0.1143 * 400
+        self.m_thermal = self.m_louvres + self.m_thermal_shield  # 0.1143 thickness of shield https://science.nasa.gov/technology/technology-highlights/heat-shield-protect-mission-to-sun
                                                                                   # 400 is density of carbon phoam https://www.cfoam.com/wp-content/uploads/Carbon-Foams-amp16111p029-3.pdf
 
 
@@ -125,6 +131,8 @@ class Orb:
             diff = abs(new_orbiter_mass - self.mass)
             self.mass = new_orbiter_mass
         self.mass_combined = self.mass + self.mass_AV
+        self.cost_str = strt.total_cost(self.m_structure)
+        self.cost_thermal = thm.total_cost(self.m_louvres) + ...
 
     def __str__(self):
         return f'Orbiter Dry Mass: {self.mass}\n' \
@@ -140,10 +148,9 @@ class Orb:
                f'Power Mass: {self.m_power}\n' \
                f'Thermal Mass: {self.m_thermal}\n' \
                f'Length Tanks: {self.l_tanks}\n' \
-               f'Radius Tanks: {self.r_tanks}'
+               f'Radius Tanks: {self.r_tanks}\n' \
+               f'Total Cost: {self.total_cost}'
 
 if __name__ == "__main__":
-
-
     orbiter = Orb()
     print(str(orbiter))

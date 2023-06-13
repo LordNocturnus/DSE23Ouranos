@@ -5,7 +5,7 @@ import numpy as np
 # https://ebookcentral-proquest-com.tudelft.idm.oclc.org/lib/delft/reader.action?docID=693314
 # Cost: https://inldigitallibrary.inl.gov/sites/sti/sti/7267852.pdf
 
-P_0 = 300  # Begin of life power one GPHS-RTG in W
+P_start = 300  # Begin of life power one GPHS-RTG in W
 tau1 = 87.7  # half life fuel in years
 mass_RTG = 55.9  # mass of one GPHS-RTG in kg
 costRTG1 = 145699633.36  # cost of one GPHS-RTG in FY$2022, This is the highest value. It could be around 130 million as well
@@ -14,26 +14,26 @@ P_req = 500  # total power required for all subsystems in W
 
 
 # Power at the end of life of one RTG calculations:
-def powerdecay(P_start, tau, t):
-    P = P_start * np.exp(-np.log(2) / (tau * 365 * 24 * 60 * 60) * (t * 365 * 24 * 60 * 60))
+def powerdecay(t=missiontime, P_0=P_start, tau=tau1):
+    P = P_0 * np.exp(-np.log(2) / (tau * 365 * 24 * 60 * 60) * (t * 365 * 24 * 60 * 60))
     return P
 
 
 # Calculate the number of RTGs needed:
 # 0.85 is path efficiency coming from SMAD
-def numberRTG(P_req, tau, t, P_start):
-    M = P_req / (powerdecay(P_start, tau, t) * 0.85)
+def numberRTG(P_req, t=missiontime, P_0=P_start, tau=tau1):
+    M = P_req / (powerdecay(t, P_0, tau) * 0.85)
     N = np.ceil(M)
     return M, N
 
 
 # Calculate mass of RTGs:
-def massRTG(m_RTG, P_req, missiontime):
-    m_RTGs = m_RTG * numberRTG(P_req, missiontime)
+def massRTG(P_req, missiontime, m_rtg=mass_RTG, P_0=P_start, tau=tau1):
+    m_RTGs = m_rtg * numberRTG(P_req, missiontime, P_0, tau)[1]
     return m_RTGs
 
-def costRTG(costRTG1, P_req, missiontime):
-    cost_RTG = costRTG1 * numberRTG(P_req, missiontime)
+def costRTG(P_req, missiontime, cost_rtg=costRTG1, P_0=P_start, tau=tau1):
+    cost_RTG = cost_rtg * numberRTG(P_req, missiontime, P_0, tau)[1]
     return cost_RTG
 
 
