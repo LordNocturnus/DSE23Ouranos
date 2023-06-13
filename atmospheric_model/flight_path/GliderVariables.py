@@ -17,7 +17,7 @@ gamma_glide = np.radians(-1.5)
 C_L_C_D = 1 / np.sin(abs(gamma_glide))
 C_D_0 = np.pi * A * e / (4 * C_L_C_D * C_L_C_D)
 C_L_opt = np.sqrt(C_D_0 * np.pi * A * e)
-C_D = 2 * C_D_0
+C_D_opt = 2 * C_D_0
 
 # Deployment Variables
 gamma_0_deploy = -np.pi / 2  # rad

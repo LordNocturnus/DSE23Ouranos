@@ -4,7 +4,8 @@ from GliderVariables import *
 
 
 # Equations for Eigenvalue Calculataions
-def eigenvalue_short_period_V_constant():
+def eigenvalue_short_period_V_constant(mu_c=mu_c, K_Y_2=K_Y_2, C_Z_alpha_dot=C_Z_alpha_dot,C_Z_alpha=C_Z_alpha,
+                                       C_Z_q=C_Z_q, C_m_alpha_dot=C_m_alpha_dot, C_m_q=C_m_q, C_m_alpha=C_m_alpha):
     A = 2 * mu_c * K_Y_2 * (2 * mu_c - C_Z_alpha_dot)
     B = -2 * mu_c * K_Y_2 * C_Z_alpha - (2 * mu_c + C_Z_q) * C_m_alpha_dot - (2 * mu_c - C_Z_alpha_dot) * C_m_q
     C = C_Z_alpha * C_m_q - (2 * mu_c + C_Z_q) * C_m_alpha
@@ -16,7 +17,8 @@ def eigenvalue_short_period_V_constant():
     return lambda1
 
 
-def eigenvalue_short_period_V_constant_gamma_constant():
+def eigenvalue_short_period_V_constant_gamma_constant(mu_c=mu_c, K_Y_2=K_Y_2, C_m_alpha_dot=C_m_alpha_dot,
+                                                      C_m_q=C_m_q, C_m_alpha=C_m_alpha):
     A = 2 * mu_c * K_Y_2
     B = C_m_alpha_dot + C_m_q
     C = C_m_alpha
@@ -28,7 +30,7 @@ def eigenvalue_short_period_V_constant_gamma_constant():
     return lambda1
 
 
-def eigenvalue_phugoid_q_dot_zero_alpha_zero():
+def eigenvalue_phugoid_q_dot_zero_alpha_zero(mu_c=mu_c, C_X_u=C_X_u, C_Z_u=C_Z_u, C_Z_0=C_Z_0):
     A = -4 * mu_c * mu_c
     B = 2 * mu_c * C_X_u
     C = - C_Z_u * C_Z_0
@@ -40,7 +42,9 @@ def eigenvalue_phugoid_q_dot_zero_alpha_zero():
     return lambda1
 
 
-def eigenvalue_phugoid_q_dot_zero_alpha_dot_zero():
+def eigenvalue_phugoid_q_dot_zero_alpha_dot_zero(mu_c=mu_c, C_Z_alpha=C_Z_alpha, C_m_q=C_m_q, C_m_alpha=C_m_alpha,
+                                                 C_X_u=C_X_u, C_m_u=C_m_u, C_X_alpha=C_X_alpha, C_Z_u=C_Z_u, C_Z_0=C_Z_0,
+                                                 ):
     A = 2 * mu_c * (C_Z_alpha * C_m_q - 2 * mu_c * C_m_alpha)
     B = 2 * mu_c * (C_X_u * C_m_alpha - C_m_u * C_X_alpha) + C_m_q * (C_Z_u * C_X_alpha - C_X_u * C_Z_alpha)
     C = C_Z_0 * (C_m_u * C_Z_alpha - C_Z_u * C_m_alpha)
@@ -52,7 +56,7 @@ def eigenvalue_phugoid_q_dot_zero_alpha_dot_zero():
     return lambda1
 
 
-def eigenvalue_heavily_damped_aperiodic_roll():
+def eigenvalue_heavily_damped_aperiodic_roll(mu_b=mu_b, K_X_2=K_X_2, C_l_p=C_l_p):
     A = 4 * mu_b * K_X_2
     lambda1 = C_l_p / A
     if lambda1 < 0:
@@ -62,7 +66,7 @@ def eigenvalue_heavily_damped_aperiodic_roll():
     return lambda1
 
 
-def eigenvalue_dutch_roll_phi_zero():
+def eigenvalue_dutch_roll_phi_zero(mu_b=mu_b, K_Z_2=K_Z_2, C_n_r=C_n_r, C_Y_beta=C_Y_beta,C_n_beta=C_n_beta):
     A = 8 * mu_b * mu_b * K_Z_2
     B = -2 * mu_b * (C_n_r + 2 * K_Z_2 * C_Y_beta)
     C = 4 * mu_b * C_n_beta + C_Y_beta * C_n_r
@@ -74,7 +78,7 @@ def eigenvalue_dutch_roll_phi_zero():
     return lambda1
 
 
-def eigenvalue_dutch_roll_phi_zero_yaw_only():
+def eigenvalue_dutch_roll_phi_zero_yaw_only(mu_b=mu_b, K_Z_2=K_Z_2, C_n_r=C_n_r, C_n_beta=C_n_beta):
     A = -2 * mu_b * K_Z_2
     B = 0.5 * C_n_r
     C = -C_n_beta
@@ -86,8 +90,9 @@ def eigenvalue_dutch_roll_phi_zero_yaw_only():
     return lambda1
 
 
-def eigenvalue_aperiodic_spiral():
-    A = 2 * C_L_opt * (C_l_beta * C_n_r - C_n_beta * C_l_r)
+def eigenvalue_aperiodic_spiral(C_L=C_L_opt, C_l_beta=C_l_beta, C_n_r=C_n_r, C_n_beta=C_n_beta, C_l_r=C_l_r,
+                                C_l_p=C_l_p, C_Y_beta=C_Y_beta, mu_b=mu_b, C_n_p=C_n_p):
+    A = 2 * C_L * (C_l_beta * C_n_r - C_n_beta * C_l_r)
     B = C_l_p * (C_Y_beta * C_n_r + 4 * mu_b * C_n_beta)
     C = C_n_p * (C_Y_beta * C_l_r + 4 * mu_b * C_l_beta)
     lambda1 = A / (B - C)
@@ -98,7 +103,9 @@ def eigenvalue_aperiodic_spiral():
     return lambda1
 
 
-def eigenvalue_dutch_roll_plus_aperiodic_spiral_motion():
+def eigenvalue_dutch_roll_plus_aperiodic_spiral_motion(mu_b=mu_b, K_X_2=K_X_2, K_Z_2=K_Z_2, K_XZ=K_XZ, C_l_r=C_l_r,
+                                                       C_n_p=C_n_p, C_n_r=C_n_r, C_l_p=C_l_p, C_l_beta=C_l_beta,
+                                                       C_n_beta=C_n_beta):
     A = 4 * mu_b * mu_b * (K_X_2 * K_Z_2 - K_XZ * K_XZ)
     B = -mu_b * ((C_l_r + C_n_p) * K_XZ + C_n_r * K_X_2 + C_l_p * K_Z_2)
     C = 2 * mu_b * (C_l_beta * K_XZ + C_n_beta * K_X_2) + 0.25 * (C_l_p * C_n_r - C_n_p * C_l_r)
@@ -115,37 +122,41 @@ def eigenvalue_dutch_roll_plus_aperiodic_spiral_motion():
     return lambdas
 
 
-def symmetric_real_eigenvalues_analysis(lambda1, V):
+def symmetric_real_eigenvalues_analysis(lambda1, V, c=chord):
     if isinstance(lambda1, complex):
         print("Given eigenvalue is complex, wrong function used")
+        return False
     else:
-        T_half = np.log(0.5) / lambda1 * chord / V
-        tau = -1 / lambda1 * chord / V
+        T_half = np.log(0.5) / lambda1 * c / V
+        tau = -1 / lambda1 * c / V
         return T_half, tau
 
 
-def symmetric_complex_eigenvalues_analysis(lambda1, V):
+def symmetric_complex_eigenvalues_analysis(lambda1, V, c=chord):
     if lambda1.imag == 0:
         print("Given eigenvalue is real, wrong function used")
+        return False
     else:
         xi_c = np.real(lambda1)
         eta_c = np.imag(lambda1)
-        P = 2 * np.pi / eta_c * chord / V
-        T_half = np.log(0.5) / xi_c * chord / V
+        P = 2 * np.pi / eta_c * c / V
+        T_half = np.log(0.5) / xi_c * c/ V
         return P, T_half
 
 
-def asymmetric_real_eigenvalues_analysis(lambda1, V):
+def asymmetric_real_eigenvalues_analysis(lambda1, V, b=b):
     if isinstance(lambda1, complex):
         print("Given eigenvalue is complex, wrong function used")
+        return False
     else:
         T_half = np.log(0.5) / lambda1 * b / V
         return T_half
 
 
-def asymmetric_complex_eigenvalues_analysis(lambda1, V):
+def asymmetric_complex_eigenvalues_analysis(lambda1, V, b=b):
     if isinstance(lambda1, float):
         print("Given eigenvalue is real, wrong function used")
+        return False
     else:
         xi_c = np.real(lambda1)
         eta_c = np.imag(lambda1)

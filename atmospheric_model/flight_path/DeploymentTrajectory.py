@@ -3,16 +3,16 @@ from GliderVariables import *
 
 # Equations for Glider Deployment
 
-def dV_dt(rho, V, gamma):
-    a = -0.5 * rho * V * V * S * C_D_deploy / m
-    b = -g_u * np.sin(gamma)
+def dV_dt(rho, V, gamma, C_D=C_D_deploy, m=m, g=g_u, S=S):
+    a = -0.5 * rho * V * V * S * C_D / m
+    b = -g * np.sin(gamma)
     dVdt = a + b
     return dVdt
 
 
-def dgamma_dt(rho, V, gamma):
-    a = 0.5 * rho * V * S * C_L_deploy / m
-    b = -g_u * np.cos(gamma) / V
+def dgamma_dt(rho, V, gamma, C_L=C_L_deploy, m=m, g=g_u, S=S):
+    a = 0.5 * rho * V * S * C_L / m
+    b = -g * np.cos(gamma) / V
     dgammadt = a + b
     return dgammadt
 
