@@ -58,7 +58,7 @@ class Orb:
         self.total_wet_mass = self.total_dry_mass + self.prop_mass
         self.burn_transfer = prop.burntimecombined(self.T, self.mass, self.deltaV_insertion, self.total_dry_mass, self.deltaV_transfer)
         self.burn_insertion = prop.burntimeorbiter(self.T, self.mass, self.deltaV_insertion, self.total_dry_mass, self.deltaV_transfer)
-        self.f_lat, self.f_ax = strt.natural_frequency(self.l_tanks, self.r_tanks, self.material, self.total_wet_mass)
+        self.f_lat, self.f_ax = strt.natural_frequency(self.l_tanks, self.r_tanks, max(self.t_cy_o, self.t_cy_f), self.material, self.mass, self.mass_AV)
 
 
 
@@ -69,8 +69,8 @@ class Orb:
         self.m_ox = self.prop_mass - self.m_fuel
         self.prop_properties = [(3 * 10 ** 6, self.m_ox, 1431), (3 * 10 ** 6, self.m_fuel, 874)]
         self.wet_mass = m_dry + self.prop_mass
-        self.l_tanks, self.r_tanks, self.m_structure = strt.final_architecture(self.material, self.prop_properties,
-                                                                              margin, self.wet_mass, self.mass_AV)
+        self.l_tanks, self.r_tanks, self.m_structure, self.t_cy_o, self.t_cy_f, self.t_caps_o, self.t_caps_f = strt.final_architecture(self.material, self.prop_properties,
+                                                                              margin, self.mass_AV)
 
     def power(self):
         self.n_rtg = pwr.numberRTG(self.P_req, self.t_mission)
@@ -143,5 +143,4 @@ if __name__ == "__main__":
     w_rtg = 0.422
 
     orbiter = Orb()
-    print(orbiter.r_tanks)
     print(str(orbiter))
