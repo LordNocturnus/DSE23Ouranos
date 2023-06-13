@@ -146,13 +146,14 @@ def calculate_sigma_xz_buckling(E_spar):  # calculates thickness of I-spars requ
 
 'Shear stress due to lift shear force in yz plane'
 def calculate_tau_yz_shear(tau): # calculates thickness necessary to resist shear caused by shear force in xz plane
-    L = -L_distr * (c_w[0] + c_w[-1]) * (b_w / 2) / 2
+    S = (c_w[0] + c_w[-1]) * (b_w / 2) / 2
+    L = -L_distr * S
     qs0 = L / (2 * t[-1]) * (1 / 2 - (t[-1] / (6 * (b_w + t[-1] / 3))) + b_w / (2 * (b_w + t[-1] / 3)))
     qmax23 = L / (4 * (b_w + t[-1] / 3)) - (L * b_w) / (t[-1] * (b_w + t[-1] / 3)) + qs0
     q12 = -L * (b_w) / (t[-1] * (b_w + t[-1] / 3)) + qs0
     qmax = max(qmax23, q12)
     t_t = qmax / tau
-    return t_t
+    return t_t, S
 
 
 'Normal stress due to differences in pressure'
@@ -303,7 +304,7 @@ if __name__ == "__main__":
     t_t_buckling_xz = max(calculate_sigma_xz_buckling(E)) * safe_thick
     print(f'The minimum thickness required to resist buckling in spars is: {t_t_buckling_xz * 10 ** 3} mm')
 
-    t_t_shear_yz = safe_thick * calculate_tau_yz_shear(tau_yield)
+    t_t_shear_yz = safe_thick * calculate_tau_yz_shear(tau_yield)[0]
     print('The minimum thickness required for the wings to sustain shear loads due to shear force in the yz plane is: ',
           t_t_shear_yz * 10 ** 3, ' mm')
 
@@ -312,6 +313,7 @@ if __name__ == "__main__":
           t_t_hoop * 10 ** 3, ' mm')
 
     max_t_t = max(t_t_sigma_bend_xz, t_t_torque_xz, t_t_buckling_xz, t_t_shear_yz, t_t_hoop)
+    print('The minimum thickness value needed for the wings structure to survive loads is: ', max_t_t, 'm')
 
     mass_wings = calculate_mass_wings(max_t_t, rho)
     print('The mass of the wings is: ', mass_wings, 'kg')
@@ -337,3 +339,9 @@ if __name__ == "__main__":
     l_tail = 1.3  # Tail span
     r_fuselage = 0.56 / 2  # Fuselage radius
     l_fuselage = 0.49 + l_obc + l_battery + 0.785  # Fuselage length (0.49 comes from payload sizing)
+
+    m_fuselage, t_fuselage = fuselage_architecture(tail_load, l_tail, r_fuselage, l_fuselage, tau_y_metal, p_atmos,
+                                                   sigma_y_metal)
+    print(m_fuselage, t_fuselage)
+    print('Wing wetted surface area: ', 2 * calculate_tau_yz_shear(tau_yield)[1])
+    print('Fuselage wetted surface area: ', 2 * np.pi * r_fuselage * l_fuselage)
