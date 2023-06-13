@@ -64,8 +64,8 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
 
     density = sp.interpolate.interp1d(gram.data.Height_km * 1000, gram.data.Density_kgm3)
 
-    """def density(h):
-        return np.asarray(gram.data.Density_kgm3[gram.data.Height_km <= h / 1000])[0]"""
+    #def density(h):
+    #    return np.asarray(gram.data.Density_kgm3[gram.data.Height_km <= h / 1000])[0]
 
     constant_temperature = np.asarray(gram.data.Density_kgm3[gram.data.Height_km <= 0.0])[0]
     specific_gas_constant = np.asarray(gram.data.Density_kgm3[gram.data.Height_km <= 0.0])[0]
