@@ -1,1 +1,1 @@
-from main import *
+from atmospheric_vehicle.aeroshell.structure.main import *
