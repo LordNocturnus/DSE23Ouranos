@@ -115,6 +115,7 @@ def thickness_tau_xz_shear(tau_yield): # calculates thickness necessary to resis
         print(f'False, required thickness is: {max(t_t_shear)}')
 
 
+'Stress due to thermal differences in atmosphere'
 def calculate_sigma_thermal(T_space, T_01, T_1, T_20, sigma):
     temperatures = np.array([[T_space], [T_01], [T_1], [T_20]]) # array of most important temperature values encountered
     delta_T = np.zeros(len(temperatures) - 1)
@@ -128,6 +129,7 @@ def calculate_sigma_thermal(T_space, T_01, T_1, T_20, sigma):
         print(f'False, stress due to thermal expansion is: {sigma_thermal / 10 ** 6} MPa')
 
 
+'Normal stress due to buckling'
 def calculate_sigma_xz_buckling(E_spar):  # calculates thickness of I-spars required to resist buckling
     t_I1 = np.zeros(len(c_w) - 1)
     t_I2 = np.zeros(len(c_w) - 1)
@@ -142,6 +144,7 @@ def calculate_sigma_xz_buckling(E_spar):  # calculates thickness of I-spars requ
         return t_I1
 
 
+'Shear stress due to lift shear force in yz plane'
 def calculate_tau_yz_shear(tau): # calculates thickness necessary to resist shear caused by shear force in xz plane
     L = -L_distr * (c_w[0] + c_w[-1]) * (b_w / 2) / 2
     qs0 = L / (2 * t[-1]) * (1 / 2 - (t[-1] / (6 * (b_w + t[-1] / 3))) + b_w / (2 * (b_w + t[-1] / 3)))
@@ -154,6 +157,7 @@ def calculate_tau_yz_shear(tau): # calculates thickness necessary to resist shea
     return t_t, t2, qs0, q12, q34
 
 
+'Normal stress due to differences in pressure'
 def calculate_hoop_stress_wing(sigma): # calculates hoop stress by assuming wing shape to be a truncated cone
     delta_p = (20 - 1) * 101325  # [Pa], difference in pressure between maximum outside pressure and pressure inside wing
     # (wing keeps same pressure inside that it had when wing was "closed", hence Earth sea level atmospheric pressure)
@@ -162,6 +166,7 @@ def calculate_hoop_stress_wing(sigma): # calculates hoop stress by assuming wing
     return t_t
 
 
+'Mass of the wings based on thickness and density'
 def calculate_mass_wings(t_t, rho): # calculates mass of wings according to maximum thickness needed to sustain loads
     # find volume given by tip cross section
     Area1 = ((t[-1] / 2 + 1) * np.pi + 2 * (a_2[-1] + t[-1]) + (t[-1] + 2 * np.sqrt((t[-1] / 2) ** 2 + a_2[-1] ** 2))) * t_t
@@ -174,7 +179,7 @@ def calculate_mass_wings(t_t, rho): # calculates mass of wings according to maxi
     mass_wings = Volume * rho
     return mass_wings
 
-#0.0019351749123755098
+
 if __name__ == "__main__":
     'Material properties (Ti-6Al-4V, Titanium-Aluminum alloy)'  # source: Mechanics of Materials textbook (besides tau, look in notes)
     E = 120 * 10 ** 9  # [Pa]
@@ -201,9 +206,9 @@ if __name__ == "__main__":
     T_20 = 193  # [K], temperature at 20 bar inside Uranus's atmosphere
 
     'Simplified dimensions used for wing cross section properties calculations'
-    A = 0.35  # percentage value of segment a_2 with respect to the chord
-    B = 0.5  # percentage value of segment t with respect to the chord: once the airfoil is selected, can be found on airfoiltools.com
-    C = 0.4  # percentage value of segment a_3 with respect to the chord
+    A = 0.28  # percentage value of segment a_2 with respect to the chord (found from geometrical sketch of airfoil)
+    B = 0.08  # percentage value of segment t with respect to the chord (same as above)
+    C = 0.68  # percentage value of segment a_3 with respect to the chord (same as above)
     a_2 = c_w * A  # [m], value used for the simplified airfoil cross section: will be found by analysing the actual geometry of the
     # airfoil and simplifying the central section into a hollow rectangle, set as dummy for now
     t = c_w * B  # [m], maximum thickness of airfoil. Set as dummy for now
