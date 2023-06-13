@@ -319,9 +319,6 @@ class orbital_trajectory:
             states_orbiter_array = np.append(states_orbiter_array_before_capture,states_orbiter_array_after_capture,axis=0)
         else:
             states_orbiter_array = states_orbiter_array_before_capture[:int(simulation_end_epoch/step_size)]
-        print(simulation_end_epoch-time_to_periapsis)
-
-
 
         self.states_orbiter_array = states_orbiter_array
 
