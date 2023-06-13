@@ -91,7 +91,7 @@ class Orb:
 
     def mass_prop(self, m_dry):
         self.prop_mass = prop.mass_prop(m_dry, self.deltaV_insertion, self.mass_combined, self.deltaV_transfer,
-                                        g, self.Isp)[2]
+                                        self.Isp)[2]
         self.m_fuel = self.prop_mass / (1 + self.mixture_ratio)
         self.m_ox = self.prop_mass - self.m_fuel
         self.prop_properties = [(3 * 10 ** 6, self.m_ox, 1431), (3 * 10 ** 6, self.m_fuel, 874)]
