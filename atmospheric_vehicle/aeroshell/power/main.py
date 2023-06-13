@@ -30,6 +30,16 @@ def f_v_bat(tot_p_req, t, dod, n_bat, n_cab, vol_energy):
     return v_bat
 
 
+def power_sizing(adcs_p_req, pr_p_req, flight_time):
+    tot_p_req = f_tot_p_req(adcs_p_req, pr_p_req)
+    t = f_t(flight_time / (24 * 3600))
+    m_bat = f_m_bat(tot_p_req, t, dod, n_bat, n_cab, spec_energy)
+    m_bat = m_bat * (1 + margin)
+    v_bat = f_v_bat(tot_p_req, t, dod, n_bat, n_cab, spec_energy)
+    v_bat = v_bat * (1 + margin)
+    return m_bat, v_bat
+
+
 if __name__ == "__main__":
     tot_p_req = f_tot_p_req(adcs_p_req, pr_p_req)
     t = f_t(days)
