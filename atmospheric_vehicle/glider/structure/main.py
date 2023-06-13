@@ -49,7 +49,7 @@ def calculate_c_w(c_w_root, c_w_tip, b_w): # estimates different values of chord
 #     return Ixx_tot, Izz_tot, A_tot, Xcentr_tot
 
 'Shear stress in xz plane due to torque caused by lift'
-def calculate_tau_xz(tau):
+def calculate_tau_xz_torque(tau):
     Xcentr_tot = ((np.pi * (1 + t) * t / 2 * (np.pi - 1) / (np.pi + 1) + 2 * (t + a_2) * (t / 2 + a_2 / 2) + (
                 t + a_3) * (a_3 / 3 * (t + 2 * a_3) / (2 * a_3 + 2 * t) + t / 2 + a_2)) / (
                               np.pi * (1 + t) + 2 * (t + a_2) + t + a_3))
@@ -69,6 +69,7 @@ def calculate_sigma_bend_xz(sigma):
     return t_t, Mx, Ixx
 
 
+'Shear stress in xz plane due to lift shear force'
 def calculate_tau_xz_shear(t_t): # gives already q_max for every cross section
     q_max = np.zeros(len(c_w)-1)
     for i in range(len(c_w)-1):
@@ -95,8 +96,9 @@ def calculate_tau_xz_shear(t_t): # gives already q_max for every cross section
     return q_max
 
 
-def thickness_tau_xz_shear(tau_yield):
+def thickness_tau_xz_shear(tau_yield): # calculates thickness necessary to resist shear caused by shear force in xz plane
     t_t_shear = np.zeros(len(c_w) - 1)
+    safe_thick = 1.3
     for i in range(len(c_w) - 1):
         t_t0 = 0.000001
         q_maxs = calculate_tau_xz_shear(t_t0)
@@ -107,18 +109,80 @@ def thickness_tau_xz_shear(tau_yield):
             q_max = calculate_tau_xz_shear(t_t0)[i]
             tau = q_max / t_t0
         t_t_shear[i] = t_t0
-    if 0.5 * 10**-3 > max(t_t_shear):
+    if 0.5 * 10**-3 > safe_thick * max(t_t_shear):
         return True
     else:
         print(f'False, required thickness is: {max(t_t_shear)}')
 
+
+def calculate_sigma_thermal(T_space, T_01, T_1, T_20, sigma):
+    temperatures = np.array([[T_space], [T_01], [T_1], [T_20]]) # array of most important temperature values encountered
+    delta_T = np.zeros(len(temperatures) - 1)
+    for i in range(len(temperatures) - 1):
+        delta_T[i] = temperatures[i + 1] - temperatures[i]
+    max_delta = max(delta_T)
+    sigma_thermal = alpha * max_delta * E
+    if sigma_thermal < sigma:
+        return True
+    else:
+        print(f'False, stress due to thermal expansion is: {sigma_thermal / 10 ** 6} MPa')
+
+
+def calculate_sigma_xz_buckling(E_spar):  # calculates thickness of I-spars required to resist buckling
+    t_I1 = np.zeros(len(c_w) - 1)
+    t_I2 = np.zeros(len(c_w) - 1)
+    for i in range(len(c_w)-1):
+        S_shear = (c_w[i] + c_w[i+1]) * db / 2
+        L = L_distr * S_shear
+        t_I1[i] = (t[i] + np.sqrt(t[i] ** 2 - 96 * L / (np.pi ** 2 * E_spar))) / 4
+        t_I2[i] = (t[i] - np.sqrt(t[i] ** 2 - 96 * L / (np.pi ** 2 * E_spar))) / 4
+    if t_I1.any() > 1 * 10 ** -2:
+        return t_I2
+    elif t_I2.any() > 1 * 10 ** -2:
+        return t_I1
+
+
+def calculate_tau_yz_shear(tau): # calculates thickness necessary to resist shear caused by shear force in xz plane
+    L = -L_distr * (c_w[0] + c_w[-1]) * (b_w / 2) / 2
+    qs0 = L / (2 * t[-1]) * (1 / 2 - (t[-1] / (6 * (b_w + t[-1] / 3))) + b_w / (2 * (b_w + t[-1] / 3)))
+    qmax = L / (4 * (b_w + t[-1] / 3)) - (L * b_w) / (t[-1] * (b_w + t[-1] / 3)) + qs0
+    t_t = qmax / tau
+    #CHECK: see if thickness given by max shear flow in segment 12 is smaller
+    q12 = -L * (b_w) / (t[-1] * (b_w + t[-1] / 3)) + qs0
+    q34 = L * (b_w) / (t[-1] * (b_w + t[-1] / 3)) + qs0 - (L * (b_w/2)) / (t[-1] * (b_w + t[-1] / 3))
+    t2 = q12 / tau
+    return t_t, t2, qs0, q12, q34
+
+
+def calculate_hoop_stress_wing(sigma): # calculates hoop stress by assuming wing shape to be a truncated cone
+    delta_p = (20 - 1) * 101325  # [Pa], difference in pressure between maximum outside pressure and pressure inside wing
+    # (wing keeps same pressure inside that it had when wing was "closed", hence Earth sea level atmospheric pressure)
+    a = np.arctan((c_w[0] - c_w[-1]) / (2 * b_w))
+    t_t = delta_p * c_w[0] * 2 / (2 * np.cos(a) * (sigma - 0.6 * delta_p))
+    return t_t
+
+
+def calculate_mass_wings(t_t, rho): # calculates mass of wings according to maximum thickness needed to sustain loads
+    # find volume given by tip cross section
+    Area1 = ((t[-1] / 2 + 1) * np.pi + 2 * (a_2[-1] + t[-1]) + (t[-1] + 2 * np.sqrt((t[-1] / 2) ** 2 + a_2[-1] ** 2))) * t_t
+    Volume1 = Area1 * b_w
+    # find volume given by root cross section
+    Area2 = ((t[0] / 2 + 1) * np.pi + 2 * (a_2[0] + t[0]) + (t[0] + 2 * np.sqrt((t[0] / 2) ** 2 + a_2[0] ** 2))) * t_t
+    Volume2 = Area2 * b_w
+    # average volume
+    Volume = (Volume1 + Volume2) / 2
+    mass_wings = Volume * rho
+    return mass_wings
+
+#0.0019351749123755098
 if __name__ == "__main__":
-    'Material properties (Ti-6Al-4V, Titanium-Aluminum alloy)'  # source: Mechanics of Materials textbook
+    'Material properties (Ti-6Al-4V, Titanium-Aluminum alloy)'  # source: Mechanics of Materials textbook (besides tau, look in notes)
     E = 120 * 10 ** 9  # [Pa]
     G = 44 * 10 ** 9  # [Pa]
     sigma_yield = 924 * 10 ** 6 * 1.1  # [Pa], normal yield stress, used as failure criterion with margin of safety
     tau_yield = 508.2 * 10 ** 6 * 1.1  # [Pa], shear yield stress, used as failure criterion with margin of safety
     rho = 4430  # [kg/m^3]
+    alpha = 9.1 * 10 ** -6  # [1/K], coefficient of thermal expansion of material selected
 
     'Wing properties'
     c_w_root = 0.785  # [m], root chord, given from Luigi
@@ -130,6 +194,12 @@ if __name__ == "__main__":
     b_range = calculate_c_w(c_w_root, c_w_tip, b_w)[1]
     db = calculate_c_w(c_w_root, c_w_tip, b_w)[2]
 
+    'Atmospheric/physical properties'
+    T_space = 2.73  # [K], average temperature in space. Source: https://phys.libretexts.org/Bookshelves/University_Physics/Book%3A_University_Physics_(OpenStax)/Book%3A_University_Physics_II_-_Thermodynamics_Electricity_and_Magnetism_(OpenStax)/01%3A_Temperature_and_Heat/1.04%3A_Thermal_Expansion
+    T_01 = 53  # [K], temperature at 0.1 bar inside Uranus's atmosphere
+    T_1 = 76  # [K], temperature at 1 bar inside Uranus's atmosphere
+    T_20 = 193  # [K], temperature at 20 bar inside Uranus's atmosphere
+
     'Simplified dimensions used for wing cross section properties calculations'
     A = 0.35  # percentage value of segment a_2 with respect to the chord
     B = 0.5  # percentage value of segment t with respect to the chord: once the airfoil is selected, can be found on airfoiltools.com
@@ -139,18 +209,36 @@ if __name__ == "__main__":
     t = c_w * B  # [m], maximum thickness of airfoil. Set as dummy for now
     a_3 = c_w * C  # [m], same reasoning as for a_2, set as dummy for now
 
-    'Safety factor(s)'  # to be applied as safety margin
-    safe_thick = 1.3  # applied to thicknesses calculated for all load cases HAS TO BE DELETED, WILL BE USED FACTOR FOR LOADS RATHER THAN THICKNESSES
-    safe_load = 1.1  # applied to loads as safety factor REMEMBER TO APPLY THIS AND NOT ONE ABOVE
+    'Safety factors'  # to be applied as safety margin
+    safe_thick = 1.3  # applied to thicknesses (if calculated)
+    safe_load = 1.1  # applied to loads (if calculated)
+
+    'Results of calculations'
     t_t_sigma_bend_xz = safe_thick * calculate_sigma_bend_xz(sigma_yield)[0]
     t_t_sigma_bend_xz = max(np.delete(t_t_sigma_bend_xz, 0))
     print('The minimum thickness required for the wings to sustain normal stress loads due to bending in the xz plane'
           ' applied in the x direction is: ', t_t_sigma_bend_xz * 10 ** 3, ' mm')
 
-    t_t_tau_xz = max(safe_thick * calculate_tau_xz(tau_yield)[0])
+    t_t_torque_xz = max(safe_thick * calculate_tau_xz_torque(tau_yield)[0])
     print('The minimum thickness required for the wings to sustain shear loads due to torques in the xz plane is: ',
-          t_t_tau_xz * 10 ** 3, ' mm')
+          t_t_torque_xz * 10 ** 3, ' mm')
 
     print(f'Shear stress due to shear force check passed: {thickness_tau_xz_shear(tau_yield)}')
 
+    print(f'Normal stress due to temperature changes check passed: {calculate_sigma_thermal(T_space, T_01, T_1, T_20, sigma_yield)}')
 
+    t_t_buckling_xz = max(calculate_sigma_xz_buckling(E)) * safe_thick
+    print(f'The minimum thickness required to resist buckling in spars is: {t_t_buckling_xz * 10 ** 3} mm')
+
+    t_t_shear_yz = safe_thick * calculate_tau_yz_shear(tau_yield)[0]
+    print('The minimum thickness required for the wings to sustain shear loads due to shear force in the yz plane is: ',
+          t_t_shear_yz * 10 ** 3, ' mm')
+
+    t_t_hoop = safe_thick * calculate_hoop_stress_wing(sigma_yield)
+    print('The minimum thickness required for the wings to sustain hoop stress is: ',
+          t_t_hoop * 10 ** 3, ' mm')
+
+    max_t_t = max(t_t_sigma_bend_xz, t_t_torque_xz, t_t_buckling_xz, t_t_shear_yz, t_t_hoop)
+
+    mass_wings = calculate_mass_wings(max_t_t, rho)
+    print('The mass of the wings is: ', mass_wings, 'kg')
