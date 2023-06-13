@@ -9,6 +9,7 @@ from tudatpy.kernel.trajectory_design import transfer_trajectory
 from tudatpy.kernel import constants
 from tudatpy.kernel.numerical_simulation import environment_setup
 from tudatpy.util import result2array
+from tudatpy.kernel.interface import spice
 
 # Pygmo imports
 import pygmo as pg
@@ -304,13 +305,13 @@ class interplanetary_trajectory:
         # Extract the state history
         state_history = self.transfer_trajectory_object.states_along_trajectory(500)
         fly_by_states = np.array([state_history[node_times[i]] for i in range(len(node_times))])
-        state_history = result2array(state_history)
+        self.state_history = result2array(state_history)
         au = 1.5e11
 
         # Plot the state history
         fig = plt.figure(figsize=(8,5))
         ax = fig.add_subplot(111)
-        ax.plot(state_history[:, 1] / au, state_history[:, 2] / au)
+        ax.plot(self.state_history[:, 1] / au, self.state_history[:, 2] / au)
         ax.scatter(fly_by_states[0, 0] / au, fly_by_states[0, 1] / au, color='blue', label='Earth departure')
         ax.scatter(fly_by_states[1, 0] / au, fly_by_states[1, 1] / au, color='green', label='Venus fly-by')
         ax.scatter(fly_by_states[2, 0] / au, fly_by_states[2, 1] / au, color='green')
@@ -323,8 +324,25 @@ class interplanetary_trajectory:
         ax.set_aspect('equal')
         ax.legend(bbox_to_anchor=[1, 1])
         plt.show()
-    def output(self):
+    def output(self,time_difference):
         print("The departure burn will be",self.pop.champion_f[0],'delta v')
+        time_of_encounter = self.state_history[-1,0]
+        time_of_separation = time_of_encounter-time_difference
+        i = 0
+        notfound = True
+        while notfound:
+            if self.state_history[i,0] > time_of_separation:
+                cartesianstate = self.state_history[i,1:]
+                print (len(cartesianstate))
+                notfound = False
+                position = cartesianstate[:3]
+                velocity = cartesianstate[3:]
+                rotationmatrix = spice.compute_rotation_matrix_between_frames(,'IAU_URANUS',time_of_separation)
+                rotationvelocitymatrix =   spice.compute_rotation_matrix_derivative_between_frames(,'IAU_URANUS'time_of_separation)              
+
+            else:
+                i += 1
+
 
 
 
