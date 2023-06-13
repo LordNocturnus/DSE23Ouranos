@@ -22,11 +22,11 @@ f = 32  # Downlink frequency in GHz
 wavelengthdown = c / (f * 10 ** 9)
 
 # antenna ground station:
-P_gs = 800 # power ground station in W
-d_gs = 70 # antenna diameter in m
-L_r = 0.75 # loss factor ground station
-uplinkDR = 25000 # uplink data rate in bps
-f_gs = f * TurnAroundRatio # uplink frequency in Ghz
+P_gs = 800  # power ground station in W
+d_gs = 70  # antenna diameter in m
+L_r = 0.75  # loss factor ground station
+uplinkDR = 25000  # uplink data rate in bps
+f_gs = f * TurnAroundRatio  # uplink frequency in Ghz
 wavelenghtup = c / (f_gs * 10 ** 9)
 
 
@@ -58,17 +58,18 @@ def pointingLoss(alpha, pointingAccuracy):
     return pointingLoss
 
 
-def downlink(P, L_l, L_r, L_a, DR, Tnoise, k):
+def downlink(P, L_l, L_r, L_a, DR, Tnoise, k, d_ant=d_antenna, d_ground=d_gs, wavelength=wavelengthdown,
+             eta_ant=eta_antenna, PointAccSC=PointingAccuracy, freq=f, d=d_EarthSC, AU=AU):
     P = 10 * np.log10(P)
-    G_t = gain(d_antenna, wavelengthdown, eta_antenna)
-    G_r = gain(d_gs, wavelengthdown, eta_antenna)
+    G_t = gain(d_ant, wavelength, eta_ant)
+    G_r = gain(d_ground, wavelength, eta_ant)
     L_l = 10 * np.log10(L_l)
     L_r = 10 * np.log10(L_r)
-    L_s = SpaceLoss(wavelengthdown, d_EarthSC, AU)
-    alphaSC = halfpowerbeamwidth(d_antenna, f)
-    alphaGS = halfpowerbeamwidth(d_gs, f)
+    L_s = SpaceLoss(wavelength, d, AU)
+    alphaSC = halfpowerbeamwidth(d_ant, freq)
+    alphaGS = halfpowerbeamwidth(d_ground, freq)
     PointingAccuracyGS = 0.1 * alphaGS  # pointing accuracy in deg
-    L_prSC = pointingLoss(alphaSC, PointingAccuracy)  # in [dB]
+    L_prSC = pointingLoss(alphaSC, PointAccSC)  # in [dB]
     L_prGS = pointingLoss(alphaGS, PointingAccuracyGS)  # in [dB]
     L_pr = L_prSC + L_prGS  # in [dB]
     DR = 10 * np.log10(1 / DR)  # [dB]
@@ -80,17 +81,18 @@ def downlink(P, L_l, L_r, L_a, DR, Tnoise, k):
     return EbN0
 
 
-def uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoise, k):
+def uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoise, k, wavelength=wavelenghtup, eta_ant=eta_antenna, d_ground=d_gs,
+           d_ant=d_antenna, d=d_EarthSC, AU=AU, PointAccSC=PointingAccuracy):
     P = 10 * np.log10(P_gs)  # in [dB]
-    G_t = gain(d_gs, wavelenghtup, eta_antenna)  # in [dB]
-    G_r = gain(d_antenna, wavelenghtup, eta_antenna)  # in [dB]
+    G_t = gain(d_ground, wavelength, eta_ant)  # in [dB]
+    G_r = gain(d_ant, wavelength, eta_ant)  # in [dB]
     L_l = 10 * np.log10(L_l)  # in [dB]
     L_r = 10 * np.log10(L_r)  # in [dB]
-    L_s = SpaceLoss(wavelenghtup, d_EarthSC, AU)
-    alphaSC = halfpowerbeamwidth(d_antenna, f_gs)
-    alphaGS = halfpowerbeamwidth(d_gs, f_gs)
+    L_s = SpaceLoss(wavelength, d, AU)
+    alphaSC = halfpowerbeamwidth(d_ant, f_gs)
+    alphaGS = halfpowerbeamwidth(d_ground, f_gs)
     PointingAccuracyGS = 0.1 * alphaGS  # pointing accuracy in deg
-    L_prSC = pointingLoss(alphaSC, 0.1 * PointingAccuracy)  # in [dB]
+    L_prSC = pointingLoss(alphaSC, 0.1 * PointAccSC)  # in [dB]
     L_prGS = pointingLoss(alphaGS, PointingAccuracyGS)  # in [dB]
     L_pr = L_prSC + L_prGS  # in [dB]
     DR = 10 * np.log10(1 / uplinkDR)  # [dB]
