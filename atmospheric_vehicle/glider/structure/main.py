@@ -148,13 +148,11 @@ def calculate_sigma_xz_buckling(E_spar):  # calculates thickness of I-spars requ
 def calculate_tau_yz_shear(tau): # calculates thickness necessary to resist shear caused by shear force in xz plane
     L = -L_distr * (c_w[0] + c_w[-1]) * (b_w / 2) / 2
     qs0 = L / (2 * t[-1]) * (1 / 2 - (t[-1] / (6 * (b_w + t[-1] / 3))) + b_w / (2 * (b_w + t[-1] / 3)))
-    qmax = L / (4 * (b_w + t[-1] / 3)) - (L * b_w) / (t[-1] * (b_w + t[-1] / 3)) + qs0
-    t_t = qmax / tau
-    #CHECK: see if thickness given by max shear flow in segment 12 is smaller
+    qmax23 = L / (4 * (b_w + t[-1] / 3)) - (L * b_w) / (t[-1] * (b_w + t[-1] / 3)) + qs0
     q12 = -L * (b_w) / (t[-1] * (b_w + t[-1] / 3)) + qs0
-    q34 = L * (b_w) / (t[-1] * (b_w + t[-1] / 3)) + qs0 - (L * (b_w/2)) / (t[-1] * (b_w + t[-1] / 3))
-    t2 = q12 / tau
-    return t_t, t2, qs0, q12, q34
+    qmax = max(qmax23, q12)
+    t_t = qmax / tau
+    return t_t
 
 
 'Normal stress due to differences in pressure'
@@ -305,7 +303,7 @@ if __name__ == "__main__":
     t_t_buckling_xz = max(calculate_sigma_xz_buckling(E)) * safe_thick
     print(f'The minimum thickness required to resist buckling in spars is: {t_t_buckling_xz * 10 ** 3} mm')
 
-    t_t_shear_yz = safe_thick * calculate_tau_yz_shear(tau_yield)[0]
+    t_t_shear_yz = safe_thick * calculate_tau_yz_shear(tau_yield)
     print('The minimum thickness required for the wings to sustain shear loads due to shear force in the yz plane is: ',
           t_t_shear_yz * 10 ** 3, ' mm')
 
