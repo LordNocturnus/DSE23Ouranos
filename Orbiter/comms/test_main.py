@@ -23,8 +23,8 @@ class Test(TestCase):
         poiting_loss_numerical = pointingLoss(alpha, pointingAccuracy)
         self.assertAlmostEquals(poiting_loss_numerical, poiting_loss_true)
 
-    # def test_downlink(self):
-    #
-    #
+    def test_downlink(self):
+
+
     # def test_uplink(self):
     #
