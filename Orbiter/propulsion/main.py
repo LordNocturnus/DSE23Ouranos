@@ -24,12 +24,14 @@ def mass_prop(m_orbiter, dV_orbiter, m_combined, dV_combined, g, I_sp):
     m_prop = m_prop_orbiter + m_prop_combined
     return m_prop_orbiter, m_prop_combined, m_prop
 
+
 # Calculate required burn time for combined system manoeuvers in hours:
-def burntimecombined(T, m_orbiter, dV_orbiter, m_combined, dV_combined):
-    a = T / (m_combined + mass_prop(m_orbiter, dV_orbiter, m_combined, dV_combined, g, I_sp)[2])
+def burntimecombined(T, m_f, dV_combined, m_orbiter, m_combined, dV_orbiter, g, I_sp):
+    a = T / (m_f + mass_prop(m_orbiter, dV_orbiter, m_combined, dV_combined, g, I_sp)[2])
     t_b = dV_combined / a
     t_b = t_b / 60 / 60
     return t_b
+
 
 # Calculate required burn time for orbiter manoeuvers in hours:
 def burntimeorbiter(T, m_orbiter, dV_orbiter, m_combined, dV_combined):
