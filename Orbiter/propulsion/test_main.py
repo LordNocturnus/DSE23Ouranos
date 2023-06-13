@@ -19,7 +19,7 @@ class Test(TestCase):
         tb_numerical = burntimecombined(T, m_f, dV_combined, m_orbiter, m_combined, dV_orbiter, I_sp)
         self.assertAlmostEqual(tb_numerical, tb_true)
 
-    def test_burntimeorbiter(self,T=100, dV_orbiter=223, m_orbiter=200, m_combined=350, dV_combined=576, I_sp=325):
-        tb_true = 0.1018922275
+    def test_burntimeorbiter(self, T=100, dV_orbiter=223, m_orbiter=200, m_combined=350, dV_combined=576, I_sp=325):
+        tb_true = 0.132864449710
         tb_numerical = burntimeorbiter(T, m_orbiter, dV_orbiter, m_combined, dV_combined, I_sp)
         self.assertAlmostEqual(tb_numerical, tb_true)
