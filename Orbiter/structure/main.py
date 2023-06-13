@@ -99,7 +99,17 @@ def geometry_mass(material, propellant, margin, plot=True):
 
     return m_structure[-1], l[-1], r[-1], max(t_caps[-1], 1 * 10**(-3)), max(t_cylind[-1], 1 * 10**(-3))
 
-def final_architecture(material, propellant, margin, m_subsystems):
+
+def minimum_thickness(m_AV, sigma_y, r):
+    return acc_axial_tension * m_AV / (sigma_y * 2 * np.pi * r)
+
+
+def pressurising_gas(propellant, v):
+    v_oxidiser = (0.9 / propellant[0]) * v / (1 - 0.9 / propellant[0])
+    m_ox = v_oxidiser * rho_oxidiser
+
+
+def final_architecture(material, propellant, margin, m_subsystems, m_AV):
     """
     Function that defines the final architecture of the tanks based on the selected material, subsystem
     mass and propellant selected. Main function to run. Stress checks are performed.
@@ -111,6 +121,11 @@ def final_architecture(material, propellant, margin, m_subsystems):
     """
     m_tank_o, l_o, r_o, t_caps_o, t_cylind_o = geometry_mass(material, propellant[0], margin, False)
     m_tank_f, l_f, r_f, t_caps_f, t_cylind_f = geometry_mass(material, propellant[1], margin, False)
+    t_min_o = minimum_thickness(m_AV, material[1], r_o)
+    t_min_f = minimum_thickness(m_AV, material[1], r_f)
+    print(t_min_o, t_min_f)
+    t_caps_o, t_cylind_o = max(t_caps_o, t_min_o), max(t_cylind_o, t_min_o)
+    t_caps_f, t_cylind_f = max(t_caps_f, t_min_f), max(t_cylind_f, t_min_f)
     m_tot_structure = m_tank_o + m_tank_f + ((r_o + r_f) * max(t_cylind_f, t_cylind_o) * 2 + 4 * r_o**2 * t_cylind_o +
                                              4 * r_f**2 * t_cylind_f + 4 * max(r_f, r_o)**2 * 2 * t_cylind_f)\
                                              * material[0] # Calculating the total mass of all metal surfaces on the orbiter
@@ -157,6 +172,7 @@ def natural_frequency(l_tot, r, material, m_tot):
 
 if __name__ == '__main__':
     ...
+    l, r, m = final_architecture()
     # l_structure, r_structure, m_structure = final_architecture(material, propellant, margin, m_subsystems)
     # f_lat, f_ax = natural_frequency(l_structure, r_structure, material, m_subsystems + m_structure, f_ax_min, f_lat_min)
 

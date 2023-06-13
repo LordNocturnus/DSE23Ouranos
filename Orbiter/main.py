@@ -71,7 +71,7 @@ class Orb:
         self.prop_properties = [(3 * 10 ** 6, self.m_ox, 1431), (3 * 10 ** 6, self.m_fuel, 874)]
         self.wet_mass = m_dry + self.prop_mass
         self.l_tanks, self.r_tanks, self.m_structure = strt.final_architecture(self.material, self.prop_properties,
-                                                                              margin, self.wet_mass)
+                                                                              margin, self.wet_mass, self.mass_AV)
 
     def power(self):
         self.n_rtg = pwr.numberRTG(self.P_req, self.t_mission)
