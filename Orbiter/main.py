@@ -88,7 +88,7 @@ class Orb:
 
     def iteration(self):
         diff = 1000
-        while diff > 1:
+        while diff > 1 * 10**-3:
             self.mass_prop(self.mass)
             self.P_req = 500
             self.power()

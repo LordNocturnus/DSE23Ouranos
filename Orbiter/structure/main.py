@@ -26,12 +26,12 @@ def axial_loads(axial, sigma_y, r):
     :param sigma_y: Yield stress of the selected material
     :return: Required minimum radius to withstand the loads
     """
-    if r > 0 and axial >= 0 and sigma_y >= 0:
-        return sigma_y * 0.9 >= axial / (np.pi * r**2)
+    if r > 0 and sigma_y >= 0:
+        return sigma_y * 0.9 >= abs(axial) / (np.pi * r**2)
     elif r < 0:
         raise ValueError(f'The radius needs to be a positive value')
-    elif axial < 0:
-        raise ValueError(f'The Axial force needs to be a positive value')
+    elif r == 0:
+        raise ZeroDivisionError(f'The raidus cannot be 0')
     else:
         raise ValueError(f'The yield strength needs to be a positive value')
 
@@ -60,8 +60,28 @@ def t_hoop_sphere(p, r, sigma_y, margin):
     :param sigma_y: Yield strength of the selected material
     :return: Required minimum thickness to withstand pressure loads
     """
-    return p * r / (2 * sigma_y) * (1 + margin)
-
+    if isinstance(r, int):
+        if r >= 0 and sigma_y > 0 and margin >= 0:
+            return abs(p) * r / (2 * sigma_y) * (1 + margin)
+        elif r < 0:
+            raise ValueError(f'The radius needs to have a positive value')
+        elif sigma_y < 0:
+            raise ValueError(f'The yield strength of the material needs to be a positive value')
+        elif sigma_y == 0:
+            raise ZeroDivisionError(f'The yield strength of a material cannot be 0')
+        else:
+            raise ValueError(f'The margin of safety needs to be a positive value')
+    else:
+        if any(r) >= 0 and sigma_y > 0 and margin >= 0:
+            return abs(p) * r / (2 * sigma_y) * (1 + margin)
+        elif any(r) < 0:
+            raise ValueError(f'The radius needs to have a positive value')
+        elif sigma_y < 0:
+            raise ValueError(f'The yield strength of the material needs to be a positive value')
+        elif sigma_y == 0:
+            raise ZeroDivisionError(f'The yield strength of a material cannot be 0')
+        else:
+            raise ValueError(f'The margin of safety needs to be a positive value')
 def t_hoop_cylind(p, r, sigma_y, margin):
     """
     Function to calculate the thickness of the orbiter due to hoop stress in cylinder. To be used
@@ -71,7 +91,28 @@ def t_hoop_cylind(p, r, sigma_y, margin):
     :param sigma_y: Yield strength of the selected material
     :return: Required minimum thickness to withstand pressure loads
     """
-    return p * r / sigma_y * (1 + margin)
+    if isinstance(r, int):
+        if r >= 0 and sigma_y > 0 and margin >= 0:
+            return abs(p) * r / sigma_y * (1 + margin)
+        elif r < 0:
+            raise ValueError(f'The orbiter radius needs to be a positive value')
+        elif sigma_y < 0:
+            raise ValueError(f'The yield strength of the material needs to be a positive value')
+        elif sigma_y == 0:
+            raise ZeroDivisionError(f'The yield strength of a material cannot be 0')
+        else:
+            raise ValueError(f'The margin of safety needs to be a positive value')
+    else:
+        if any(r) >= 0 and sigma_y > 0 and margin >= 0:
+            return abs(p) * r / sigma_y * (1 + margin)
+        elif any(r) < 0:
+            raise ValueError(f'The orbiter radius needs to be a positive value')
+        elif sigma_y < 0:
+            raise ValueError(f'The yield strength of the material needs to be a positive value')
+        elif sigma_y == 0:
+            raise ZeroDivisionError(f'The yield strength of a material cannot be 0')
+        else:
+            raise ValueError(f'The margin of safety needs to be a positive value')
 
 
 def geometry_mass(material, propellant, margin, plot=True):
@@ -116,7 +157,16 @@ def geometry_mass(material, propellant, margin, plot=True):
 
 
 def minimum_thickness(m_AV, sigma_y, r):
-    return acc_axial_tension * m_AV / (sigma_y * 2 * np.pi * r)
+    if m_AV >= 0 and r > 0 and sigma_y > 0:
+        return acc_axial_tension * m_AV / (sigma_y * 2 * np.pi * r)
+    elif r < 0:
+        raise ValueError(f'The orbiter radius needs to be a positive value')
+    elif sigma_y < 0:
+        raise ValueError(f'The yield strength of the material needs to be a positive value')
+    elif m_AV < 0:
+        raise ValueError(f'The mass of the atmospheric vehicle cannot be negative')
+    else:
+        raise ZeroDivisionError(f'The yield strength and radius cannot be 0 valued')
 
 
 def pressurising_gas(propellant, v_o):
@@ -127,7 +177,7 @@ def pressurising_gas(propellant, v_o):
     :param v_o: Volume of the propellant, either fuel or oxidiser
     :return: Total volume of the pressurising gas
     """
-    v_helium = (0.9 / propellant[0]) * v_o / (1 - 0.9 / propellant[0])
+    v_helium = (0.9 * 10**6 / propellant[0]) * v_o / (1 - 0.9 * 10**6 / propellant[0])
     return v_helium
 
 
@@ -194,7 +244,7 @@ def natural_frequency(l_tot, r, material, m_tot):
 
 if __name__ == '__main__':
     ...
-    l, r, m = final_architecture()
+    # l, r, m = final_architecture()
     # l_structure, r_structure, m_structure = final_architecture(material, propellant, margin, m_subsystems)
     # f_lat, f_ax = natural_frequency(l_structure, r_structure, material, m_subsystems + m_structure, f_ax_min, f_lat_min)
 
