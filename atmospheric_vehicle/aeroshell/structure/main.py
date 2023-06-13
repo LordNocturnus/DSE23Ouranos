@@ -133,8 +133,9 @@ def thermal_loads(alpha, delta_T, E, sigma_y):
 
 if __name__ == "__main__":
     # Loads values
-    load_peak = 100 * 9.81
-    p_load = 2 * 10**6
+    peak_load_parachute = 100  # Parachute Peak Load
+    peak_load_entry = 311  # Peak load due deceleration in atmosphere
+    p_load = 0.1 * 10**6  # Pressure when deploying glider
     delta_T = 100
 
     # Mass Budget
