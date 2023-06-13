@@ -16,8 +16,8 @@ import pygmo as pg
 import os
 
 def convert_trajectory_parameters (transfer_trajectory_object: tudatpy.kernel.trajectory_design.transfer_trajectory.TransferTrajectory,
-                                   trajectory_parameters: List[float]
-                                   ) -> Tuple[ List[float], List[List[float]], List[List[float]] ]:
+                                   trajectory_parameters: List[float], target_periapsis
+                                   ) -> Tuple[ List[float], List[List[float]], List[List[float]]]:
 
     # Declare lists of transfer parameters
     node_times = list()
@@ -43,7 +43,7 @@ def convert_trajectory_parameters (transfer_trajectory_object: tudatpy.kernel.tr
     # One empty array for each node
     for i in range(transfer_trajectory_object.number_of_nodes-1):
         node_free_parameters.append( [ ] )
-    node_free_parameters.append([1,1,1])
+    node_free_parameters.append([target_periapsis,0,0])
 
     return node_times, leg_free_parameters, node_free_parameters
 
@@ -58,7 +58,8 @@ class TransferTrajectoryProblem:
                  departure_date_lb: float, # Lower bound on departure date
                  departure_date_ub: float, # Upper bound on departure date
                  legs_tof_lb: np.ndarray, # Lower bounds of each leg's time of flight
-                 legs_tof_ub: np.ndarray): # Upper bounds of each leg's time of flight
+                 legs_tof_ub: np.ndarray, # Upper bounds of each leg's time of flight
+                 periapsis_height):
         """
         Class constructor.
         """
@@ -67,6 +68,7 @@ class TransferTrajectoryProblem:
         self.departure_date_ub = departure_date_ub
         self.legs_tof_lb = legs_tof_lb
         self.legs_tof_ub = legs_tof_ub
+        self.periapsis_height = periapsis_height
 
         # Save the transfer trajectory object as a lambda function
         # PyGMO internally pickles its user defined objects and some objects cannot be pickled properly without using lambda functions.
@@ -122,7 +124,7 @@ class TransferTrajectoryProblem:
         # Convert list of trajectory parameters to appropriate format
         node_times, leg_free_parameters, node_free_parameters = convert_trajectory_parameters(
             transfer_trajectory,
-            trajectory_parameters)
+            trajectory_parameters, self.periapsis_height)
 
         # Evaluate trajectory
         try:
@@ -153,6 +155,7 @@ class interplanetary_trajectory:
         self.departure_semi_major_axis = departure_orbit[0]
         self.departure_eccentricity = departure_orbit[1]
 
+        self.target_periapsis = target_periapsis
 
         # Create simplified system of bodies
         self.bodies = environment_setup.create_simplified_system_of_bodies()
@@ -170,6 +173,7 @@ class interplanetary_trajectory:
             self.transfer_node_settings,
             transfer_body_order,
             self.central_body)
+        transfer_trajectory.print_parameter_definitions(self.transfer_leg_settings,self.transfer_node_settings)
 
         # Lower and upper bound on departure date
 #        self.departure_date_lb = 11000 * constants.JULIAN_DAY
@@ -209,7 +213,8 @@ class interplanetary_trajectory:
                                                 self.departure_date_lb,
                                                 self.departure_date_ub,
                                                 self.legs_tof_lb,
-                                                self.legs_tof_ub)
+                                                self.legs_tof_ub,
+                                                self.target_periapsis)
 
         # Creation of the pygmo problem object
         prob = pg.problem(optimizer)
@@ -300,7 +305,7 @@ class interplanetary_trajectory:
         plt.show()
 
         # Reevaluate the transfer trajectory using the champion design variables
-        node_times, leg_free_parameters, node_free_parameters = convert_trajectory_parameters(self.transfer_trajectory_object, self.pop.champion_x)
+        node_times, leg_free_parameters, node_free_parameters = convert_trajectory_parameters(self.transfer_trajectory_object, self.pop.champion_x,self.target_periapsis)
         self.transfer_trajectory_object.evaluate(node_times, leg_free_parameters, node_free_parameters)
 
         # Extract the state history
