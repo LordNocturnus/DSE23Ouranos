@@ -1,4 +1,4 @@
-from structure.main import aeroshell_geometry
+from atmospheric_vehicle.aeroshell.structure import aeroshell_geometry
 
 # Loads values
 load_peak = 100 * 9.81

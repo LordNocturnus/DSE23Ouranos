@@ -5,54 +5,60 @@ import matplotlib.pyplot as plt
 
 class Reentry():
     def __init__(self):
-        self.m = 500 #[kg]
-        self.Ixx = 2
-        self.Iyy = 2
-        self.Izz = 2
-        self.Ixz = 1
-        self.S_ref = 1
-        self.b_ref = 1
-        self.c_ref = 1
-        self.V_0 = 1
-        self.M_0 = 1
-        self.q_bar_0 = 1
-        self.D_0 = 1
-        self.p_0 = 0
-        self.q_0 = 0
-        self.r_0 = 0
-        self.g_0 = 9.80665
-        self.gamma_0 = 1.25  # [deg]
-        self.R_0 = 27000  # [km]
-        self.gamma_prime_0 = 1
-        self.theta_0 = 1
+        self.m = 4976 #[kg]
+        self.Ixx = 2 #[kg/m^2]
+        self.Iyy = 2 #[kg/m^2]
+        self.Izz = 2 #[kg/m^2]
+        self.Ixz = 1 #[kg/m^2]
+        self.S_ref = 12 #[m^2] needs to be
+        self.b_ref = 3.9  #[m] assumed to be the diameter of the heatshield
+        self.c_ref = 0.75*self.b_ref #[m] taken to be the height of the capsule
+        self.V_0 =  11000 #[m/s]
+        self.rho_0 = 1.225 #[kg/m^3]
+        self.a_0 = 340.2 #[m/s]
+        self.M_0 = self.V_0/self.a_0
+        self.q_bar_0 = 0.5*self.rho_0*self.V_0**2
+        self.C_D0 = 0.72
+        self.D_0 = self.q_bar_0 * self.S_ref * self.C_D0
+        self.g_0 = 9.80665 #[m/s^2]
+        self.gamma_0 = np.deg2rad(-9.536)  # [rad]
+        self.mu_0 = np.deg2rad(1) #rad
+        self.R_0 = 220000  # [m]
+        self.gamma_prime_0 = 0
+        self.theta_0 = np.deg2rad(1) #[rad]
         self.dCD_dCM = 1
+        self.dCD_dM = 1
         self.dCD_dalpha = 1
         self.dCL_dCM = 1
-        self.L_0 = 1
+        self.C_L0 = 0.16
+        self.L_0 = self.q_bar_0*self.S_ref*self.C_L0
         self.dCL_dAlpha = 1
         self.dCS_dBeta = 1
         self.C_L = 1
         self.dCl_dBeta = 1
         self.dCm_dAlpha = 1
-        self.dCm_dM = 1
+        self.dCm_dM = 0.5
         self.dCn_dBeta = 1
         self.dCL_dM = 1
-        self.alpha_0 = 1
-        self.dCl_dDeltaA = 1
-        self.dCn_dDeltar = 1
-        self.dCn_dDeltaA = 1
-        self.dCm_dDeltaE = 1
+        self.alpha_0 = np.deg2rad(-24.5) #[rad]
+        self.dCl_dDeltaA = 0
+        self.dCn_dDeltar = 0
+        self.dCn_dDeltaA = 0
+        self.dCm_dDeltaE = 0
+        self.p_0 = ((self.g_0 / self.V_0) * np.cos(self.gamma_0) * np.sin(self.mu_0)) * np.sin(self.alpha_0) + (((self.L_0) / (self.m * self.V_0)) * np.tan(self.gamma_0) * np.sin(self.mu_0)) * np.cos(self.alpha_0)
+        self.q_0 = (self.L_0 / (self.m * self.V_0)) - (self.g_0 / self.V_0) * np.cos(self.gamma_0) * np.cos(self.mu_0)
+        self.r_0 = -((self.g_0 / self.V_0) * np.cos(self.gamma_0) * np.sin(self.mu_0)) * np.cos(self.alpha_0) + ((self.L_0 / (self.m * self.V_0)) * np.tan(self.gamma_0) * np.sin(self.mu_0)) * np.sin(self.alpha_0)
         self.A_matrix_entries()
         self.B_matrix_entries()
         self.x_matrix_entries()
         self.u_matrix_entries()
         self.state_space_matrices()
         self.eigen_estimation()
-        self.eigenvalue_plot()
+
 
         #Individual components of State Space Matrix:
     def A_matrix_entries(self):
-        self.a_VV = (-1/(self.m*self.V_0))*(self.M_0*self.dCD_dCM*self.q_bar_0*self.S_ref +2*self.D_0)
+        self.a_VV = (-1/(self.m*self.V_0))*(self.M_0*self.dCD_dM*self.q_bar_0*self.S_ref +2*self.D_0)
         self.a_Vgamma = -self.g_0*np.cos(self.gamma_0)
         self.a_VR = 2*(self.g_0/self.R_0)*np.sin(self.gamma_0)
         self.a_Vp = 0
@@ -64,7 +70,7 @@ class Reentry():
         #Creating array
         self.a_V = np.array([self.a_VV, self.a_Vgamma, self.a_VR, self.a_Vp, self.a_Vq, self.a_Vr, self.a_Valpha, self.a_Vbeta, self.a_Vtheta])
 
-        self.a_gammaV = (1/self.V_0)*(-self.gamma_prime_0 + 2*(self.V_0/self.R_0)*np.cos(self.gamma_0)) + (self.theta_0/(self.m*(self.V_0**2)))*(self.M_0*self.dCL_dCM*self.q_bar_0*self.S_ref + 2*self.L_0)
+        self.a_gammaV = (1/self.V_0)*(-self.gamma_prime_0 + ((2*self.V_0)/self.R_0)*np.cos(self.gamma_0)) + (np.cos(self.theta_0)/(self.m*self.V_0**2))*(self.M_0*self.dCL_dM*self.q_bar_0*self.S_ref + 2*self.L_0)
         self.a_gammagamma = -((self.V_0/self.R_0)-(self.g_0/self.V_0))*np.sin(self.gamma_0)
         self.a_gammaR = (((2*self.g_0)/self.V_0) - (self.V_0/self.R_0))*(np.cos(self.gamma_0)/self.R_0)
         self.a_gammap = 0
@@ -121,6 +127,7 @@ class Reentry():
         self.a_rR = 0
         self.a_rp = (((self.Ixx-self.Iyy)*self.Ixx - self.Ixz**2)/(self.Ixx*self.Izz - self.Ixz*self.Ixz))*self.q_0
         self.a_rq = (((self.Ixx-self.Iyy)*self.Ixx - self.Ixz**2)/(self.Ixx*self.Izz - self.Ixz*self.Ixz))*self.p_0 + (((-self.Ixx + self.Iyy - self.Izz)*self.Ixz)/(self.Ixx*self.Izz - self.Ixz*self.Ixz))*self.r_0
+        print(self.a_rq)
         self.a_rr = (((-self.Ixx + self.Iyy - self.Izz)*self.Ixz)/(self.Ixx*self.Izz - self.Ixz*self.Ixz))*self.q_0
         self.a_ralpha = 0
         self.a_rbeta = (1/self.Izz)*self.dCn_dBeta*self.q_bar_0*self.S_ref*self.b_ref
@@ -129,7 +136,7 @@ class Reentry():
         self.a_r = np.array([self.a_rV, self.a_rgamma, self.a_rR, self.a_rp, self.a_rq, self.a_rr, self.a_ralpha, self.a_rbeta, self.a_rtheta])
 
 
-        self.a_alphaV = -(self.g_0/(self.V_0**2))*np.cos(self.gamma_0)*np.cos(self.theta_0) - (1/(self.m*self.V_0))*(self.M_0*self.dCL_dM + self.C_L)*self.q_bar_0*self.S_ref
+        self.a_alphaV = -(self.g_0/(self.V_0**2))*np.cos(self.gamma_0)*np.cos(self.theta_0) - (1/(self.m*self.V_0**2))*(self.M_0*self.dCL_dM + self.C_L)*self.q_bar_0*self.S_ref
         self.a_alphagamma = -(self.g_0/self.V_0)*np.sin(self.gamma_0)*np.cos(self.theta_0)
         self.a_alphaR = -(2*self.g_0/(self.R_0*self.V_0))*np.cos(self.gamma_0)*np.cos(self.theta_0)
         self.a_alphap = 0
@@ -322,12 +329,14 @@ class Reentry():
 if __name__ == "__main__":
     print("Hello World")
     test = Reentry()
+    #test.eigenvalue_plot()
+
     #test.eigen_estimation()
-    print(test.Period)
+    #print(test.Period)
     #print(test.eigen_value)
     # print(test.A.shape)
     # print(test.B.shape)
-
+    #print(test.a_VV)
     # print(test.x.shape)
     # print(test.u.shape)
     #print(test.Period)
