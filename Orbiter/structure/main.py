@@ -104,6 +104,11 @@ def minimum_thickness(m_AV, sigma_y, r):
     return acc_axial_tension * m_AV / (sigma_y * 2 * np.pi * r)
 
 
+def pressurising_gas(propellant, v):
+    v_oxidiser = (0.9 / propellant[0]) * v / (1 - 0.9 / propellant[0])
+    m_ox = v_oxidiser * rho_oxidiser
+
+
 def final_architecture(material, propellant, margin, m_subsystems, m_AV):
     """
     Function that defines the final architecture of the tanks based on the selected material, subsystem

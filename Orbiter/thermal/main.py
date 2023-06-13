@@ -34,7 +34,7 @@ A_single_l = 0.05 * w_rtg * np.pi
 # Constants
 boltzman = 5.67 * 10 ** (-8)
 
-def solar_intensity(r, planet):
+def solar_intensity(r, planet, planet_list=planets_list):
     """
     Function to calculate the solar radiation on the spacecraft. Power of sun and distance of Uranus
     are taken, respectively, from SMAD and online research.
@@ -147,13 +147,13 @@ def louvres_area(p_diss, A_rec, alpha, d_rtg_uranus, A_rtg, p_rtg_tot, n_rtg, A_
     return n_lv
 
 
-def power_phases(planet_list, r_orbit, A_rec, A_emit, alpha, epsilon, n_rtg, p_rtg_tot, A_single_l, T_operational, A_rtg):
+def power_phases(A_rec, A_emit, n_rtg, planet_list=planets_list, r=r_orbit, alpha=alpha, epsilon=epsilon, p_rtg_tot=p_rtg_tot, A_single_l=A_single_l, T_operational=T_operational, A_rtg=A_rtg):
     """
     Function that determines the rtg distance at Uranus and the number of closed louvres cells for the
     different mission phases. RTG distance is only computed for Uranus because this is the driving
     environment since we will perform mission there.
     :param planet_list: List of all planets characteristics [distance, radius, albedo factor, radiating temperature]
-    :param r_orbit: Orbit radius at Uranus
+    :param r: Orbit radius at Uranus
     :param A_rec: Orbiter receiving area
     :param A_emit: Orbiter emitting area
     :param alpha: Absorptivity
@@ -165,8 +165,9 @@ def power_phases(planet_list, r_orbit, A_rec, A_emit, alpha, epsilon, n_rtg, p_r
     """
     areas = []
     d_rtg = 0
+    print(r)
     for planet in planet_list:
-        r = r_orbit if planet == 'Uranus' else planet_list[planet][4]
+        r = r if planet == 'Uranus' else planet_list[planet][4]
         solar = False if planet == 'Venus' else True
         power_abs = power_absorbed(r, A_rec, alpha, epsilon, planet, planet_list, solar=solar)
         power_em = power_emitted(A_emit, epsilon, T_operational)

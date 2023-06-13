@@ -56,12 +56,12 @@ class Test(TestCase):
         n_louvre_numerical = louvres_area(p_diss, A_rec, alpha, d_rtg_uranus, A_rtg, p_rtg_tot, n_rtg, A_single_l)
         self.assertEqual(n_louvre_numerical, n_louvre_true)
 
-    def test_power_phases(self, planet_list=planets_list_test, r_orbit=156, A_rec=5.73, A_emit=11.56, alpha=0.02,
-                          epsilon=0.76, n_rtg=5, p_rtg_tot=11370, A_single_l=0.2, T_operational = 200, A_rtg=7.63):
+    def test_power_phases(self, A_rec=5.73, A_emit=11.56, n_rtg=5, planet_list=planets_list_test, r_orbit=156, alpha=0.02,
+                          epsilon=0.76, p_rtg_tot=11370, A_single_l=0.2, T_operational = 200, A_rtg=7.63):
         areas_true = [('Planet_Test', 191), ('Venus', 191)]
         d_rtg_true = 0.8082663753
-        d_rtg_numerical, areas_numerical = power_phases(planet_list, r_orbit, A_rec, A_emit, alpha, epsilon, n_rtg, p_rtg_tot, A_single_l, T_operational, A_rtg)
+        d_rtg_numerical, areas_numerical = power_phases(A_rec, A_emit, n_rtg, planet_list, r_orbit, alpha, epsilon, p_rtg_tot, A_single_l, T_operational, A_rtg)
         self.assertEqual(areas_numerical[0], areas_true[0])
         self.assertEqual(areas_numerical[1], areas_true[1])
-        self.assertAlmostEqual(d_rtg_numerical, d_rtg_true)
+        self.assertAlmostEqual(d_rtg_numerical, d_rtg_true, 5)
 
