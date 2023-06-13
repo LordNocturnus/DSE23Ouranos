@@ -86,7 +86,7 @@ def decelerator_sizing(target_time, target_pressure, totalmass, heatshieldmass, 
     total_weight = chute_weight
 
     line_load = np.sqrt(np.sum(np.square(dep_vars[0, 5:8]))) * (totalmass - heatshieldmass)
-    line_safe_strength = 325  # N with safety factor of 12
+    line_safe_strength = 1300 * 4  # N with safety factor of 3
     line_weight_per_meter = 0.013 # kg/m
     line_count = np.ceil(line_load / line_safe_strength)
 
@@ -96,12 +96,11 @@ def decelerator_sizing(target_time, target_pressure, totalmass, heatshieldmass, 
 
     total_weight += line_weight
 
-    print(total_weight)
-
-    return deploy_alt, total_weight
+    return deploy_alt[0] / 1000, total_weight, max(max(np.sqrt(np.sum(np.square(ballistic_dep_vars[:, 5:8]), axis=1))),
+                                                   max(np.sqrt(np.sum(np.square(dep_vars[:, 5:8]), axis=1))))
 
 
 if __name__ == "__main__":
-    decelerator_sizing(4 * 3600, 20*10**5, 500, 250, 1.53, 0.4, 2.0, 4.5, 3.02877105e+07,
-                       -6.40748300e-02, -1.63500310e+00 + 2 * np.pi, 1.93919454e+04, np.deg2rad(-30), -2.35413606e+00,
-                       100, steps=1)
+    print(decelerator_sizing(4 * 3600, 20*10**5, 250 + 317.1944911601971, 317.1944911601971, 1.53, 0.4, 2.0, 4.5,
+                       3.02877105e+07, -6.40748300e-02, -1.63500310e+00 + 2 * np.pi, 1.93919454e+04, np.deg2rad(-30),
+                       -2.35413606e+00, 100, steps=1))
