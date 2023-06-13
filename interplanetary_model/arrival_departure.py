@@ -4,6 +4,7 @@ v_leo = 7800
 
 
 def earth_departure(pericentre, dv, grav_para_earth=3.986e14):
+    v_leo = np.sqrt(grav_para_earth/(pericentre))
     v_inf = np.sqrt((v_leo + dv)**2 - 2*grav_para_earth/pericentre)
     theta_inf = (2 * np.arcsin(1 / (1 + pericentre * v_inf * v_inf / grav_para_earth)) + np.pi) / 2
     e = -1/np.cos(theta_inf)
