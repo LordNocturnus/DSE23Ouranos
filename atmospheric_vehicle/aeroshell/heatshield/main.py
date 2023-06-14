@@ -1,9 +1,9 @@
 from matplotlib import pyplot as plt
-from tudatpy.kernel.numerical_simulation import propagation_setup
+from tudatpy.kernel.numerical_simulation import environment_setup, environment, propagation_setup
 import numpy as np
 import scipy as sp
 
-from atmospheric_model.Entry_model import entry_sim
+import atmospheric_model.Entry_model
 from atmospheric_model.GRAM import GRAM
 
 _dia = 4.5
@@ -51,7 +51,6 @@ def heatshield_sizing(diameter, heat_load, interface_velocity, peak_heat_flux):
 
     PICA = False
     CP = False
-    print(peak_heat_flux)
     if PICA_thickness <= radius2:
         PICA = True
 
@@ -61,16 +60,16 @@ def heatshield_sizing(diameter, heat_load, interface_velocity, peak_heat_flux):
     if CP and PICA:
         if CP_total_weight > PICA_weight:
             print("choose PICA")
-            return PICA_weight
+            return PICA_weight, PICA_thickness
         else:
             print("choose CP")
-        return CP_total_weight
+        return CP_total_weight, CP_thickness + HT_424_thickness + ACC6_thickness
     elif PICA:
         print("choose PICA")
-        return PICA_weight
+        return PICA_weight, PICA_thickness
     elif CP:
         print("choose CP")
-        return CP_total_weight
+        return CP_total_weight, CP_thickness + HT_424_thickness + ACC6_thickness
     else:
         raise ValueError("No heatshield feasible")
 
@@ -151,14 +150,23 @@ def s3(x, d, r1, r2, a1, a2, dia):
     return dia / 2 - r2 + (r2 - d) * np.cos(np.arcsin(x / (r2 - d)))
 
 
-def simulate_entry_heating(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_path_angle, heading_angle,
-                           limit_altitude, acc=1):
-    termination_altitude_settings = propagation_setup.propagator.dependent_variable_termination(
-        dependent_variable_settings=propagation_setup.dependent_variable.altitude("Capsule", "Uranus"),
-        limit_value=limit_altitude,
+def simulate_entry_heating(mass, diameter, alt, lat, lon, speed, flight_path_angle, heading_angle, acc=1):
+
+    drag = atmospheric_model.Entry_model.CapsuleDrag(diameter, 1.125, np.deg2rad(20), lat, lon, acc)
+
+    aero_coefficient_setting = environment_setup.aerodynamic_coefficients.custom_aerodynamic_force_coefficients(
+        force_coefficient_function=drag.drag_coefficient,
+        reference_area=np.pi * (drag.diameter / 2) ** 2,
+        independent_variable_names=[environment.AerodynamicCoefficientsIndependentVariables.mach_number_dependent,
+                                    environment.AerodynamicCoefficientsIndependentVariables.altitude_dependent])
+
+    termination_mach_setting = propagation_setup.propagator.dependent_variable_termination(
+        dependent_variable_settings=propagation_setup.dependent_variable.mach_number("Capsule", "Uranus"),
+        limit_value=2.0,
         use_as_lower_limit=True)
-    dependent_variables_array = entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_path_angle,
-                                          heading_angle, [termination_altitude_settings], acc=1)
+    dependent_variables_array = atmospheric_model.Entry_model.entry_sim(mass, aero_coefficient_setting, alt, lat, lon,
+                                                                        speed, flight_path_angle, heading_angle,
+                                                                        [termination_mach_setting], acc=1)
     gram = GRAM()
     gram.altitudes = dependent_variables_array[:, 1] / 1000
     gram.time = dependent_variables_array[:, 0]
@@ -175,21 +183,28 @@ def simulate_entry_heating(mass, drag_coefficient, diameter, alt, lat, lon, spee
     q_func = sp.interpolate.interp1d(dependent_variables_array[:, 0], q_c + q_r)
     h = sp.integrate.quad(lambda x: q_func(x), dependent_variables_array[0, 0],
                           dependent_variables_array[-1, 0])[0]
-    return h, max(q_c + q_r)
+
+    plt.plot(dependent_variables_array[:, 0], q_c + q_r)
+    plt.show()
+
+    print(h, max(q_c + q_r))
+    drag.gamma = np.asarray(gram.data.SpecificHeatRatio)
+    drag.mach = dependent_variables_array[:, 6]
+    pressure = drag.p_0_stag() * np.asarray(gram.data.Pressure_Pa)
+    return h, max(q_c + q_r), max(pressure), max(dependent_variables_array[:, 5])
 
 
-def itterate_heatshield(plmass, structuremass, drag_coefficient, diameter, alt, lat, lon, speed, flight_path_angle,
+def itterate_heatshield(mass, diameter, alt, lat, lon, speed, flight_path_angle,
                         heading_angle, acc=1, steps=5):
     hmass = 0
     for _ in range(0, steps):
-        h, q = simulate_entry_heating(plmass + structuremass + hmass, drag_coefficient, diameter, alt, lat, lon,
-                                      speed, flight_path_angle, heading_angle, 25000, acc)
-        hmass = heatshield_sizing(diameter, h, speed, q)
-        print(hmass)
+        h, q, p, a = simulate_entry_heating(mass + hmass, diameter, alt, lat, lon, speed, flight_path_angle,
+                                            heading_angle, acc)
+        hmass, t = heatshield_sizing(diameter, h, speed, q)
 
-    return hmass
+    return hmass, p, a, t
 
 
 if __name__ == "__main__":
-    itterate_heatshield(400, 85, 1.53, 4.5, 3.02877105e+07, -6.40748300e-02, -1.63500310e+00 + 2 * np.pi,
-                        1.93919454e+04, np.deg2rad(-45), -2.35413606e+00, 1, 2)
+    print(itterate_heatshield(400, 4.5, 3.03327727e+07, 5.45941114e-01, -2.33346601e-02, 2.65992642e+04,
+                              -5.91036848e-01, -2.96367147e+00, 1, 3))
