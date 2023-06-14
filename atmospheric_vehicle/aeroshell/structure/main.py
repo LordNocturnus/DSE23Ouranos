@@ -7,8 +7,8 @@ import numpy as np
 from Volume import *
 
 # Loads values
-load_peak_para = 100
-load_peak_entry = 300
+load_peak_para = 311
+load_peak_entry = 311
 p_load = 2 * 10 ** 6
 delta_T = 100
 
@@ -17,7 +17,7 @@ m_thermal_para = 330 + 30
 m_glider = 300
 
 # Size Constraints
-h_glider = 1.5
+h_folded_wings = 1.5
 h_parachute = 0.5
 r_thermal = 4.5 / 2
 r_parachute = 0.3
@@ -43,10 +43,10 @@ E_backshell = 130 * 10 ** 9  # https://www.azom.com/article.aspx?ArticleID=6618
 alpha_backshell = 23.6 * 10 ** -6
 
 # Bottom shell with ceramic aerogel file:///C:/Users/mzamb/Downloads/s41586-022-04784-0.pdf
-alpha_bottom = 1.2 * 10**-7
-sigma_y_bottom = 790 * 10**6
-E_bottom = 173 * 10**9
-rho_bottom = 55
+alpha_insulator = 1.2 * 10 ** -7
+sigma_y_insulator = 790 * 10 ** 6
+E_insulator = 173 * 10 ** 9
+rho_insulator = 55
 # -- Alluminum Honeycomb --
 # rho_backshell = 54.4  # https://pdf.sciencedirectassets.com/271493/1-s2.0-S0263823100X00456/1-s2.0-S0263823199000269/main.pdf?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEPf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIEYcpzxEXVmsIPQ7dXYvc%2F7KIwF%2Bvm5xmju2mp16E5B%2FAiEAoLFSr%2FQD8DE61bpasIYYN0CevERM48NxnWNw2HogFd8qsgUIQBAFGgwwNTkwMDM1NDY4NjUiDEg%2FA3swjHWYTtrDtiqPBVPXitudSZ5okfgxfWqURmNRI5QDeaJQIbUUnHBTXqKEUxQYB7TvbGceTSw1UWYH4rmzkgOs8YD56a5EMWyLQcvjck6L42LfuNEnLzlVmrwaY46SEpmtSi5W3D3gYZ7BYA0vKBn%2FfjiqR197rzZYKtLFuT8EifjvL%2FY6bW3rp%2FFkGNgGDryYeUSfosFpGG5LNEbk7tW4QTVWtn3RUkqSZr%2Bsp8oZKvPfc%2BjVoBeWP77d9j6jONRrIbdn%2F6UEeV0pzaNyLGPTwu9B3tVKHOkCdNxR5c5dWgFDmSrJSRNQpR69%2BpQAbVOTMEredyBZyhFLnKQ9pj%2FVjLEu3uL2AeQTW0wVr8GTqdXfjjmF440AqHckWg2NO0GbHAbrCxIXauIIAae3HOvFzGS2gY%2FT%2FwPVIiDn2WGIg4VD6urxcPGjB3jqOGuX%2FLvpb3MIJZ8xR67vAfAHQ3Yo08E7RE2eAkroglZPtbn7Uqnx5IC96d%2BEsvFPJ2hWjWQM0Yy6HQhT8wPMrFpD%2FM93cDzeIwaGbW5AwAG4D9fCbOXzqqdS5T%2BwAi9mE%2F1CfFmtGJWNiDTehe9d9DYw2wt17c8GBG%2FAPB4nsA355RWBbIpHNc%2BBgkS4OszazUfBvUITlybBWdIetY6%2BmeckwcfMl%2FEpiqemb4mY%2BIBfY8ZU0wA%2BPDxGxw3FtA6GXxLvxMca0nkjcHq85d7vB4SAR7XBe41wQWz329ss7AciFEX8ZZ78vTeXUpEtwEOAZxONCYfUB82pEq7lFfQ%2FI%2F5qOweX4cbVfn%2B2WA10rUwA7A74un3pOvquXH%2Fop88mTfUeZ5aqRnv9WjWDCNj53oTEaENu6JRXGQzgyKPvxmOVRh4CZqy96WVf5xGaXoEwyq77owY6sQGhBiWUaPlV51caDzPYCTJrqJ%2Fez6twk6Zg05oosFK7a8VlmXhnARUtOITHZ3xl2d0JZFlcX9waYOey1XoKz08tBQL9ClOv8c1lto7aXpxn6zRX5KYr1RZR%2BeqEASArmRdTRpVWXsI3GOYF0OGTGqDcP3rJSeHN6HChK%2F78d2ZHfmvwCGmCkfluewj%2Ftu5fhIqv1lwBgQmrg7UrpH3J5XXPJ0O77sqtwV1x2ii9mBnXd2s%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20230606T081127Z&X-Amz-SignedHeaders=host&X-Amz-Expires=299&X-Amz-Credential=ASIAQ3PHCVTYQXRRMFP4%2F20230606%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=bf7dc076dbd173ecbcd96ffa72c3ccf458b36f2e87be3cad24c9d2e26d0566e0&hash=381e99d39fab924be7c214f45491d50c10cf7169b2124ee73b7fc356ba479251&host=68042c943591013ac2b2430a89b270f6af2c76d8dfd086a07176afe7c76c2c61&pii=S0263823199000269&tid=spdf-29eaeca5-92ad-4c84-a236-8e8679c5e771&sid=38c3df1f57d6e84e14099c90f14e886d3390gxrqb&type=client&tsoh=d3d3LnNjaWVuY2VkaXJlY3QuY29t&ua=0b0a520b560453035557&rr=7d2f2f459d5c0bb3&cc=nl
 # sigma_y_backshell = 190 * 10**6  # https://pdf.sciencedirectassets.com/271493/1-s2.0-S0263823100X00456/1-s2.0-S0263823199000269/main.pdf?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEPf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIEYcpzxEXVmsIPQ7dXYvc%2F7KIwF%2Bvm5xmju2mp16E5B%2FAiEAoLFSr%2FQD8DE61bpasIYYN0CevERM48NxnWNw2HogFd8qsgUIQBAFGgwwNTkwMDM1NDY4NjUiDEg%2FA3swjHWYTtrDtiqPBVPXitudSZ5okfgxfWqURmNRI5QDeaJQIbUUnHBTXqKEUxQYB7TvbGceTSw1UWYH4rmzkgOs8YD56a5EMWyLQcvjck6L42LfuNEnLzlVmrwaY46SEpmtSi5W3D3gYZ7BYA0vKBn%2FfjiqR197rzZYKtLFuT8EifjvL%2FY6bW3rp%2FFkGNgGDryYeUSfosFpGG5LNEbk7tW4QTVWtn3RUkqSZr%2Bsp8oZKvPfc%2BjVoBeWP77d9j6jONRrIbdn%2F6UEeV0pzaNyLGPTwu9B3tVKHOkCdNxR5c5dWgFDmSrJSRNQpR69%2BpQAbVOTMEredyBZyhFLnKQ9pj%2FVjLEu3uL2AeQTW0wVr8GTqdXfjjmF440AqHckWg2NO0GbHAbrCxIXauIIAae3HOvFzGS2gY%2FT%2FwPVIiDn2WGIg4VD6urxcPGjB3jqOGuX%2FLvpb3MIJZ8xR67vAfAHQ3Yo08E7RE2eAkroglZPtbn7Uqnx5IC96d%2BEsvFPJ2hWjWQM0Yy6HQhT8wPMrFpD%2FM93cDzeIwaGbW5AwAG4D9fCbOXzqqdS5T%2BwAi9mE%2F1CfFmtGJWNiDTehe9d9DYw2wt17c8GBG%2FAPB4nsA355RWBbIpHNc%2BBgkS4OszazUfBvUITlybBWdIetY6%2BmeckwcfMl%2FEpiqemb4mY%2BIBfY8ZU0wA%2BPDxGxw3FtA6GXxLvxMca0nkjcHq85d7vB4SAR7XBe41wQWz329ss7AciFEX8ZZ78vTeXUpEtwEOAZxONCYfUB82pEq7lFfQ%2FI%2F5qOweX4cbVfn%2B2WA10rUwA7A74un3pOvquXH%2Fop88mTfUeZ5aqRnv9WjWDCNj53oTEaENu6JRXGQzgyKPvxmOVRh4CZqy96WVf5xGaXoEwyq77owY6sQGhBiWUaPlV51caDzPYCTJrqJ%2Fez6twk6Zg05oosFK7a8VlmXhnARUtOITHZ3xl2d0JZFlcX9waYOey1XoKz08tBQL9ClOv8c1lto7aXpxn6zRX5KYr1RZR%2BeqEASArmRdTRpVWXsI3GOYF0OGTGqDcP3rJSeHN6HChK%2F78d2ZHfmvwCGmCkfluewj%2Ftu5fhIqv1lwBgQmrg7UrpH3J5XXPJ0O77sqtwV1x2ii9mBnXd2s%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20230606T081127Z&X-Amz-SignedHeaders=host&X-Amz-Expires=299&X-Amz-Credential=ASIAQ3PHCVTYQXRRMFP4%2F20230606%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=bf7dc076dbd173ecbcd96ffa72c3ccf458b36f2e87be3cad24c9d2e26d0566e0&hash=381e99d39fab924be7c214f45491d50c10cf7169b2124ee73b7fc356ba479251&host=68042c943591013ac2b2430a89b270f6af2c76d8dfd086a07176afe7c76c2c61&pii=S0263823199000269&tid=spdf-29eaeca5-92ad-4c84-a236-8e8679c5e771&sid=38c3df1f57d6e84e14099c90f14e886d3390gxrqb&type=client&tsoh=d3d3LnNjaWVuY2VkaXJlY3QuY29t&ua=0b0a520b560453035557&rr=7d2f2f459d5c0bb3&cc=nl
@@ -109,7 +109,7 @@ def buckling(E, l, I, p_load):
     return p_load < np.pi**2 * E * I / (l**2)
 
 
-def backshell_geometry(peak_load, p_load=p_load, r_thermal=r_thermal, h_glider=h_glider):
+def backshell_geometry(peak_load, load_entry, peak_T, p_load=p_load, r_thermal=r_thermal, h_glider=h_folded_wings):
     """
     Function that determines all geometrical properties and mass of the backshell. Multiple things are computed,
     during integration, it should be decided what is the most useful return, if one is actually needed. As of now the
@@ -117,7 +117,7 @@ def backshell_geometry(peak_load, p_load=p_load, r_thermal=r_thermal, h_glider=h
     formed by two truncated cones, a bottom one that has the bottom radius equal to the thermal shield radius and a
     top one that has the top radius equal to the parachute radius (in folded configuration). Taper ratio is selected
     manually to determine the transition from one truncated cone to the other.
-    :param peak_load: Peak load experienced during entry (from decelerator analysis)
+    :param peak_load: Peak parachute load experienced during entry (from decelerator analysis)
     :param p_load: Pressure loads experienced during entry
     :param sigma_y: Yield stress of the chosen material
     :param taper: Taper ratio of the different elements of the backshell
@@ -129,7 +129,7 @@ def backshell_geometry(peak_load, p_load=p_load, r_thermal=r_thermal, h_glider=h
     """
 
     # Calculate the big and small radius of the top truncated cone. Limit case is the parachute radius
-    r_top_small = np.sqrt(max(peak_load / sigma_y_backshell, np.pi * r_parachute**2) / np.pi)
+    r_top_small = np.sqrt(max(peak_load * 1.1 / sigma_y_backshell, np.pi * r_parachute**2) / np.pi)
     r_top_big = r_top_small / (1 - taper_ratio_top)
 
     # Calculate the big and small radius of the bottom truncated cone. Limit case is the radius of the thermal shield
@@ -141,8 +141,8 @@ def backshell_geometry(peak_load, p_load=p_load, r_thermal=r_thermal, h_glider=h
     a_bottom = angle_cone(r_bottom_big, r_bottom_small, h_glider)
 
     # Calculate thickness based on pressure loads. Use personalised formula
-    t_top = t_pressure(p_load, r_top_big, a_top, sigma_y_backshell)
-    t_bottom = t_pressure(p_load, r_bottom_big, a_bottom, sigma_y_backshell)
+    t_top = t_pressure(p_load, r_top_big, a_top, sigma_y_backshell) * 1.3
+    t_bottom = t_pressure(p_load, r_bottom_big, a_bottom, sigma_y_backshell) * 1.3
 
     # Calculate thickness based on pressure loads. Use traditional formula for thin walled cylinders
     # t_top = t_hoop(p_load, r_top_big, sigma_y)
@@ -150,9 +150,11 @@ def backshell_geometry(peak_load, p_load=p_load, r_thermal=r_thermal, h_glider=h
 
     # Check buckling
     I_top = 1/12 * t_top * (h_parachute / np.cos(a_top))**3
-    buck_top = buckling(E_backshell, I_top, h_parachute / np.cos(a_top), p_load)
+    A_top = np.pi * (r_top_big + r_top_small) * h_parachute / np.cos(a_top)
+    buck_top = buckling(E_backshell, I_top, h_parachute / np.cos(a_top), p_load * A_top)
     I_bottom = 1/12 * t_bottom * h_glider / np.cos(a_bottom)
-    buck_bottom = buckling(E_backshell, I_bottom, h_glider / np.cos(a_bottom), p_load)
+    A_bottom = np.pi * (r_bottom_big + r_bottom_small) * h_folded_wings / np.cos(a_bottom)
+    buck_bottom = buckling(E_backshell, I_bottom, h_glider / np.cos(a_bottom), p_load * A_bottom)
 
     if buck_bottom and buck_top:
         # Calculate the volume of the thin walled structure by subtraction
@@ -161,33 +163,59 @@ def backshell_geometry(peak_load, p_load=p_load, r_thermal=r_thermal, h_glider=h
 
         # Calculate backshell mass
         mass_backshell = (volume_top + volume_bottom) * rho_backshell
+        t_bottom_shell = bending_bottom(load_entry, r_thermal * 2, sigma_y_backshell)
+        mass_bottom_shell = volume(t_heatshield, t_bottom_shell, r_thermal * 2) * rho_backshell
     else:
         print(f'Buckling requirements is not satisfied')
-    return mass_backshell
+    return mass_backshell + mass_bottom_shell
 
 
-def bending_bottom(load_entry, l_thermal_shield):
+def bending_bottom(load_entry, l_thermal_shield, sigma_y):
     """
     Method to calculate the thickness necessary to withstand entry loads
     :param load_entry: Entry loads
     :param l_thermal_shield: Size of the thermal shield
-    :return: Required minimum thickness
+    :return: Required minimum thickness to withstand entry loads
     """
-    return np.sqrt(load_entry * l_thermal_shield / (2 * l_thermal_shield * sigma_y_bottom))
+    return np.sqrt(load_entry * l_thermal_shield / (2 * l_thermal_shield * sigma_y))
 
 def thermal_loads(alpha, peak_T, E, sigma_y):
-    print(alpha * (peak_T + 273.15 - 4) * E / 10**6)
-    return sigma_y > alpha * (peak_T + 273.15 - 4) * E
+    """
+    Method to calculate the thermal stress due to change in temperature during entry
+    :param alpha: coefficient of thermal expansion
+    :param peak_T: Peak temperature during entry
+    :param E: Elastic modulus of material considered
+    :param sigma_y: Yield strength of material considered
+    :return: Bool for compliance with temperature change
+    """
+    if sigma_y > alpha * (peak_T + 273.15 - 4) * E:
+        print(f'Thermal check passed')
+    else:
+        print(f'Thermal check not passed')
 
-def mass_bottom_shell(t):
-    v_bottom_shell = volume(t_heatshield, t, r_thermal * 2)
-    return v_bottom_shell * rho_bottom
+def mass_insulator_shell(peak_T):
+    """
+    Method to calculate the mass of the insulator layer for entry
+    :return: Total mass of insulation layer to survive entry
+    """
+    t_bottom = bending_bottom(load_peak_entry * (m_glider + m_thermal_para), r_thermal * 2, sigma_y_insulator)
+    v_bottom_shell = volume(t_heatshield, t_bottom, r_thermal * 2)
+    thermal_loads(alpha_insulator, peak_T, E_insulator, sigma_y_insulator)
+    return v_bottom_shell * rho_insulator
 
-def total_mass(peak_load, p_load, r_thermal, h_glider):
-    t_bottom = bending_bottom(load_peak_entry * (m_glider + m_thermal_para), r_thermal * 2)
-    mass_bottom = mass_bottom_shell(t_bottom)
-    mass_back = backshell_geometry(peak_load, p_load, r_thermal, h_glider)
-    return (mass_back + mass_bottom) * 1.05
+def total_mass(peak_load_para, p_load, load_entry, peak_T, r_thermal, h_glider):
+    """
+    Method to calculate the total mass of the aeroshell structure
+    :param peak_load_para: Peak parachute load during entry
+    :param p_load: Pressure loads during entry
+    :param load_entry: Entry loads on the bottom structure of aeroshell
+    :param r_thermal: Size of thermal shield
+    :param h_glider: height of the folded wings
+    :return:
+    """
+    mass_insulator = mass_insulator_shell(peak_T)
+    mass_back = backshell_geometry(peak_load_para, load_entry, peak_T, p_load, r_thermal, h_glider)
+    return (mass_back + mass_insulator) * 1.5
 
 if __name__ == "__main__":
-    print(total_mass(load_peak_para, p_load, r_thermal, h_glider))
+    print(total_mass(load_peak_para, p_load, load_peak_entry, 250, r_thermal, h_folded_wings))
