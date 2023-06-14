@@ -48,13 +48,13 @@ class Orb:
 
         # Power
         self.t_mission = 25  # Mission Timeline Tool
-        self.P_comms = 60
-        self.P_prop = 46
+        self.P_comms = 120
+        self.P_prop = 40
         self.P_adcs = 37.5
-        self.P_dh = 37.5
+        self.P_dh = 27
         self.P_payload = 38.2
         self.P_thermal = 0
-        self.P_pw = 30
+        self.P_pw = 25
 
         # Comms
         self.f_dl = 32
@@ -125,11 +125,10 @@ class Orb:
         diff = 1000
         while diff > 1 * 10**-3:
             self.mass_prop(self.mass)
-            self.P_req = 500
+            self.P_req = (self.P_comms + self.P_pw + self.P_dh + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop) * 1.2
             self.power()
             self.thermal()
             new_orbiter_mass = self.m_structure + self.m_tanks + self.m_power + self.m_thermal + self.m_payload + self.m_dh + self.m_comms + self.m_adcs
-            self.P_req = (self.P_comms + self.P_pw + self.P_dh + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop) * 1.2
             diff = abs(new_orbiter_mass - self.mass)
             self.mass = new_orbiter_mass
         self.mass *= 1.25  # Nasa Green Book
