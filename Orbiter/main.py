@@ -67,9 +67,9 @@ class Orb:
         # Structure and Prop
         self.mass = 2427  # Orbiter dry mass
         self.mixture_ratio = 1.65
-        self.mass_AV = 500  # Atmospheric vehicle mass (import from AV class)
+        self.mass_AV = 1000  # Atmospheric vehicle mass (import from AV class)
         self.mass_combined = self.mass + self.mass_AV  # Mass of combined systems
-        self.deltaV_transfer = 1000  # Combined systems deltaV
+        self.deltaV_transfer = 2000  # Combined systems deltaV
         self.deltaV_insertion = 1000  # Delta V after splitting up at Uranus
         self.Isp = 321  # Isp of the orbiter thrusters
         self.T = 445  # Orbiter thrust
@@ -82,6 +82,7 @@ class Orb:
         self.cost_str = 0
         self.cost_rtg = 0
         self.cost_thermal = 0
+        self.cost_dh = 0
 
         # Iteration
         if optimisation:
@@ -91,7 +92,7 @@ class Orb:
             # self.burn_transfer = prop.burntimecombined(self.T, self.mass, self.deltaV_transfer, self.total_dry_mass, self.deltaV_insertion, self.Isp)
             self.burn_insertion = prop.burntimeorbiter(self.T, self.mass, self.deltaV_insertion, self.total_dry_mass, self.deltaV_transfer, self.Isp)
             self.f_lat, self.f_ax = strt.natural_frequency(self.l_tanks, self.r_tanks, max(self.t_cy_o, self.t_cy_f), self.material, self.mass, self.mass_AV)
-            self.total_cost = (self.cost_str + self.cost_thermal + self.cost_rtg) / (10**6)
+            self.total_cost = (self.cost_str + self.cost_thermal + self.cost_rtg) * 1.2 / (10**6)  # Nasa Green Book
 
 
     def mass_prop(self, m_dry):
@@ -114,7 +115,7 @@ class Orb:
         self.A_emit = 2 * np.pi * self.r_tanks * self.l_tanks + np.pi * self.r_tanks ** 2
         self.m_louvres = 0.001 * np.pi * self.n_rtg * l_rtg * w_rtg * 2700
         self.d_rtg, self.n_l_closed = thm.power_phases(self.A_rec, self.A_emit, self.n_rtg, T_operational=self.T_operational)
-        self.m_thermal_shield = np.pi * self.r_tanks**2 * 0.1143 * 400
+        self.m_thermal_shield = np.pi * self.r_tanks**2 * 0.1143 * 400 + 20  # Spin and eject device from Beppi colombo (MOSIF)
         self.m_thermal = self.m_louvres + self.m_thermal_shield  # 0.1143 thickness of shield https://science.nasa.gov/technology/technology-highlights/heat-shield-protect-mission-to-sun
                                                                                   # 400 is density of carbon phoam https://www.cfoam.com/wp-content/uploads/Carbon-Foams-amp16111p029-3.pdf
 
@@ -126,13 +127,16 @@ class Orb:
             self.P_req = 500
             self.power()
             self.thermal()
-            new_orbiter_mass = 1.1 * (self.m_structure + self.m_power + self.m_thermal + self.m_payload + self.m_dh + self.m_comms + self.m_adcs)  # 1.1 is 10% margin based on smad page 316
-            self.P_req = self.P_comms + self.P_pw + self.P_dh + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop
+            new_orbiter_mass = self.m_structure + self.m_power + self.m_thermal + self.m_payload + self.m_dh + self.m_comms + self.m_adcs
+            self.P_req = (self.P_comms + self.P_pw + self.P_dh + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop) * 1.2
             diff = abs(new_orbiter_mass - self.mass)
             self.mass = new_orbiter_mass
+        self.mass *= 1.25  # Nasa Green Book
+        self.prop_mass *= 1.25  # Nasa Green Book
         self.mass_combined = self.mass + self.mass_AV
+        self.cost_prop = prop.total_cost(self.m_ox, self.m_fuel)
         self.cost_str = strt.total_cost(self.m_structure)
-        self.cost_thermal = thm.total_cost(self.m_louvres) + ...
+        self.cost_thermal = thm.total_cost(self.m_louvres, self.m_thermal_shield)
 
     def __str__(self):
         return f'Orbiter Dry Mass: {self.mass}\n' \
@@ -153,4 +157,4 @@ class Orb:
 
 if __name__ == "__main__":
     orbiter = Orb()
-    print(str(orbiter))
+    print(orbiter.cost_str)

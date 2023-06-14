@@ -30,8 +30,9 @@ A_single_l = 0.05 * w_rtg * np.pi
 # mass_louvres = 0.001 * np.pi * n_rtg * l_rtg * w_rtg * 2700  # Assumed to be an alluminum plate https://ntrs.nasa.gov/api/citations/20190028943/downloads/20190028943.pdf
 
 # Alluminum properties https://material-properties.org/aluminium-thermal-properties-melting-point-thermal-conductivity-expansion/
-cost_kg = 2.2  # https://markets.businessinsider.com/commodities/aluminum-price
-
+cost_kg_l = 2.2 * 0.92535  # https://markets.businessinsider.com/commodities/aluminum-price
+cost_kg_shield = 14 * 0.92535  # Rogers DK, Plucinski J. Low-cost carbon foams for thermal protection and reinforcement applications
+                               # https://pdf.sciencedirectassets.com/271508/1-s2.0-S0008622309X00059/1-s2.0-S0008622309000591/mainext.pdf?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEKf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIQDxP5dUHkIZpVDWdoLmplrWPGNnWOInPf%2F%2BRfNdalzoNwIgBjgGdocVkdQk30a%2FvmZsPmCCD0xrptYd2QSciD%2BG3fMquwUI7%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARAFGgwwNTkwMDM1NDY4NjUiDOnXkI7dqY7H4rUtXiqPBRlrcIFgnKjUPRnMvYAH47d3nwI2xOqp7YVGonEkT6n2Dh6Z%2ByStkcrgKtFNJ93lmfovgtuoGaIPS3lsOWXyG30IkQySAqQF71T0lfLFxsl2M6414gBrQV5AMdZpbPY4tUZ%2FTuly3d7Zry%2B%2FjegSNGxntTX%2BCszhkpA8ccHccOK77lq3JyNiSxqBNUIEhayZR9Nq%2F1idYa3Q4pAmWSvlOPUGNwWt%2B8uAVbc7FysokvLila6CD1riiMB%2FWOBb7GfQ3i0H%2BkQRJm65opIZVhkcuBGMWXaA62Vnnidy9xJhy5Vcvwy0qn%2F05Vov9FXzY%2BfAXfbznGYE2wT%2FI2M8HXbA6dnwexWgtSyALwNWdY2pYIdFpFPI4LvmXN6T88OO3twBIQCkWUjnka38iigw5oRbpTVP70MDu9GthR7ah%2BSxAtKiqKWy3gRRAnYPNuElWKqS1ZgJj492GFdzkl65j4KezLNDmLG7WmP9jFpJaCPWh9hXgsy65MFTDqTM4mqVjLXcbYHHjFS2ftNhGY4%2BIrMqKiAoBRXew58E6vDIUqwgeqDvezeZy0hJukoZxXqIKQKgHh%2By%2F2NMfhrIxZykNtvFHxSRccFdI5ijiLYFu5XmkfJ70%2FT7G%2B8U3Sm5hXHSJQFpx1abGu1OPzjf0Ubf7bXNKaKNCRd7lBEwUe58LKYXgRT%2FU2Oc9WgH2YuQLIl3UbyrIvZ%2FFtrJIQ133BvCqC5CBrw%2Ba8EwSX5SnNcQ8JLPxNcHS103J3%2BISePizRfIcCv7ovltmp0psDb7zqDRuI6tA67iFRrbK20Xv%2FSTmiwLSMf1EBQOvKCcbn3GPaWU4MY8V7xzBUg5rPp4elRu%2B0adXuLI67or9ecJkXnX4Eypzmgw2fOhpAY6sQH1S0c0oZ1LtPQ%2FK6Eha3mV8hc0KhyPjH97h29Q3ZbKXDjg%2BfZwCLXkC7WLYa8U%2BsccIggXruJfn%2FWI8SWjnnfkV8O7txCowOjPLvENJAP%2Fp4dLCBeaqquriTw8xjTwDL4o6vTBZ3oJEKOJenFT8yNiFgWFcFhv3oPWby4hqX7h%2Fi1PKtCBKbWL9EybOi%2B5lTxE3UIhNN4R3t3pb5c0yzkUnNQ5nJHfo%2FKkG3PSeBZa5uY%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20230613T151007Z&X-Amz-SignedHeaders=host&X-Amz-Expires=300&X-Amz-Credential=ASIAQ3PHCVTYZFBG2VPP%2F20230613%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=0a8dd66e91273ba35e7cea5c66912228ace3c89b0262df90f02bb6a1faee5de6&hash=0a7caaa0557d0cb4cafecdad718772c429de7fe7fe83f676d4fa142050549394&host=68042c943591013ac2b2430a89b270f6af2c76d8dfd086a07176afe7c76c2c61&pii=S0008622309000591&tid=spdf-adc79775-744e-41d2-9e9f-c1e607edc507&sid=c010b063594b854fba0adef864f4dd9f4f48gxrqb&type=client&tsoh=d3d3LnNjaWVuY2VkaXJlY3QuY29t&ua=0b0a520b520055575307&rr=7d6b422e7fa30e14&cc=nl
 # Constants
 boltzman = 5.67 * 10 ** (-8)
 
@@ -178,8 +179,8 @@ def power_phases(A_rec, A_emit, n_rtg, planet_list=planets_list, r=r_orbit, alph
             areas.append((f'{planet}', louvres_area(power_diss, A_rec, alpha, d_rtg, A_rtg, p_rtg_tot, n_rtg, A_single_l)))
     return d_rtg, areas
 
-def total_cost(m_tot):
-    return m_tot * cost_kg
+def total_cost(m_louvres, m_shield):
+    return m_louvres * cost_kg_l + m_shield * cost_kg_shield
 
 
 if __name__ == "__main__":

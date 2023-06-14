@@ -15,7 +15,9 @@ g = 9.81  # gravitational constant in m/s^2
 I_sp = 321  # specific impulse in sec
 T = 445  # thrust in N
 m_flow = 1  # fuel mass flow in kg/s
-
+cost_kg_fuel = 146.54 * 1.1655 * 0.92535 / 0.45359237  # FY22 € converted and cost/kg taken from https://www.dla.mil/Portals/104/Documents/Energy/Standard%20Prices/Aerospace%20Prices/E_2017Oct1AerospaceStandardPrices_170913.pdf?ver=2017-09-13-145335-477
+cost_kg_ox = 151.93 * 1.1655 * 0.92535 / 0.45359237  # FY22 € converted and cost/kg taken from https://www.dla.mil/Portals/104/Documents/Energy/Standard%20Prices/Aerospace%20Prices/E_2017Oct1AerospaceStandardPrices_170913.pdf?ver=2017-09-13-145335-477
+cost_engine = 0
 
 # Calculate required propellant mass:
 def mass_prop(m_orbiter, dV_orbiter, m_combined, dV_combined, Isp):
@@ -39,6 +41,10 @@ def burntimeorbiter(T, m_orbiter, dV_orbiter, m_combined, dV_combined, Isp):
     t_b = dV_orbiter / a
     t_b = t_b / 60 / 60
     return t_b
+
+
+def total_cost(m_ox, m_fuel):
+    return m_fuel * cost_kg_fuel + m_ox * cost_kg_fuel + cost_engine
 
 
 if __name__ == "__main__":

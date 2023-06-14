@@ -16,8 +16,8 @@ f_ax_min = 25  # Falcon Heavy user manual
 d_fairing = 5.2  # https://www.spacex.com/vehicles/falcon-heavy/
 h_fairing = 13.1  # https://www.spacex.com/vehicles/falcon-heavy/
 
-cost_kg = 45  # https://www.navstarsteel.com/titanium-grade-5-sheet.html
-
+cost_kg = 45 * 0.92535  # https://www.navstarsteel.com/titanium-grade-5-sheet.html
+manuf_cost = 132868.896  # Based on cost found in source and previous cst/kg of alluminum (check thermal) https://www.osti.gov/servlets/purl/62626
 
 def axial_loads(axial, sigma_y, r):
     """
@@ -259,7 +259,7 @@ def total_cost(mass_tot):
     :param mass_tot: Total orbiter mass
     :return: Total cost
     """
-    return mass_tot * cost_kg
+    return mass_tot * cost_kg + manuf_cost
 
 
 
