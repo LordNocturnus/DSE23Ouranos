@@ -41,7 +41,7 @@ class Orb:
     def __init__(self, optimisation=True):
         # Payload
         self.T_operational = 283.15  # Operational temperature of payload instruments in K
-        self.m_payload = 26.77
+        self.m_payload = 30.17
         
         # Data Handling
         self.m_dh = 1
