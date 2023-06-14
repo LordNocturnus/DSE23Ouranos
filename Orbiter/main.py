@@ -79,10 +79,12 @@ class Orb:
         self.m_adcs = 30
 
         # COST
-        self.cost_str = 0
-        self.cost_rtg = 0
-        self.cost_thermal = 0
-        self.cost_dh = 0
+        self.cost_dh = 41400000
+        self.cost_ops = ...
+        self.cost_comms = ...
+        self.cost_ADCS = ...
+        self.cost_payload = ...
+
 
         # Iteration
         if optimisation:
