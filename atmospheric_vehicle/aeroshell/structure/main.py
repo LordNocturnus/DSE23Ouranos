@@ -41,12 +41,14 @@ rho_backshell = 49.7  # https://journals.sagepub.com/doi/pdf/10.1177/00219983134
 sigma_y_backshell = 450 * 10 ** 6  # https://journals.sagepub.com/doi/pdf/10.1177/0021998313499949 (Q2 selected because strongest)
 E_backshell = 130 * 10 ** 9  # https://www.azom.com/article.aspx?ArticleID=6618
 alpha_backshell = 23.6 * 10 ** -6
+back_cost_kg = 40  # Based on research https://www.easycomposites.co.uk/3mm-aluminium-honeycomb
 
 # Bottom shell with ceramic aerogel file:///C:/Users/mzamb/Downloads/s41586-022-04784-0.pdf
 alpha_insulator = 1.2 * 10 ** -7
 sigma_y_insulator = 790 * 10 ** 6
 E_insulator = 173 * 10 ** 9
 rho_insulator = 55
+insulator_cost_kg = ...
 # -- Alluminum Honeycomb --
 # rho_backshell = 54.4  # https://pdf.sciencedirectassets.com/271493/1-s2.0-S0263823100X00456/1-s2.0-S0263823199000269/main.pdf?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEPf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIEYcpzxEXVmsIPQ7dXYvc%2F7KIwF%2Bvm5xmju2mp16E5B%2FAiEAoLFSr%2FQD8DE61bpasIYYN0CevERM48NxnWNw2HogFd8qsgUIQBAFGgwwNTkwMDM1NDY4NjUiDEg%2FA3swjHWYTtrDtiqPBVPXitudSZ5okfgxfWqURmNRI5QDeaJQIbUUnHBTXqKEUxQYB7TvbGceTSw1UWYH4rmzkgOs8YD56a5EMWyLQcvjck6L42LfuNEnLzlVmrwaY46SEpmtSi5W3D3gYZ7BYA0vKBn%2FfjiqR197rzZYKtLFuT8EifjvL%2FY6bW3rp%2FFkGNgGDryYeUSfosFpGG5LNEbk7tW4QTVWtn3RUkqSZr%2Bsp8oZKvPfc%2BjVoBeWP77d9j6jONRrIbdn%2F6UEeV0pzaNyLGPTwu9B3tVKHOkCdNxR5c5dWgFDmSrJSRNQpR69%2BpQAbVOTMEredyBZyhFLnKQ9pj%2FVjLEu3uL2AeQTW0wVr8GTqdXfjjmF440AqHckWg2NO0GbHAbrCxIXauIIAae3HOvFzGS2gY%2FT%2FwPVIiDn2WGIg4VD6urxcPGjB3jqOGuX%2FLvpb3MIJZ8xR67vAfAHQ3Yo08E7RE2eAkroglZPtbn7Uqnx5IC96d%2BEsvFPJ2hWjWQM0Yy6HQhT8wPMrFpD%2FM93cDzeIwaGbW5AwAG4D9fCbOXzqqdS5T%2BwAi9mE%2F1CfFmtGJWNiDTehe9d9DYw2wt17c8GBG%2FAPB4nsA355RWBbIpHNc%2BBgkS4OszazUfBvUITlybBWdIetY6%2BmeckwcfMl%2FEpiqemb4mY%2BIBfY8ZU0wA%2BPDxGxw3FtA6GXxLvxMca0nkjcHq85d7vB4SAR7XBe41wQWz329ss7AciFEX8ZZ78vTeXUpEtwEOAZxONCYfUB82pEq7lFfQ%2FI%2F5qOweX4cbVfn%2B2WA10rUwA7A74un3pOvquXH%2Fop88mTfUeZ5aqRnv9WjWDCNj53oTEaENu6JRXGQzgyKPvxmOVRh4CZqy96WVf5xGaXoEwyq77owY6sQGhBiWUaPlV51caDzPYCTJrqJ%2Fez6twk6Zg05oosFK7a8VlmXhnARUtOITHZ3xl2d0JZFlcX9waYOey1XoKz08tBQL9ClOv8c1lto7aXpxn6zRX5KYr1RZR%2BeqEASArmRdTRpVWXsI3GOYF0OGTGqDcP3rJSeHN6HChK%2F78d2ZHfmvwCGmCkfluewj%2Ftu5fhIqv1lwBgQmrg7UrpH3J5XXPJ0O77sqtwV1x2ii9mBnXd2s%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20230606T081127Z&X-Amz-SignedHeaders=host&X-Amz-Expires=299&X-Amz-Credential=ASIAQ3PHCVTYQXRRMFP4%2F20230606%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=bf7dc076dbd173ecbcd96ffa72c3ccf458b36f2e87be3cad24c9d2e26d0566e0&hash=381e99d39fab924be7c214f45491d50c10cf7169b2124ee73b7fc356ba479251&host=68042c943591013ac2b2430a89b270f6af2c76d8dfd086a07176afe7c76c2c61&pii=S0263823199000269&tid=spdf-29eaeca5-92ad-4c84-a236-8e8679c5e771&sid=38c3df1f57d6e84e14099c90f14e886d3390gxrqb&type=client&tsoh=d3d3LnNjaWVuY2VkaXJlY3QuY29t&ua=0b0a520b560453035557&rr=7d2f2f459d5c0bb3&cc=nl
 # sigma_y_backshell = 190 * 10**6  # https://pdf.sciencedirectassets.com/271493/1-s2.0-S0263823100X00456/1-s2.0-S0263823199000269/main.pdf?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEPf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIEYcpzxEXVmsIPQ7dXYvc%2F7KIwF%2Bvm5xmju2mp16E5B%2FAiEAoLFSr%2FQD8DE61bpasIYYN0CevERM48NxnWNw2HogFd8qsgUIQBAFGgwwNTkwMDM1NDY4NjUiDEg%2FA3swjHWYTtrDtiqPBVPXitudSZ5okfgxfWqURmNRI5QDeaJQIbUUnHBTXqKEUxQYB7TvbGceTSw1UWYH4rmzkgOs8YD56a5EMWyLQcvjck6L42LfuNEnLzlVmrwaY46SEpmtSi5W3D3gYZ7BYA0vKBn%2FfjiqR197rzZYKtLFuT8EifjvL%2FY6bW3rp%2FFkGNgGDryYeUSfosFpGG5LNEbk7tW4QTVWtn3RUkqSZr%2Bsp8oZKvPfc%2BjVoBeWP77d9j6jONRrIbdn%2F6UEeV0pzaNyLGPTwu9B3tVKHOkCdNxR5c5dWgFDmSrJSRNQpR69%2BpQAbVOTMEredyBZyhFLnKQ9pj%2FVjLEu3uL2AeQTW0wVr8GTqdXfjjmF440AqHckWg2NO0GbHAbrCxIXauIIAae3HOvFzGS2gY%2FT%2FwPVIiDn2WGIg4VD6urxcPGjB3jqOGuX%2FLvpb3MIJZ8xR67vAfAHQ3Yo08E7RE2eAkroglZPtbn7Uqnx5IC96d%2BEsvFPJ2hWjWQM0Yy6HQhT8wPMrFpD%2FM93cDzeIwaGbW5AwAG4D9fCbOXzqqdS5T%2BwAi9mE%2F1CfFmtGJWNiDTehe9d9DYw2wt17c8GBG%2FAPB4nsA355RWBbIpHNc%2BBgkS4OszazUfBvUITlybBWdIetY6%2BmeckwcfMl%2FEpiqemb4mY%2BIBfY8ZU0wA%2BPDxGxw3FtA6GXxLvxMca0nkjcHq85d7vB4SAR7XBe41wQWz329ss7AciFEX8ZZ78vTeXUpEtwEOAZxONCYfUB82pEq7lFfQ%2FI%2F5qOweX4cbVfn%2B2WA10rUwA7A74un3pOvquXH%2Fop88mTfUeZ5aqRnv9WjWDCNj53oTEaENu6JRXGQzgyKPvxmOVRh4CZqy96WVf5xGaXoEwyq77owY6sQGhBiWUaPlV51caDzPYCTJrqJ%2Fez6twk6Zg05oosFK7a8VlmXhnARUtOITHZ3xl2d0JZFlcX9waYOey1XoKz08tBQL9ClOv8c1lto7aXpxn6zRX5KYr1RZR%2BeqEASArmRdTRpVWXsI3GOYF0OGTGqDcP3rJSeHN6HChK%2F78d2ZHfmvwCGmCkfluewj%2Ftu5fhIqv1lwBgQmrg7UrpH3J5XXPJ0O77sqtwV1x2ii9mBnXd2s%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20230606T081127Z&X-Amz-SignedHeaders=host&X-Amz-Expires=299&X-Amz-Credential=ASIAQ3PHCVTYQXRRMFP4%2F20230606%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=bf7dc076dbd173ecbcd96ffa72c3ccf458b36f2e87be3cad24c9d2e26d0566e0&hash=381e99d39fab924be7c214f45491d50c10cf7169b2124ee73b7fc356ba479251&host=68042c943591013ac2b2430a89b270f6af2c76d8dfd086a07176afe7c76c2c61&pii=S0263823199000269&tid=spdf-29eaeca5-92ad-4c84-a236-8e8679c5e771&sid=38c3df1f57d6e84e14099c90f14e886d3390gxrqb&type=client&tsoh=d3d3LnNjaWVuY2VkaXJlY3QuY29t&ua=0b0a520b560453035557&rr=7d2f2f459d5c0bb3&cc=nl
@@ -139,7 +141,6 @@ def backshell_geometry(peak_load, load_entry, peak_T, p_load=p_load, r_thermal=r
     # Calculate the angle at the base of the truncated cones
     a_top = angle_cone(r_top_big, r_top_small, h_parachute)
     a_bottom = angle_cone(r_bottom_big, r_bottom_small, h_glider)
-    print(a_top, a_bottom)
 
     # Calculate thickness based on pressure loads. Use personalised formula
     t_top = t_pressure(p_load, r_top_big, a_top, sigma_y_backshell) * 1.3
@@ -164,7 +165,7 @@ def backshell_geometry(peak_load, load_entry, peak_T, p_load=p_load, r_thermal=r
 
         # Calculate backshell mass
         mass_backshell = (volume_top + volume_bottom) * rho_backshell
-        t_bottom_shell = bending_bottom(load_entry, r_thermal * 2, sigma_y_backshell)
+        t_bottom_shell = max(bending_bottom(load_entry, r_thermal * 2, sigma_y_backshell), 1 * 10**-3)
         mass_bottom_shell = volume(t_heatshield, t_bottom_shell, r_thermal * 2) * rho_backshell
         return mass_backshell + mass_bottom_shell, t_top, t_bottom, t_bottom_shell
     else:
@@ -207,7 +208,7 @@ def mass_insulator_shell(peak_T):
     return v_bottom_shell * rho_insulator, t_bottom
 
 
-def total_mass(peak_load_para, p_load, load_entry, peak_T, r_thermal, h_glider):
+def total_mass(peak_load_para, p_load, load_entry, peak_T, r_thermal, h_folded_wings):
     """
     Method to calculate the total mass of the aeroshell structure
     :param peak_load_para: Peak parachute load during entry
@@ -219,8 +220,15 @@ def total_mass(peak_load_para, p_load, load_entry, peak_T, r_thermal, h_glider):
              bottom shell thickness
     """
     mass_insulator, t_insulator = mass_insulator_shell(peak_T)
-    mass_back, t_top, t_bottom, t_bottom_shell = backshell_geometry(peak_load_para, load_entry, peak_T, p_load, r_thermal, h_glider)
+    mass_back, t_top, t_bottom, t_bottom_shell = backshell_geometry(peak_load_para, load_entry, peak_T, p_load, r_thermal, h_folded_wings)
     return (mass_back + mass_insulator) * 1.5, t_insulator, t_top, t_bottom, t_bottom_shell
 
+
+def total_cost(m_back, m_insulator):
+    return m_back * back_cost_kg + m_insulator * insulator_cost_kg
+
+
+
+
 if __name__ == "__main__":
-    ...
+    print(total_mass(load_peak_para, p_load, load_peak_entry, 250, r_thermal, h_folded_wings))
