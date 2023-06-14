@@ -143,7 +143,7 @@ class TransferTrajectoryProblem:
 
 
 class interplanetary_trajectory:
-    def __init__(self,transfer_body_order,departure_orbit,target_periapsis,launch_interval):
+    def __init__(self,transfer_body_order:list[str],departure_orbit:tuple[float,float],target_periapsis:float,launch_interval:tuple[float,float]):
 
         # Define the central body
         self.central_body = "Sun"
@@ -208,7 +208,7 @@ class interplanetary_trajectory:
         ###########################################################################
         # Initialize optimization class
 
-    def optimize(self,repeats):
+    def optimize(self,repeats:float):
         optimizer = TransferTrajectoryProblem(self.transfer_trajectory_object,
                                                 self.departure_date_lb,
                                                 self.departure_date_ub,
@@ -330,7 +330,7 @@ class interplanetary_trajectory:
         ax.set_aspect('equal')
         ax.legend(bbox_to_anchor=[1, 1])
         plt.show()
-    def output(self,time_difference):
+    def output(self,time_difference:float):
         spice.load_standard_kernels()
         path = os.path.dirname(__file__)
         spice.load_kernel(path+'/ura111.bsp')
