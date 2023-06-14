@@ -42,6 +42,7 @@ sigma_y_backshell = 450 * 10 ** 6  # https://journals.sagepub.com/doi/pdf/10.117
 E_backshell = 130 * 10 ** 9  # https://www.azom.com/article.aspx?ArticleID=6618
 alpha_backshell = 23.6 * 10 ** -6
 back_cost_kg = 40  # Based on research https://www.easycomposites.co.uk/3mm-aluminium-honeycomb
+cost_manu_all = 2063 * 0.92535
 
 # Bottom shell with ceramic aerogel file:///C:/Users/mzamb/Downloads/s41586-022-04784-0.pdf
 alpha_insulator = 1.2 * 10 ** -7
@@ -221,14 +222,14 @@ def total_mass(peak_load_para, p_load, load_entry, peak_T, r_thermal, h_folded_w
     """
     mass_insulator, t_insulator = mass_insulator_shell(peak_T)
     mass_back, t_top, t_bottom, t_bottom_shell = backshell_geometry(peak_load_para, load_entry, peak_T, p_load, r_thermal, h_folded_wings)
-    return (mass_back + mass_insulator) * 1.5, t_insulator, t_top, t_bottom, t_bottom_shell
+    return mass_back * 1.5, mass_insulator * 1.5, t_insulator, t_top, t_bottom, t_bottom_shell
 
 
-def total_cost(m_back, m_insulator):
-    return m_back * back_cost_kg + m_insulator * insulator_cost_kg
+def total_cost(m_back):
+    return m_back * back_cost_kg + m_back * cost_manu_all
 
 
 
 
 if __name__ == "__main__":
-    print(total_mass(load_peak_para, p_load, load_peak_entry, 250, r_thermal, h_folded_wings))
+    mass_back = total_mass(load_peak_para, p_load, load_peak_entry, 250, r_thermal, h_folded_wings)[0]
