@@ -229,6 +229,9 @@ def calculate_mass_wings(t_t, rho): # calculates mass of wings according to maxi
 
 
 
+
+
+
 'FUSELAGE STRUCTURAL ANALYSIS'
 
 def thickness_torque(f_tail, l_tail, r_fuselage, tau_y):
@@ -291,6 +294,19 @@ def fuselage_architecture(f_tail, l_tail, r_fuselage, l_fuselage, tau_y, delta_p
     buckling_check(t_fuselage, r_fuselage, p_atmos, E_metal, l_fuselage)
     mass_fuselage = 2 * np.pi * r_fuselage * l_fuselage * t_fuselage * density_metal
     return mass_fuselage, t_fuselage
+
+
+'Cost estimation of the structure'
+def calculate_cost(mass, cost_pkg, cost_manuf_pkg): # estimates total cost of structure, including cost of material itself
+    """
+    :param mass: structural mass for which cost has to be calculated
+    :param cost_pkg: cost per kilogram of material
+    :param cost_manuf_pkg: cost per kilogram of material manufacturing
+    :return: total cost of structural component
+    """
+    # and manufacturing (price of manufacturing/kg found in a paper by Marco)
+    return mass * (cost_pkg + cost_manuf_pkg)
+
 
 
 if __name__ == "__main__":
@@ -388,8 +404,17 @@ if __name__ == "__main__":
     r_fuselage = 0.56 / 2  # Fuselage radius
     l_fuselage = 0.49 + l_obc + l_battery + 0.785  # Fuselage length (0.49 comes from payload sizing)
 
+    'Material costs'
+    cost_TiAl_pkg = 43  # [€/kg]
+    cost_Al2024_pkg = 1.85  # [€/kg]
+    cost_manuf_pkg = 1909  # [€/kg]
+
     m_fuselage, t_fuselage = fuselage_architecture(tail_load, l_tail, r_fuselage, l_fuselage, tau_y_metal, p_atmos,
                                                    sigma_y_metal)
     print('Fuselage mass: ', m_fuselage, 'kg')
     print('Fuselage thickness: ', t_fuselage * 10**3, 'mm')
     print('Total structure mass: ', m_fuselage + mass_wings, 'kg')
+
+    cost_tot = calculate_cost(mass_wings, cost_TiAl_pkg, cost_manuf_pkg) + \
+               calculate_cost(m_fuselage, cost_Al2024_pkg, cost_manuf_pkg)
+    print('Total cost of structure: ', cost_tot, '€')
