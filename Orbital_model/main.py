@@ -65,6 +65,7 @@ class orbital_trajectory:
         self.bodies.create_empty_body("Capsule")
         self.bodies.create_empty_body("Orbiter")
         self.uranus_gravitational_parameter = self.bodies.get("Uranus").gravitational_parameter
+        print(self.uranus_gravitational_parameter)
 
     def initial_manoeuvre_capsule(self,desired_periapsis,capsule_retrograde = False):
         if desired_periapsis < 25362000* 0.95:
@@ -77,7 +78,7 @@ class orbital_trajectory:
         def helperfunc(a,periapsis,true_anomaly,radius):
             return radius * (1+(1-periapsis/a)*np.cos(true_anomaly))/(1-(1-periapsis/a)**2) - a
 
-        #print (initial_state_keplerian)
+        print (initial_state_keplerian)
         final_semi_major_axis = opt.fsolve(helperfunc,initial_state_keplerian[0],(desired_periapsis,initial_state_keplerian[5],radius))
         final_eccentricity = 1-desired_periapsis/final_semi_major_axis
 
@@ -190,8 +191,6 @@ class orbital_trajectory:
         count = 0
         atmospheric_encounter = False
         notfound = True
-        plt.plot(altitude_capsule,np.arange(0,len(altitude_capsule)*10,10))
-        plt.show()        
         try:
 
             while notfound:
@@ -445,6 +444,8 @@ if __name__ == "__main__":
 
     initialstate = np.array([-1.08630339e+10 , 1.24446912e+10 , 7.25305409e+10, -6.57253947e+02 ,7.13997881e+02 , 4.13553122e+03])
     #initialstate = np.array([1e10,1e10,1e10,-4000,-1000,-1000])
+    initialstate = np.array([-1.08630339e+10 , 1.24446912e+10 , 7.25305409e+10, 100,-100 , -400])
+    
     desiredorbit = np.array([1,1,1,1,1,1])
 
     time=constants.JULIAN_DAY / 24 * 3
@@ -457,11 +458,13 @@ if __name__ == "__main__":
 
     capsulestate = trajectory.capsule_trajectory(atmosphere_height=5e6,step_size=10)
 
+    print ('capsule state is',capsulestate)
+
     capsulestatecartesian = astro.element_conversion.spherical_to_cartesian(capsulestate)
 
-    initialmanoeuvre = trajectory.initial_manoeuvre_orbiter(35380000)
+    initialmanoeuvre = trajectory.initial_manoeuvre_orbiter(25380000)
 
-    capturedeltav, orbital_period = trajectory.get_capture_delta_v(583000000)
+    capturedeltav, orbital_period = trajectory.get_capture_delta_v(58300000000000000)
 
     print(capturedeltav,orbital_period)
 
