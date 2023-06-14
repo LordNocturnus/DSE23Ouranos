@@ -10,6 +10,9 @@ d_EarthSC = 20.8 # max distance between SC and Earth in AU
 Tnoisedown = 424 # Noise temperature in K
 Tnoiseup = 763 # Noise temperature in K
 TurnAroundRatio = 3599 / 3344
+D = 4000000 #  Total data generated
+CF = 5 #  compression factor
+t_comm = 4 * 365 * 24 * 60 * 60 #  comms time in seconds
 
 # antenna spacecraft:
 d_antenna = 5 # antenna diameter in m
@@ -53,6 +56,13 @@ def halfpowerbeamwidth(D, f):
 def pointingLoss(alpha, pointingAccuracy):
     pointingLoss = -12. * (pointingAccuracy / alpha) ** 2
     return pointingLoss
+
+#  Calculate minimum required data rate based on the total data generated and compress it (CF) and comms time:
+def minDR(D, CF, t):
+    DR = D / CF / t
+    return DR
+
+
 
 
 def downlink(P, L_l, L_r, L_a, DR, Tnoise, k):
