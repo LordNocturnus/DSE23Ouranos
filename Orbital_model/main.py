@@ -70,14 +70,14 @@ class orbital_trajectory:
         if desired_periapsis < 25362000* 0.95:
             raise ValueError("Periapsis location is too low, radisus of Uranus is 25362000 meters")
         radius = np.sqrt(self.initial_state[0]**2+self.initial_state[1]**2+self.initial_state[2]**2)
-        initial_state_keplerian = astro.element_conversion.cartesian_to_keplerian(self.initial_state)
+        initial_state_keplerian = astro.element_conversion.cartesian_to_keplerian(self.initial_state,self.uranus_gravitational_parameter)
         
         periapsis = initial_state_keplerian[0]/(1-initial_state_keplerian[1])
 
         def helperfunc(a,periapsis,true_anomaly,radius):
             return radius * (1+(1-periapsis/a)*np.cos(true_anomaly))/(1-(1-periapsis/a)**2) - a
 
-        
+        #print (initial_state_keplerian)
         final_semi_major_axis = opt.fsolve(helperfunc,initial_state_keplerian[0],(desired_periapsis,initial_state_keplerian[5],radius))
         final_eccentricity = 1-desired_periapsis/final_semi_major_axis
 
@@ -86,7 +86,9 @@ class orbital_trajectory:
         state[0] = final_semi_major_axis
         state[1] = final_eccentricity
 
-        self.initial_state_capsule = astro.element_conversion.keplerian_to_cartesian(state)
+        self.initial_state_capsule = astro.element_conversion.keplerian_to_cartesian(state,self.uranus_gravitational_parameter)
+        if np.inner(self.initial_state_capsule[:3],self.initial_state_capsule[3:]) > 0:
+            self.initial_state_capsule[3:] = -self.initial_state_capsule[3:]
 
         return np.sqrt((self.initial_state[3]-self.initial_state_capsule[3]) ** 2 + (self.initial_state[4]-self.initial_state_capsule[4]) ** 2 + (self.initial_state[5]-self.initial_state_capsule[5]) ** 2 )
     
@@ -114,6 +116,8 @@ class orbital_trajectory:
         state[1] = final_eccentricity
 
         self.initial_state_orbiter = astro.element_conversion.keplerian_to_cartesian(state,self.uranus_gravitational_parameter)
+        if np.inner(self.initial_state_orbiter[:3],self.initial_state_orbiter[3:]) > 0:
+            self.initial_state_orbiter[3:] = -self.initial_state_orbiter[3:]
 
         return np.sqrt((self.initial_state[3]-self.initial_state_orbiter[3]) ** 2 + (self.initial_state[4]-self.initial_state_orbiter[4]) ** 2 + (self.initial_state[5]-self.initial_state_orbiter[5]) ** 2 )
 
@@ -152,6 +156,8 @@ class orbital_trajectory:
 
         time_to_periapsis = astro.element_conversion.delta_mean_anomaly_to_elapsed_time(delta_mean_anomaly,self.uranus_gravitational_parameter,initial_state_capsule_keplerian[0])
 
+        print (time_to_periapsis/constants.JULIAN_DAY)
+
         timenotfound = True
         simulation_end_epoch = time_to_periapsis
 
@@ -184,13 +190,21 @@ class orbital_trajectory:
         count = 0
         atmospheric_encounter = False
         notfound = True
-        while notfound:
-            if altitude_capsule[count] < 0:
-                atmospheric_encounter = count
-                notfound = False
-            count += 1
-            if count > len(altitude_capsule):
-                notfound = False
+        plt.plot(altitude_capsule,np.arange(0,len(altitude_capsule)*10,10))
+        plt.show()        
+        try:
+
+            while notfound:
+                if altitude_capsule[count] < 0:
+                    atmospheric_encounter = count
+                    notfound = False
+                count += 1
+                if count > len(altitude_capsule):
+                    notfound = False
+        except:
+            altitude = np.min(altitude_capsule)
+#            atmospheric_encounter = count -1
+            raise ValueError('the periapsis is too high, it is currently',(altitude-25362000)/1000,'Kilometers above 1 bar. The atmospere starts 5000 kilometers above 1 bar')
 
         if atmospheric_encounter == False:
             raise RuntimeError("The atmosphere was not encountered. Set the periapsis lower.")
@@ -198,6 +212,8 @@ class orbital_trajectory:
             simulation_end_epoch = atmospheric_encounter * step_size
 
         self.atmospheric_encounter = simulation_end_epoch
+
+        print (simulation_end_epoch/constants.JULIAN_DAY)
 
         capsule_position = np.array([states_capsule_array[atmospheric_encounter,1],states_capsule_array[atmospheric_encounter,2],states_capsule_array[atmospheric_encounter,3]])
 
@@ -235,8 +251,8 @@ class orbital_trajectory:
             raise ValueError("the entry duration should be positive.")
         if np.linalg.norm(glider_position[:3]) <= 25062000:
             raise ValueError("The capsule posisiton is too low.")
-        if np.linalg.norm(glider_position[:3]) > 30362000:
-            raise ValueError("The capsule posisiton is too high.")
+#        if np.linalg.norm(glider_position[:3]) > 30362000:
+#            raise ValueError("The capsule posisiton is too high.")
         if abs(glider_position[1]) < 5 or abs(glider_position[2]) < 5:
             raise ValueError("The capsule posisiton is given in the wrong coordinate frame. Cartesian coordinates are expected.")
         if step_size <= 0:
@@ -246,15 +262,20 @@ class orbital_trajectory:
 
         self.start_atmospheric_mission = start_atmospheric_mission
 
-        self.start_atmospheric_mission_index = int(start_atmospheric_mission/10)
+        self.start_atmospheric_mission_index = int(start_atmospheric_mission/step_size)
 
         end_atmsopheric_mission = int(start_atmospheric_mission + atmospheric_mission_time)
 
-        self.end_atmospheric_mission_index = int(end_atmsopheric_mission/10)
+        #print((end_atmsopheric_mission-self.atmospheric_encounter)/step_size)
+
+        self.end_atmospheric_mission_index = int(end_atmsopheric_mission/step_size)
 
         initial_state_orbiter_keplerian = astro.element_conversion.cartesian_to_keplerian(self.initial_state_orbiter,self.uranus_gravitational_parameter)
 
         delta_mean_anomaly = - astro.element_conversion.true_to_mean_anomaly(initial_state_orbiter_keplerian[1],initial_state_orbiter_keplerian[5])
+
+        if delta_mean_anomaly < 0:
+            delta_mean_anomaly = - delta_mean_anomaly
 
         time_to_periapsis = astro.element_conversion.delta_mean_anomaly_to_elapsed_time(delta_mean_anomaly,self.uranus_gravitational_parameter,initial_state_orbiter_keplerian[0])
 
@@ -422,8 +443,8 @@ if __name__ == "__main__":
     print("Hello World")
 
 
-    initialstate = np.array([1e9,1e9,1e9,-380,0,0])
-
+    initialstate = np.array([-1.08630339e+10 , 1.24446912e+10 , 7.25305409e+10, -6.57253947e+02 ,7.13997881e+02 , 4.13553122e+03])
+    #initialstate = np.array([1e10,1e10,1e10,-4000,-1000,-1000])
     desiredorbit = np.array([1,1,1,1,1,1])
 
     time=constants.JULIAN_DAY / 24 * 3
@@ -432,17 +453,17 @@ if __name__ == "__main__":
 
     trajectory = orbital_trajectory(initial_state=initialstate)
 
-    trajectory.capsule_no_manoeuvre()
+    trajectory.initial_manoeuvre_capsule(25380000)
 
     capsulestate = trajectory.capsule_trajectory(atmosphere_height=5e6,step_size=10)
-
-    capture_velocity = trajectory.get_capture_delta_v
 
     capsulestatecartesian = astro.element_conversion.spherical_to_cartesian(capsulestate)
 
     initialmanoeuvre = trajectory.initial_manoeuvre_orbiter(35380000)
 
     capturedeltav, orbital_period = trajectory.get_capture_delta_v(583000000)
+
+    print(capturedeltav,orbital_period)
 
     telemetry_distance, telemetry_distance_max, telemetry_angle, telemetry_angle_max = trajectory.orbiter_initial_trajectory(duration_of_entry=entry_time,glider_position=capsulestatecartesian,step_size=10)
 
