@@ -149,7 +149,7 @@ class interplanetary_trajectory:
         self.central_body = "Sun"
 
         # Define order of bodies (nodes)
-        transfer_body_order = ['Earth', 'Venus', 'Earth', 'Earth', 'Jupiter', 'Uranus']
+        transfer_body_order = transfer_body_order
 
         # Define departure orbit
         self.departure_semi_major_axis = departure_orbit[0]
@@ -173,7 +173,7 @@ class interplanetary_trajectory:
             self.transfer_node_settings,
             transfer_body_order,
             self.central_body)
-        transfer_trajectory.print_parameter_definitions(self.transfer_leg_settings,self.transfer_node_settings)
+        #transfer_trajectory.print_parameter_definitions(self.transfer_leg_settings,self.transfer_node_settings)
 
         # Lower and upper bound on departure date
 #        self.departure_date_lb = 11000 * constants.JULIAN_DAY
@@ -277,13 +277,15 @@ class interplanetary_trajectory:
         # Extract the best individual
         print('\n########### CHAMPION INDIVIDUAL ###########\n')
         print('Total Delta V [m/s]: ', self.pop.champion_f[0])
-        best_decision_variables = self.pop.champion_x/constants.JULIAN_DAY
+        best_decision_variables = self.pop.champion_x/constants.JULIAN_YEAR
+        flight_times = best_decision_variables[1:]
+        flight_time = np.sum(flight_times)
         print('Departure time w.r.t J2000 [days]: ', best_decision_variables[0])
-        print('Earth-Venus time of flight [days]: ', best_decision_variables[1])
-        print('Venus-Earth time of flight [days]: ', best_decision_variables[2])
-        print('Earth-Earth time of flight [days]: ', best_decision_variables[3])
-        print('Earth-Jupiter time of flight [days]: ', best_decision_variables[4])
-        print('Jupiter-Uranus time of flight [days]: ', best_decision_variables[5])
+        print('Earth-Venus time of flight [days]: ', flight_time)
+        #print('Venus-Earth time of flight [days]: ', best_decision_variables[2])
+        #print('Earth-Earth time of flight [days]: ', best_decision_variables[3])
+        #print('Earth-Jupiter time of flight [days]: ', best_decision_variables[4])
+        #print('Jupiter-Uranus time of flight [days]: ', best_decision_variables[5])
 
         # Plot fitness over generations
         fig, ax = plt.subplots(figsize=(8, 4))
@@ -364,6 +366,7 @@ class interplanetary_trajectory:
 if __name__ == "__main__":
     print("Hello, world")
     #planets = ['Earth','Venus','Earth','Earth','Jupiter','Uranus']
+    #planets = ['Earth','Mars','Jupiter','Saturn','Uranus']
     planets = ['Earth','Jupiter','Uranus']
     earthorbit = (6521000,0)
     periapsis = 30000000
