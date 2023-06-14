@@ -224,7 +224,7 @@ class interplanetary_trajectory:
 
         # Define number of generations per evolution
         number_of_generations = 1
-        bestdv = 1e20
+        bestdv = 1e99
         # Fix seed
         for j in range(repeats):
             #print (j)
@@ -321,9 +321,9 @@ class interplanetary_trajectory:
         ax.scatter(fly_by_states[0, 0] / au, fly_by_states[0, 1] / au, color='blue', label='Earth departure')
         ax.scatter(fly_by_states[1, 0] / au, fly_by_states[1, 1] / au, color='green', label='Venus fly-by')
         ax.scatter(fly_by_states[2, 0] / au, fly_by_states[2, 1] / au, color='green')
-        ax.scatter(fly_by_states[3, 0] / au, fly_by_states[3, 1] / au, color='brown', label='Earth fly-by')
-        ax.scatter(fly_by_states[4, 0] / au, fly_by_states[4, 1] / au, color='red', label='Jupiter fly-by')
-        ax.scatter(fly_by_states[5, 0] / au, fly_by_states[5, 1] / au, color='grey', label='Saturn arrival')
+        #ax.scatter(fly_by_states[3, 0] / au, fly_by_states[3, 1] / au, color='brown', label='Earth fly-by')
+        #ax.scatter(fly_by_states[4, 0] / au, fly_by_states[4, 1] / au, color='red', label='Jupiter fly-by')
+        #ax.scatter(fly_by_states[5, 0] / au, fly_by_states[5, 1] / au, color='grey', label='Saturn arrival')
         ax.scatter([0], [0], color='orange', label='Sun')
         ax.set_xlabel('x wrt Sun [AU]')
         ax.set_ylabel('y wrt Sun [AU]')
@@ -363,11 +363,13 @@ class interplanetary_trajectory:
 
 if __name__ == "__main__":
     print("Hello, world")
-    planets = ['Earth','Venus','Earth','Earth','Jupiter','Uranus']
-    earthorbit = (10000000,0)
+    #planets = ['Earth','Venus','Earth','Earth','Jupiter','Uranus']
+    planets = ['Earth','Jupiter','Uranus']
+    earthorbit = (6521000,0)
     periapsis = 30000000
     launching = (30*constants.JULIAN_YEAR,40*constants.JULIAN_YEAR)
     trajectory = interplanetary_trajectory(planets,earthorbit,periapsis,launching)
     trajectory.optimize(25)
     trajectory.plot()
     state = trajectory.output(constants.JULIAN_DAY * 12)
+    print(state)
