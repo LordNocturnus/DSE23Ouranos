@@ -179,6 +179,7 @@ def bending_bottom(load_entry, l_thermal_shield, sigma_y):
     """
     return np.sqrt(load_entry * l_thermal_shield / (2 * l_thermal_shield * sigma_y))
 
+
 def thermal_loads(alpha, peak_T, E, sigma_y):
     """
     Method to calculate the thermal stress due to change in temperature during entry
@@ -193,6 +194,7 @@ def thermal_loads(alpha, peak_T, E, sigma_y):
     else:
         print(f'Thermal check not passed')
 
+
 def mass_insulator_shell(peak_T):
     """
     Method to calculate the mass of the insulator layer for entry
@@ -202,6 +204,7 @@ def mass_insulator_shell(peak_T):
     v_bottom_shell = volume(t_heatshield, t_bottom, r_thermal * 2)
     thermal_loads(alpha_insulator, peak_T, E_insulator, sigma_y_insulator)
     return v_bottom_shell * rho_insulator
+
 
 def total_mass(peak_load_para, p_load, load_entry, peak_T, r_thermal, h_glider):
     """
