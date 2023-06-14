@@ -7,18 +7,19 @@ spec_energy = 710 #https://www.eaglepicher.com/sites/default/files/LCF-514%20022
 margin = 0.2
 days=3
 nom_watt = 0.5
-capacity = 19*2
+capacity = 19*2 # Watt
 
 dh_p_req = 0
 ttc_p_req = 20
 adcs_p_req = 0
 pl_p_req = 96.1
 tm_p_req = 30
+aero_p_req =1
 
 
 def f_tot_p_req(dh_p_req, ttc_p_req,
-                adcs_p_req, pl_p_req, tm_p_req):
-    tot_p_req = dh_p_req + ttc_p_req + adcs_p_req + pl_p_req + tm_p_req
+                adcs_p_req, pl_p_req, tm_p_req, aero_p_req):
+    tot_p_req = dh_p_req + ttc_p_req + adcs_p_req + pl_p_req + tm_p_req + aero_p_req
     return tot_p_req
 
 
@@ -42,7 +43,7 @@ def f_n_bat(tot_p_req, t, dod, n_bat, n_cab, capacity):
     return n_bat
 
 if __name__ == "__main__":
-    tot_p_req = f_tot_p_req(dh_p_req, ttc_p_req, adcs_p_req, pl_p_req, tm_p_req)
+    tot_p_req = f_tot_p_req(dh_p_req, ttc_p_req, adcs_p_req, pl_p_req, tm_p_req, aero_p_req)
     t = f_t(days)
     print("Required energy [kWh]:", tot_p_req * t / dod / n_bat / n_cab/1000)
     n_bat = f_n_bat(tot_p_req, t, dod, n_bat, n_cab, capacity)
