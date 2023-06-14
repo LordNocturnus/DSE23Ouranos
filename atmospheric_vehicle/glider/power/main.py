@@ -15,18 +15,22 @@ adcs_p_req = 0
 pl_p_req = 96.1
 tm_p_req = 30
 
+
 def f_tot_p_req(dh_p_req, ttc_p_req,
-        adcs_p_req, pl_p_req, tm_p_req):
-    tot_p_req = dh_p_req+ttc_p_req+adcs_p_req+pl_p_req+tm_p_req
-    return  tot_p_req
+                adcs_p_req, pl_p_req, tm_p_req):
+    tot_p_req = dh_p_req + ttc_p_req + adcs_p_req + pl_p_req + tm_p_req
+    return tot_p_req
+
 
 def f_t(days):
-    t = days*24
+    t = days * 24
     return t
+
 
 def f_m_bat(tot_p_req, t, dod, n_bat, n_cab, spec_energy):
     m_bat = tot_p_req * t / dod / n_bat / n_cab / spec_energy
     return m_bat
+
 
 def f_v_bat(tot_p_req, t, dod, n_bat, n_cab, vol_energy):
     v_bat = tot_p_req * t / dod / n_bat / n_cab / vol_energy
