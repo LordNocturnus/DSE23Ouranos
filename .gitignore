@@ -166,3 +166,5 @@ traj_data.txt
 atmos_LIST.md
 atmos_OUTPUT.csv
 atmos_data.csv
+*.bsp
+*.tpc

@@ -21,9 +21,6 @@ _path = os.path.dirname(__file__)
 spice.load_standard_kernels()
 spice.load_kernel(_path + '/../GRAM/GRAM_Suite_1_5/SPICE/spk/satellites/ura116xl.bsp')
 
-angle = np.deg2rad(20)
-diameter = 4.5
-
 
 # spice.load_kernel(_path+'/Gravity.tpc')
 
@@ -31,6 +28,7 @@ diameter = 4.5
 def entry_sim(mass, aero_coefficient_settings, alt, lat, lon, speed, flight_path_angle, heading_angle,
               termination_settings, simulation_start_epoch=6000.0, max_simulation_time=1 / 2 * constants.JULIAN_DAY,
               acc=1):
+
     # define bodies in simulation
     bodies_to_create = ["Uranus"]
 
