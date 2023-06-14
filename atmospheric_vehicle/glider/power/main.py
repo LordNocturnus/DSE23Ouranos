@@ -3,7 +3,7 @@ dod = 1
 n_bat = 0.9
 n_cab = 0.9
 vol_energy = 1000e3
-spec_energy = 710 #https://www.greencarcongress.com/2023/04/20230429-li.html
+spec_energy = 710 #https://www.eaglepicher.com/sites/default/files/LCF-514%200222.pdf
 margin = 0.2
 days=3
 nom_watt = 0.5
@@ -36,6 +36,7 @@ def f_v_bat(tot_p_req, t, dod, n_bat, n_cab, vol_energy):
     v_bat = tot_p_req * t / dod / n_bat / n_cab / vol_energy
     return v_bat
 
+
 def f_n_bat(tot_p_req, t, dod, n_bat, n_cab, capacity):
     n_bat = m.ceil(tot_p_req * t / dod / n_bat / n_cab / capacity)
     return n_bat
@@ -46,6 +47,6 @@ if __name__ == "__main__":
     print("Required energy [kWh]:", tot_p_req * t / dod / n_bat / n_cab/1000)
     n_bat = f_n_bat(tot_p_req, t, dod, n_bat, n_cab, capacity)
     print("Battery number [n]:", n_bat)
-    print("Battery volume [m3]:", ((33e-3)/2)**2*m.pi*59e-3*n_bat)
-    print("Battery mass [kg]:", n_bat * 72e-3)
+    print("Battery volume [m3]:", n_bat * capacity / vol_energy)
+    print("Battery mass [kg]:", n_bat * capacity / spec_energy)
 
