@@ -1,7 +1,6 @@
 import numpy as np
 
 
-
 def mmoi(cyl_r, cyl_h, cyl_com, cyl_mass, tank_r, tanks_mass, ox_mass, ox_com, fuel_mass, fuel_com,
          caps_r, caps_h, caps_com, caps_mass, tanks_full=True, caps_attached=True):
     """
@@ -24,7 +23,7 @@ def mmoi(cyl_r, cyl_h, cyl_com, cyl_mass, tank_r, tanks_mass, ox_mass, ox_com, f
     :return:
     """
     tank_mass = tanks_mass/2
-    caps_com = np.array([(cyl_h + caps_h - caps_com[0]), 0, 0]) - caps_com
+    caps_com = np.array([(cyl_h + caps_h), 0, 0]) - caps_com
     if tanks_full and caps_attached:
         com = (cyl_com * cyl_mass + ox_com * (tank_mass + ox_mass) + fuel_com * (tank_mass + fuel_mass) +
                caps_com * caps_mass)/(cyl_mass + 2 * tank_mass + ox_mass + fuel_mass + caps_mass)
@@ -38,61 +37,63 @@ def mmoi(cyl_r, cyl_h, cyl_com, cyl_mass, tank_r, tanks_mass, ox_mass, ox_com, f
         com = (cyl_com * cyl_mass + ox_com * tank_mass + fuel_com * tank_mass) / (cyl_mass + 2 * tank_mass)
     print(f"Centre of mass found to be {com}")
     # cylinder mass moment of inertia
-    cyl_i_xx = cyl_mass*cyl_r**2
-    cyl_i_yy = cyl_mass/12*(6*cyl_r**2+cyl_h**2)
+    cyl_i_xx = cyl_mass * cyl_r ** 2
+    cyl_i_yy = cyl_mass / 12 * (6 * cyl_r ** 2 + cyl_h ** 2)
     cyl_i_zz = cyl_i_yy
-
-    cyl_i_xx = cyl_i_xx + cyl_mass * (com[1] - cyl_com[1]) ** 2 + (com[2]-cyl_com[2]) ** 2
-    cyl_i_yy = cyl_i_yy + cyl_mass * (com[0] - cyl_com[0]) ** 2 + (com[2]-cyl_com[2]) ** 2
-    cyl_i_zz = cyl_i_zz + cyl_mass * (com[0] - cyl_com[0]) ** 2 + (com[1]-cyl_com[1]) ** 2
+    print(f"CoM MMOI cylinder found to be: {cyl_i_xx, cyl_i_yy, cyl_i_zz}")
+    cyl_i_xx += cyl_mass * ((com[1] - cyl_com[1]) ** 2 + (com[2]-cyl_com[2]) ** 2)
+    cyl_i_yy += cyl_mass * ((com[0] - cyl_com[0]) ** 2 + (com[2]-cyl_com[2]) ** 2)
+    cyl_i_zz += cyl_mass * ((com[0] - cyl_com[0]) ** 2 + (com[1]-cyl_com[1]) ** 2)
     cyl_mmoi = np.array([cyl_i_xx, cyl_i_yy, cyl_i_zz])
+    print(f"Cylinder MMOI found to be: {cyl_mmoi}")
 
     if tanks_full:  # Oxidiser tank mass moment of inertia
         ox_tank_i_xx = 2 / 5 * (tank_mass + ox_mass) * tank_r ** 2
         ox_tank_i_yy = ox_tank_i_xx
         ox_tank_i_zz = ox_tank_i_xx
-        ox_tank_i_xx = ox_tank_i_xx + (tank_mass + ox_mass) * (com[1] - ox_com[1]) ** 2 + (com[2] - ox_com[2]) ** 2
-        ox_tank_i_yy = ox_tank_i_yy + (tank_mass + ox_mass) * (com[0] - ox_com[0]) ** 2 + (com[2] - ox_com[2]) ** 2
-        ox_tank_i_zz = ox_tank_i_zz + (tank_mass + ox_mass) * (com[0] - ox_com[0]) ** 2 + (com[1] - ox_com[1]) ** 2
+        ox_tank_i_xx += (tank_mass + ox_mass) * ((com[1] - ox_com[1]) ** 2 + (com[2] - ox_com[2]) ** 2)
+        ox_tank_i_yy += (tank_mass + ox_mass) * ((com[0] - ox_com[0]) ** 2 + (com[2] - ox_com[2]) ** 2)
+        ox_tank_i_zz += (tank_mass + ox_mass) * ((com[0] - ox_com[0]) ** 2 + (com[1] - ox_com[1]) ** 2)
         ox_mmoi = np.array([ox_tank_i_xx, ox_tank_i_yy, ox_tank_i_zz])
 
         # Fuel moment of inertia
         fuel_tank_i_xx = 2 / 5 * (tank_mass + fuel_mass) * tank_r ** 2
         fuel_tank_i_yy = fuel_tank_i_xx
         fuel_tank_i_zz = fuel_tank_i_xx
-        fuel_tank_i_xx = fuel_tank_i_xx + (tank_mass + fuel_mass) * (com[1] - fuel_com[1]) ** 2 + (com[2] - fuel_com[2]) ** 2
-        fuel_tank_i_yy = fuel_tank_i_yy + (tank_mass + fuel_mass) * (com[0] - fuel_com[0]) ** 2 + (com[2] - fuel_com[2]) ** 2
-        fuel_tank_i_zz = fuel_tank_i_zz + (tank_mass + fuel_mass) * (com[0] - fuel_com[0]) ** 2 + (com[1] - fuel_com[1]) ** 2
+        fuel_tank_i_xx += (tank_mass + fuel_mass) * ((com[1] - fuel_com[1]) ** 2 + (com[2] - fuel_com[2]) ** 2)
+        fuel_tank_i_yy += (tank_mass + fuel_mass) * ((com[0] - fuel_com[0]) ** 2 + (com[2] - fuel_com[2]) ** 2)
+        fuel_tank_i_zz += (tank_mass + fuel_mass) * ((com[0] - fuel_com[0]) ** 2 + (com[1] - fuel_com[1]) ** 2)
         fuel_mmoi = np.array([fuel_tank_i_xx, fuel_tank_i_yy, fuel_tank_i_zz])
     else:
         ox_tank_i_xx = 2 / 3 * tank_mass * tank_r ** 2
         ox_tank_i_yy = ox_tank_i_xx
         ox_tank_i_zz = ox_tank_i_xx
-        ox_tank_i_xx = ox_tank_i_xx + tank_mass * (com[1] - ox_com[1]) ** 2 + (com[2] - ox_com[2]) ** 2
-        ox_tank_i_yy = ox_tank_i_yy + tank_mass * (com[0] - ox_com[0]) ** 2 + (com[2] - ox_com[2]) ** 2
-        ox_tank_i_zz = ox_tank_i_zz + tank_mass * (com[0] - ox_com[0]) ** 2 + (com[1] - ox_com[1]) ** 2
+        ox_tank_i_xx += tank_mass * ((com[1] - ox_com[1]) ** 2 + (com[2] - ox_com[2]) ** 2)
+        ox_tank_i_yy += tank_mass * ((com[0] - ox_com[0]) ** 2 + (com[2] - ox_com[2]) ** 2)
+        ox_tank_i_zz += tank_mass * ((com[0] - ox_com[0]) ** 2 + (com[1] - ox_com[1]) ** 2)
         ox_mmoi = np.array([ox_tank_i_xx, ox_tank_i_yy, ox_tank_i_zz])
 
         fuel_tank_i_xx, fuel_tank_i_yy, fuel_tank_i_zz = 2 / 3 * tank_mass * tank_r ** 2
         fuel_tank_i_yy = fuel_tank_i_xx
         fuel_tank_i_zz = fuel_tank_i_xx
-        fuel_tank_i_xx = fuel_tank_i_xx + tank_mass * (com[1] - fuel_com[1]) ** 2 + (com[2] - fuel_com[2]) ** 2
-        fuel_tank_i_yy = fuel_tank_i_yy + tank_mass * (com[0] - fuel_com[0]) ** 2 + (com[2] - fuel_com[2]) ** 2
-        fuel_tank_i_zz = fuel_tank_i_zz + tank_mass * (com[0] - fuel_com[0]) ** 2 + (com[1] - fuel_com[1]) ** 2
+        fuel_tank_i_xx += tank_mass * ((com[1] - fuel_com[1]) ** 2 + (com[2] - fuel_com[2]) ** 2)
+        fuel_tank_i_yy += tank_mass * ((com[0] - fuel_com[0]) ** 2 + (com[2] - fuel_com[2]) ** 2)
+        fuel_tank_i_zz += tank_mass * ((com[0] - fuel_com[0]) ** 2 + (com[1] - fuel_com[1]) ** 2)
         fuel_mmoi = np.array([fuel_tank_i_xx, fuel_tank_i_yy, fuel_tank_i_zz])
-
+    print(f"Oxidiser tank MMOI found to be: {ox_mmoi}\n"
+          f"Fuel tank MMOI found to be: {fuel_mmoi}")
     caps_i_xx = 0.5 * caps_mass*caps_r ** 2
     caps_i_yy = caps_mass * (3/20 * caps_r ** 2 + 1/10 * caps_h**2)
     caps_i_zz = caps_i_yy
 
-    caps_i_xx = caps_i_xx + caps_mass * ((com[1] - caps_com[1]) ** 2 + (com[2] - caps_com[2])) ** 2
-    caps_i_yy = caps_i_yy + caps_mass * ((com[0] - caps_com[0]) ** 2 + (com[2] - caps_com[2])) ** 2
-    caps_i_zz = caps_i_zz + caps_mass * ((com[0] - caps_com[0]) ** 2 + (com[1] - caps_com[1])) ** 2
+    caps_i_xx += caps_mass * ((com[1] - caps_com[1]) ** 2 + (com[2] - caps_com[2]) ** 2)
+    caps_i_yy += caps_mass * ((com[0] - caps_com[0]) ** 2 + (com[2] - caps_com[2]) ** 2)
+    caps_i_zz += caps_mass * ((com[0] - caps_com[0]) ** 2 + (com[1] - caps_com[1]) ** 2)
 
     caps_mmoi = np.array([caps_i_xx, caps_i_yy, caps_i_zz])
-
+    print(f"Capsule MMOI found to be: {caps_mmoi}")
     mmoi = cyl_mmoi + ox_mmoi + fuel_mmoi + caps_mmoi
-    print(mmoi)
+    print(f"Mass moment of inertia found to be: {mmoi}\n")
 
 
 def grav_grad_torque(mmoi, a, grav_param, phase_angle, true_anomaly):
@@ -141,7 +142,7 @@ capsule_mass = 1230
 
 
 if __name__ == "__main__":
-    mmoi(cylinder_mass, cylinder_height, cylinder_com, cylinder_mass, tank_radius, tanks_mass, oxidiser_mass,
+    mmoi(cylinder_radius, cylinder_height, cylinder_com, cylinder_mass, tank_radius, tanks_mass, oxidiser_mass,
          oxidiser_com, fuelmass, fuelcom, capsule_r, capsule_h, capsule_com, capsule_mass)
-    mmoi(cylinder_mass, cylinder_height, cylinder_com, cylinder_mass, tank_radius, tanks_mass, oxidiser_mass,
+    mmoi(cylinder_radius, cylinder_height, cylinder_com, cylinder_mass, tank_radius, tanks_mass, oxidiser_mass,
          oxidiser_com, fuelmass, fuelcom, capsule_r, capsule_h, np.array([0.5, 0, 0]), capsule_mass)
