@@ -68,8 +68,8 @@ class orbital_trajectory:
         print(self.uranus_gravitational_parameter)
 
     def initial_manoeuvre_capsule(self,desired_periapsis,capsule_retrograde = False):
-        if desired_periapsis < 25362000* 0.95:
-            raise ValueError("Periapsis location is too low, radisus of Uranus is 25362000 meters")
+        #if desired_periapsis < 25362000* 0.95:
+        #    raise ValueError("Periapsis location is too low, radisus of Uranus is 25362000 meters")
         radius = np.sqrt(self.initial_state[0]**2+self.initial_state[1]**2+self.initial_state[2]**2)
         initial_state_keplerian = astro.element_conversion.cartesian_to_keplerian(self.initial_state,self.uranus_gravitational_parameter)
         
@@ -444,7 +444,7 @@ if __name__ == "__main__":
 
     initialstate = np.array([-1.08630339e+10 , 1.24446912e+10 , 7.25305409e+10, -6.57253947e+02 ,7.13997881e+02 , 4.13553122e+03])
     #initialstate = np.array([1e10,1e10,1e10,-4000,-1000,-1000])
-    initialstate = np.array([-1.08630339e+10 , 1.24446912e+10 , 7.25305409e+10, 100,-100 , -400])
+    #initialstate = np.array([-1.08630339e+10 , 1.24446912e+10 , 7.25305409e+10, 100,-100 , -400])
     
     desiredorbit = np.array([1,1,1,1,1,1])
 
@@ -454,7 +454,7 @@ if __name__ == "__main__":
 
     trajectory = orbital_trajectory(initial_state=initialstate)
 
-    trajectory.initial_manoeuvre_capsule(25380000)
+    trajectory.initial_manoeuvre_capsule(25380000-2e6)
 
     capsulestate = trajectory.capsule_trajectory(atmosphere_height=5e6,step_size=10)
 
