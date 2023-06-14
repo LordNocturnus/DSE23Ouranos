@@ -1,4 +1,14 @@
-def volume(diameter, radius1, radius2, depth, thickness):
+import numpy as np
+import scipy as sp
+
+
+_dia = 4.5
+_radius1 = 1.125
+_radius2 = 0.126
+_bottom_angle = np.deg2rad(20)
+_top_angle = np.deg2rad(59.73)
+
+def volume(depth, thickness, diameter=_dia, radius1=_radius1, radius2=_radius2):
     l0 = -(radius1 - depth)
     l1 = -(radius1 - depth) * np.cos(_bottom_angle)
     l2 = (diameter / 2 - radius2 + (radius2 - depth) * np.cos(np.pi / 2 - _bottom_angle) -
@@ -58,3 +68,17 @@ def volume(diameter, radius1, radius2, depth, thickness):
     plt.show() #"""
 
     return vpos - vneg
+
+
+def s1(x, d, r1, r2, a1, a2, dia):
+    return (r1 - d) * np.sin(np.arccos(x/(r1 - d)))
+
+
+def s2(x, d, r1, r2, a1, a2, dia):
+    return np.tan(np.pi / 2 - a1) * x + (r1 - d) / np.sin(a1)
+
+
+def s3(x, d, r1, r2, a1, a2, dia):
+    x -= (dia / 2 - r2 + (r2 - d) * np.cos(np.pi / 2 - a1) -
+          (r1 - d) / np.sin(a1)) / np.tan(np.pi / 2 - a1) + (r2 - d) * np.sin(np.pi / 2 - a1)
+    return dia / 2 - r2 + (r2 - d) * np.cos(np.arcsin(x / (r2 - d)))
