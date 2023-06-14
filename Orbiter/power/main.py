@@ -9,8 +9,8 @@ P_0 = 300  # Begin of life power one GPHS-RTG in W
 tau1 = 87.7  # half life fuel in years
 mass_RTG = 55.9  # mass of one GPHS-RTG in kg
 costRTG1 = 145699633.36  # cost of one GPHS-RTG in FY$2022, This is the highest value. It could be around 130 million as well
-missiontime = 20  # in years
-P_req = 500  # total power required for all subsystems in W
+missiontime = 25  # in years
+P_req = 415  # total power required for all subsystems in W
 
 
 # Power at the end of life of one RTG calculations:
