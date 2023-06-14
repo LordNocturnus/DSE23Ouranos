@@ -139,6 +139,7 @@ def backshell_geometry(peak_load, load_entry, peak_T, p_load=p_load, r_thermal=r
     # Calculate the angle at the base of the truncated cones
     a_top = angle_cone(r_top_big, r_top_small, h_parachute)
     a_bottom = angle_cone(r_bottom_big, r_bottom_small, h_glider)
+    print(a_top, a_bottom)
 
     # Calculate thickness based on pressure loads. Use personalised formula
     t_top = t_pressure(p_load, r_top_big, a_top, sigma_y_backshell) * 1.3
@@ -165,9 +166,9 @@ def backshell_geometry(peak_load, load_entry, peak_T, p_load=p_load, r_thermal=r
         mass_backshell = (volume_top + volume_bottom) * rho_backshell
         t_bottom_shell = bending_bottom(load_entry, r_thermal * 2, sigma_y_backshell)
         mass_bottom_shell = volume(t_heatshield, t_bottom_shell, r_thermal * 2) * rho_backshell
+        return mass_backshell + mass_bottom_shell, t_top, t_bottom, t_bottom_shell
     else:
         print(f'Buckling requirements is not satisfied')
-    return mass_backshell + mass_bottom_shell
 
 
 def bending_bottom(load_entry, l_thermal_shield, sigma_y):
@@ -203,7 +204,7 @@ def mass_insulator_shell(peak_T):
     t_bottom = bending_bottom(load_peak_entry * (m_glider + m_thermal_para), r_thermal * 2, sigma_y_insulator)
     v_bottom_shell = volume(t_heatshield, t_bottom, r_thermal * 2)
     thermal_loads(alpha_insulator, peak_T, E_insulator, sigma_y_insulator)
-    return v_bottom_shell * rho_insulator
+    return v_bottom_shell * rho_insulator, t_bottom
 
 
 def total_mass(peak_load_para, p_load, load_entry, peak_T, r_thermal, h_glider):
@@ -214,11 +215,12 @@ def total_mass(peak_load_para, p_load, load_entry, peak_T, r_thermal, h_glider):
     :param load_entry: Entry loads on the bottom structure of aeroshell
     :param r_thermal: Size of thermal shield
     :param h_glider: height of the folded wings
-    :return:
+    :return: Total mass, insulator thickness, backshell top section thickness, backshell bottom section thickness
+             bottom shell thickness
     """
-    mass_insulator = mass_insulator_shell(peak_T)
-    mass_back = backshell_geometry(peak_load_para, load_entry, peak_T, p_load, r_thermal, h_glider)
-    return (mass_back + mass_insulator) * 1.5
+    mass_insulator, t_insulator = mass_insulator_shell(peak_T)
+    mass_back, t_top, t_bottom, t_bottom_shell = backshell_geometry(peak_load_para, load_entry, peak_T, p_load, r_thermal, h_glider)
+    return (mass_back + mass_insulator) * 1.5, t_insulator, t_top, t_bottom, t_bottom_shell
 
 if __name__ == "__main__":
-    print(total_mass(load_peak_para, p_load, load_peak_entry, 250, r_thermal, h_folded_wings))
+    ...
