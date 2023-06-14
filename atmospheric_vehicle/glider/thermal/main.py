@@ -1,5 +1,5 @@
 def thermal_equilibrium(area_structure, area_structure_ss, area_body_payload, area_payload, area_subsystems,
-                        temp_atm_min, temp_atm_max, temp_payload, temp_subsystems, t_skin, epsilon,
+                        temp_atm, temp_payload, temp_subsystems, t_skin, epsilon,
                         alpha_s, k, l_str, l_str_ss, alpha_IR, power, eta=0.85, j_s=3.69, temp_IR=58.2):
     """
     Function that determines the thermal equilibrium temperature of the glider
@@ -25,7 +25,7 @@ def thermal_equilibrium(area_structure, area_structure_ss, area_body_payload, ar
     """
 
     sigma = 5.670374e-8  # Stefan-Boltzmann constant
-    temp_out = temp_atm_min
+    temp_out = temp_atm
     
     # Payload calculations
     q_dot_radiation = epsilon * sigma * area_payload * temp_payload**4  # Heat loss due to black body radiation
@@ -35,11 +35,7 @@ def thermal_equilibrium(area_structure, area_structure_ss, area_body_payload, ar
     q_dot_IR = alpha_IR * sigma * temp_IR**4 * area_payload/2  # infrared radiation heating
     q_ineff_pl = power * (1 - eta)  # Internal heating from inefficiency (payload specific)
 
-
     q_req_pl = (q_dot_radiation + q_dot_cond_str - q_dot_solar - q_dot_IR - q_ineff_pl)
-
-
-
     # Subsystem calculations
     q_dot_radiation_ss = epsilon * sigma * area_subsystems * temp_subsystems ** 4  # Heat loss from black body radiation
     q_dot_cond_str_ss = k * area_structure_ss * (temp_subsystems - temp_out) / l_str_ss  # Heat loss through structure
@@ -87,11 +83,20 @@ if __name__ == "__main__":
     l_structure_ss = 0.19
     alpha_IR = eps
     power = 134.3
-    efficiency = 0.75
+    efficiency = 0.95
+
+    # thermal_equilibrium(area_s, area_s_ss, area_body_payload, area_payload, area_subsystem,
+    #                     temp_low, temp_high, temp_payload, temp_subsys,
+    #                     t_skin_body, 0.129, 0.448, k_mat, l_structure, l_structure_ss, 0.129, power, efficiency)
+    # thermal_equilibrium(area_s, area_s_ss, area_body_payload, area_payload, area_subsystem,
+    #                     temp_low, temp_high, temp_payload, temp_subsys,
+    #                     t_skin_body, 0.472, 0.766, k_mat, l_structure, l_structure_ss, 0.472, power, efficiency)
+
+    #
+    thermal_equilibrium(area_s, area_s_ss, area_body_payload, area_payload, area_subsystem,
+                        temp_low, temp_payload, temp_subsys,
+                        t_skin_body, 0.09, 0.766, k_mat, l_structure, l_structure_ss, 0.09, power, efficiency)
 
     thermal_equilibrium(area_s, area_s_ss, area_body_payload, area_payload, area_subsystem,
-                        temp_low, temp_high, temp_payload, temp_subsys,
-                        t_skin_body, 0.129, 0.448, k_mat, l_structure, l_structure_ss, 0.129, power, efficiency)
-    thermal_equilibrium(area_s, area_s_ss, area_body_payload, area_payload, area_subsystem,
-                        temp_low, temp_high, temp_payload, temp_subsys,
-                        t_skin_body, 0.472, 0.766, k_mat, l_structure, l_structure_ss, 0.472, power, efficiency)
+                        temp_high, temp_payload, temp_subsys,
+                        t_skin_body, 0.09, 0.766, k_mat, l_structure, l_structure_ss, 0.09, power, efficiency)
