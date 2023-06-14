@@ -69,8 +69,8 @@ class Orb:
         self.mixture_ratio = 1.65
         self.mass_AV = 1000  # Atmospheric vehicle mass (import from AV class)
         self.mass_combined = self.mass + self.mass_AV  # Mass of combined systems
-        self.deltaV_transfer = 2000  # Combined systems deltaV
-        self.deltaV_insertion = 1000  # Delta V after splitting up at Uranus
+        self.deltaV_transfer = 1223.9  # Combined systems deltaV
+        self.deltaV_insertion = 493  # Delta V after splitting up at Uranus
         self.Isp = 321  # Isp of the orbiter thrusters
         self.T = 445  # Orbiter thrust
         self.material = [4430, 880 * 10**6, 970 * 10**6, 113.8 * 10**9]
