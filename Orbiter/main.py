@@ -102,8 +102,9 @@ class Orb:
         self.m_ox = self.prop_mass - self.m_fuel
         self.prop_properties = [(3 * 10 ** 6, self.m_ox, 1431), (3 * 10 ** 6, self.m_fuel, 874)]
         self.wet_mass = m_dry + self.prop_mass
-        self.l_tanks, self.r_tanks, self.m_structure, self.t_cy_o, self.t_cy_f, self.t_caps_o, self.t_caps_f = strt.final_architecture(self.material, self.prop_properties,
+        self.l_tanks, self.r_tanks, self.m_structure, self.t_cy_o, self.t_cy_f, self.t_caps_o, self.t_caps_f, self.m_tanks = strt.final_architecture(self.material, self.prop_properties,
                                                                               margin, self.mass_AV)
+        self.m_propulsion = self.m_tanks + self.prop_mass
 
     def power(self):
         self.n_rtg = pwr.numberRTG(self.P_req, self.t_mission)[1]
@@ -127,7 +128,7 @@ class Orb:
             self.P_req = 500
             self.power()
             self.thermal()
-            new_orbiter_mass = self.m_structure + self.m_power + self.m_thermal + self.m_payload + self.m_dh + self.m_comms + self.m_adcs
+            new_orbiter_mass = self.m_structure + self.m_tanks + self.m_power + self.m_thermal + self.m_payload + self.m_dh + self.m_comms + self.m_adcs
             self.P_req = (self.P_comms + self.P_pw + self.P_dh + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop) * 1.2
             diff = abs(new_orbiter_mass - self.mass)
             self.mass = new_orbiter_mass
@@ -151,10 +152,11 @@ class Orb:
                f'ADCS Mass: {self.m_adcs}\n' \
                f'Power Mass: {self.m_power}\n' \
                f'Thermal Mass: {self.m_thermal}\n' \
+               f'Tanks Mass: {self.m_tanks}\n' \
                f'Length Tanks: {self.l_tanks}\n' \
                f'Radius Tanks: {self.r_tanks}\n' \
                f'Total Cost: {self.total_cost}'
 
 if __name__ == "__main__":
     orbiter = Orb()
-    print(orbiter.cost_str)
+    print(str(orbiter))

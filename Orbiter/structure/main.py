@@ -208,7 +208,8 @@ def final_architecture(material, propellant, margin, m_AV):
         t_min_f = minimum_thickness(m_AV, material[1], r_f)
         t_caps_o, t_cylind_o = max(t_caps_o, t_min_o), max(t_cylind_o, t_min_o)
         t_caps_f, t_cylind_f = max(t_caps_f, t_min_f), max(t_cylind_f, t_min_f)
-        m_tot_structure = m_tank_o + m_tank_f + ((r_o + r_f) * max(t_cylind_f, t_cylind_o) * 2 + 4 * r_o**2 * t_cylind_o +
+        m_tanks = m_tank_o + m_tank_f
+        m_tot_structure = ((r_o + r_f) * max(t_cylind_f, t_cylind_o) * 2 + 4 * r_o**2 * t_cylind_o +
                                                  4 * r_f**2 * t_cylind_f + 4 * max(r_f, r_o)**2 * 2 * t_cylind_f)\
                                                  * material[0] # Calculating the total mass of all metal surfaces on the orbiter
         l_tot = l_o + l_f + r_f * 2 + r_o * 2
@@ -224,7 +225,7 @@ def final_architecture(material, propellant, margin, m_AV):
                   f'Axial Shock --> {axial_shock}')
         else:
             print(f'Stress checks passed')
-        return l_tot, max(r_f, r_o), m_tot_structure, t_cylind_o, t_cylind_f, t_caps_o, t_caps_f
+        return l_tot, max(r_f, r_o), m_tot_structure, t_cylind_o, t_cylind_f, t_caps_o, t_caps_f, m_tanks
     else:
         raise TypeError(f'The variable "propellant" should be a list[tuple, ...] and the variable "material" should be a list[float, ...]')
 
