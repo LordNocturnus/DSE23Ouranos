@@ -21,12 +21,14 @@ _path = os.path.dirname(__file__)
 spice.load_standard_kernels()
 spice.load_kernel(_path + '/../GRAM/GRAM_Suite_1_5/SPICE/spk/satellites/ura116xl.bsp')
 
+angle = np.deg2rad(20)
+diameter = 4.5
 
 # spice.load_kernel(_path+'/Gravity.tpc')
 
 
-def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_path_angle, heading_angle,
-              termination_settings, simulation_start_epoch=6000.0, max_simulation_time=1 * constants.JULIAN_DAY,
+def entry_sim(mass, aero_coefficient_settings, alt, lat, lon, speed, flight_path_angle, heading_angle,
+              termination_settings, simulation_start_epoch=6000.0, max_simulation_time=1 / 2 * constants.JULIAN_DAY,
               acc=1):
 
     # define bodies in simulation
@@ -99,9 +101,7 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
     bodies.get("Capsule").mass = mass
 
     # Create aerodynamic coefficient interface settings, and add to vehicle
-    aero_coefficient_settings = environment_setup.aerodynamic_coefficients.constant(
-        reference_area=np.pi * (diameter / 2) ** 2,
-        constant_force_coefficient=[drag_coefficient, 0.0, 0.0])
+
     environment_setup.add_aerodynamic_coefficient_interface(bodies, "Capsule", aero_coefficient_settings)
 
     print("Setup Capsule")
@@ -197,17 +197,104 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
     return result2array(dependent_variables)
 
 
-if __name__ == "__main__":
-    angle = -45
+class CapsuleDrag:
+    def __init__(self, dia, r1, angle, lat, lon, acc=1):
+        gram = GRAM.GRAM()
+        gram.altitudes = np.arange(7000, -290 - acc, -acc)
+        gram.lat = np.full_like(gram.altitudes, np.rad2deg(lat))
+        gram.long = np.full_like(gram.altitudes, np.rad2deg((lon + 2 * np.pi) % (2 * np.pi)))
+        gram.time = np.zeros_like(gram.altitudes)
+        gram.run()
+        self.SpecificHeatRatio = sp.interpolate.interp1d(gram.data.Height_km * 1000, gram.data.SpecificHeatRatio)
+        self.Pressure_Pa = sp.interpolate.interp1d(gram.data.Height_km * 1000, gram.data.Pressure_Pa)
+        self.diameter = dia
+        self.area = np.pi * (dia / 2) ** 2
+        self.r1 = r1
+        self.angle = angle
 
-    termination_altitude_settings = propagation_setup.propagator.dependent_variable_termination(
+    def drag_coefficient(self, var): # Mach, specific heat ratio, freestream pressure
+        self.mach = var[0]
+        print(var[1])
+        self.gamma = self.SpecificHeatRatio(var[1])
+        self.p_inf = self.Pressure_Pa(var[1])
+        drag = sp.integrate.quad(lambda y: self.p_bar(y) * 2 * np.pi * y, 0.0, self.diameter / 2)[0]
+        return [drag / (1 / 2 * self.gamma * self.mach ** 2 * self.area) + 1 / (1 / 2 * self.gamma * self.mach ** 2),
+                0.0, 0.0]
+
+    def beta(self, y):
+        if y <= np.sin(self.angle) * self.r1:
+            return np.sin(y / self.r1)
+        else:
+            return self.angle
+
+    def p_star_bar(self): # Mach, specific heat ratio, freestream pressure
+        return (2 / (self.gamma + 1)) ** (self.gamma / (self.gamma - 1))
+
+    def p_0_stag(self): # Mach, specific heat ratio, freestream pressure
+        upper = ((self.gamma + 1) / 2 * self.mach**2) ** (self.gamma / (self.gamma - 1))
+        lower = (2*self.gamma / (self.gamma + 1) * self.mach**2 - (self.gamma - 1) /
+                 (self.gamma + 1)) ** (1 / (self.gamma - 1))
+        return upper / lower
+
+    def p_inf_bar(self):
+        return 1 / (1 + self.p_0_stag())
+
+    def s(self, y):
+        if y <= np.sin(self.angle) * self.r1:
+            return np.arcsin(y / self.r1) * self.r1
+        else:
+            return self.angle * self.r1 + (y - self.r1 * np.sin(self.angle) / np.cos(self.angle))
+
+    def s_star(self):
+        return self.angle * self.r1 + (self.diameter / 2 - self.r1 * np.sin(self.angle) / np.cos(self.angle))
+
+    def p_fd_bar(self, y):
+        return 1 - np.exp(-self.Lambda(y)) * (1 - self.p_star_bar()) + 1 / 16 * ((self.s(y) / self.s_star()) ** 2 -
+                                                                                 np.exp(-self.Lambda(y)))
+
+    def Lambda(self, y):
+        return 5 * np.sqrt(np.log(self.s_star() / self.s(y)))
+
+    def R_N(self, y):
+        if y <= np.sin(self.angle) * self.r1:
+            return self.r1
+        else:
+            return y / np.sin(self.angle)
+
+    def R_max(self):
+        return self.diameter / (2 * np.sin(self.angle))
+
+    def p_bar(self, y):
+        s_ratio = self.s(y) / self.s_star()
+        p1 = self.p_inf_bar()
+        p2 = (1 - self.p_inf_bar()) * np.cos(self.beta(y)) ** 2
+        p3 = (1 - self.p_fd_bar(y)) * ((np.cos(self.beta(y)) ** 2 - self.p_star_bar()) / (1 - self.p_star_bar()))
+        p4 = (1 - self.R_N(y) / self.R_max()) * (np.sin(self.beta(y)) ** 2 * (1 - s_ratio) + 1/2 * s_ratio * (
+                self.p_fd_bar(y) - 1 + s_ratio * np.sin(self.beta(y)) ** 2 + p3))
+        return (p1 + p2 - p3 + p4) * self.p_0_stag()
+
+if __name__ == "__main__":
+    drag = CapsuleDrag(4.5, 1.125, np.deg2rad(20), 5.45941114e-01, -2.33346601e-02)
+    
+    aero_coefficient_setting = environment_setup.aerodynamic_coefficients.custom_aerodynamic_force_coefficients(
+        force_coefficient_function=drag.drag_coefficient,
+        reference_area=np.pi * (drag.diameter / 2) ** 2,
+        independent_variable_names=[environment.AerodynamicCoefficientsIndependentVariables.mach_number_dependent,
+                                    environment.AerodynamicCoefficientsIndependentVariables.altitude_dependent])
+
+    termination_altitude_setting = propagation_setup.propagator.dependent_variable_termination(
         dependent_variable_settings=propagation_setup.dependent_variable.altitude("Capsule", "Uranus"),
         limit_value=-150000,
         use_as_lower_limit=True)
 
-    dependent_variables_array = entry_sim(500, 1.53, 4.5, 3.02877105e+07, -6.40748300e-02, -1.63500310e+00 + 2 * np.pi,
-                                          1.93919454e+04, np.deg2rad(angle), -2.35413606e+00,
-                                          [termination_altitude_settings])
+    termination_mach_setting = propagation_setup.propagator.dependent_variable_termination(
+        dependent_variable_settings=propagation_setup.dependent_variable.mach_number("Capsule", "Uranus"),
+        limit_value=2.0,
+        use_as_lower_limit=True)
+
+    dependent_variables_array = entry_sim(500, aero_coefficient_setting, 3.03327727e+07, 5.45941114e-01,
+                                          -2.33346601e-02, 2.65992642e+04, -5.91036848e-01, -2.96367147e+00,
+                                          [termination_altitude_setting, termination_mach_setting])
 
     plt.plot(dependent_variables_array[:, 0], dependent_variables_array[:, 1])
     plt.show()
@@ -225,4 +312,4 @@ if __name__ == "__main__":
     plt.legend()
     plt.show()
 
-    print("finished")
+    print("finished")#"""

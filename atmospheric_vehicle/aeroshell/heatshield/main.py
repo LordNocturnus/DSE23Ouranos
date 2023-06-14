@@ -167,13 +167,15 @@ def simulate_entry_heating(mass, drag_coefficient, diameter, alt, lat, lon, spee
     gram.run()
 
     k = 1 / (np.asarray(gram.data.H2mass_pct) / 0.0395 + np.asarray(gram.data.Hemass_pct) / 0.0797)
-    q = k * dependent_variables_array[:, 4] ** 3 * np.sqrt(np.asarray(gram.data.Density_kgm3) /
-                                                           (np.pi * (diameter/2) ** 2)) * (1 + 436 / 120)
+    q_c = k * dependent_variables_array[:, 4] ** 3 * np.sqrt(np.asarray(gram.data.Density_kgm3) /
+                                                             (np.pi * (diameter/2) ** 2))
+    q_r = 9.7632379 ** (-40) * diameter ** (-0.17905) * np.asarray(gram.data.Density_kgm3) ** 1.763827469 * \
+          dependent_variables_array[:, 4] ** 10.993852
 
-    q_func = sp.interpolate.interp1d(dependent_variables_array[:, 0], q)
+    q_func = sp.interpolate.interp1d(dependent_variables_array[:, 0], q_c + q_r)
     h = sp.integrate.quad(lambda x: q_func(x), dependent_variables_array[0, 0],
                           dependent_variables_array[-1, 0])[0]
-    return h, max(q)
+    return h, max(q_c + q_r)
 
 
 def itterate_heatshield(plmass, structuremass, drag_coefficient, diameter, alt, lat, lon, speed, flight_path_angle,
@@ -189,5 +191,5 @@ def itterate_heatshield(plmass, structuremass, drag_coefficient, diameter, alt, 
 
 
 if __name__ == "__main__":
-    itterate_heatshield(125, 105, 1.53, 4.5, 3.02877105e+07, -6.40748300e-02, -1.63500310e+00 + 2 * np.pi,
+    itterate_heatshield(400, 85, 1.53, 4.5, 3.02877105e+07, -6.40748300e-02, -1.63500310e+00 + 2 * np.pi,
                         1.93919454e+04, np.deg2rad(-45), -2.35413606e+00, 1, 2)
