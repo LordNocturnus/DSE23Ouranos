@@ -149,9 +149,9 @@ def backshell_geometry(peak_load, p_load=p_load, r_thermal=r_thermal, h_glider=h
 
     # Check buckling
     I_top = 1/12 * t_top * (h_parachute / np.cos(a_top))**3
-    buck_top = buckling(E, I_top, h_parachute / np.cos(a_top), p_load)
+    buck_top = buckling(E_backshell, I_top, h_parachute / np.cos(a_top), p_load)
     I_bottom = 1/12 * t_bottom * h_glider / np.cos(a_bottom)
-    buck_bottom = buckling(E, I_bottom, h_glider / np.cos(a_bottom), p_load)
+    buck_bottom = buckling(E_backshell, I_bottom, h_glider / np.cos(a_bottom), p_load)
 
     if buck_bottom and buck_top:
         # Calculate the volume of the thin walled structure by subtraction
@@ -169,6 +169,7 @@ def bending_bottom(load_entry, l_thermal_shield):
     return np.sqrt(load_entry * l_thermal_shield / (2 * l_thermal_shield * sigma_y_backshell))
 
 def thermal_loads(alpha, peak_T, E, sigma_y):
+    print(alpha * (peak_T + 273.15 - 4) * E / 10**6)
     return sigma_y > alpha * (peak_T + 273.15 - 4) * E
 
 def mass_bottom_shell(t):
