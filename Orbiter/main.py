@@ -159,4 +159,4 @@ class Orb:
 
 if __name__ == "__main__":
     orbiter = Orb()
-    print(str(orbiter))
+    print(orbiter.cost_str)
