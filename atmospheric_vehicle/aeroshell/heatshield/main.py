@@ -27,7 +27,7 @@ def heatshield_sizing(diameter, heat_load, interface_velocity, peak_heat_flux):
     if 3.27 / 100 >= PICA_thickness:
         print("PICA thin")
         PICA_thickness = 3.27 / 100
-    PICA_volume = volume(diameter, radius1, radius2, 0.0, PICA_thickness)
+    PICA_volume = volume(diameter, radius1, max(radius2, PICA_thickness * 1.01), 0.0, PICA_thickness)
     PICA_weight = PICA_volume * PICA_density
 
     CP_thickness = 1.1959 * (heat_load / (interface_velocity ** 2)) ** 0.2102 / 100
@@ -41,7 +41,8 @@ def heatshield_sizing(diameter, heat_load, interface_velocity, peak_heat_flux):
         print("CP thin")
         CP_thickness = 2.266 / 100
 
-    CP_volume = volume(diameter, radius1, radius2, 0.0, CP_thickness)
+    CP_volume = volume(diameter, radius1, max(radius2, (CP_thickness + HT_424_thickness + ACC6_thickness) * 1.01),
+                       0.0, CP_thickness)
     HT_424_volume = volume(diameter, radius1, radius2, CP_thickness, HT_424_thickness)
     ACC6_volume = volume(diameter, radius1, radius2, CP_thickness + HT_424_thickness, ACC6_thickness)
     CP_weight = CP_volume * CP_density
@@ -49,8 +50,8 @@ def heatshield_sizing(diameter, heat_load, interface_velocity, peak_heat_flux):
     ACC6_weight = ACC6_volume * ACC6_density
     CP_total_weight = CP_weight + HT_424_weight + ACC6_weight
 
-    PICA = False
-    CP = False
+    PICA = True
+    CP = True
     if PICA_thickness <= radius2:
         PICA = True
 
@@ -175,8 +176,8 @@ def simulate_entry_heating(mass, diameter, alt, lat, lon, speed, flight_path_ang
     gram.run()
 
     k = 1 / (np.asarray(gram.data.H2mass_pct) / 0.0395 + np.asarray(gram.data.Hemass_pct) / 0.0797)
-    q_c = k * dependent_variables_array[:, 4] ** 3 * np.sqrt(np.asarray(gram.data.Density_kgm3) /
-                                                             (np.pi * (diameter/2) ** 2))
+    q_c = k * dependent_variables_array[:, 4] ** 3 * (np.asarray(gram.data.Density_kgm3) /
+                                                      (np.pi * (diameter/2) ** 2)) ** 0.2
     q_r = 9.7632379 ** (-40) * diameter ** (-0.17905) * np.asarray(gram.data.Density_kgm3) ** 1.763827469 * \
           dependent_variables_array[:, 4] ** 10.993852
 
@@ -184,8 +185,6 @@ def simulate_entry_heating(mass, diameter, alt, lat, lon, speed, flight_path_ang
     h = sp.integrate.quad(lambda x: q_func(x), dependent_variables_array[0, 0],
                           dependent_variables_array[-1, 0])[0]
 
-
-    print(h, max(q_c + q_r))
     drag.gamma = np.asarray(gram.data.SpecificHeatRatio)
     drag.mach = dependent_variables_array[:, 6]
     pressure = drag.p_0_stag() * np.asarray(gram.data.Pressure_Pa)
@@ -204,5 +203,6 @@ def itterate_heatshield(mass, diameter, alt, lat, lon, speed, flight_path_angle,
 
 
 if __name__ == "__main__":
-    print(itterate_heatshield(400, 4.5, 3.03327727e+07, 5.45941114e-01, -2.33346601e-02, 2.65992642e+04,
-                              -5.91036848e-01, -2.96367147e+00, 1, 3))
+
+    print(itterate_heatshield(400, 3, 3.03327727e+07, 5.45941114e-01, -2.33346601e-02, 2.65992642e+04,
+                              -5.91036848e-01, -2.96367147e+00, 30, 1))

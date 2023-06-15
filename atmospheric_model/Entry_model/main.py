@@ -198,7 +198,7 @@ class CapsuleDrag:
         self.mach = var[0]
         self.gamma = self.SpecificHeatRatio(var[1])
         self.p_inf = self.Pressure_Pa(var[1])
-        drag = sp.integrate.quad(lambda y: self.p_bar(y) * 2 * np.pi * y, 0.0, self.diameter / 2)[0]
+        drag = sp.integrate.quad(lambda y: self.p_bar(y) * 2 * np.pi * y * np.cos(self.beta(y)), 0.0, self.diameter / 2)[0]
         return [drag / (1 / 2 * self.gamma * self.mach ** 2 * self.area) + 1 / (1 / 2 * self.gamma * self.mach ** 2),
                 0.0, 0.0]
 
