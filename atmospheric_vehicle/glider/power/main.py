@@ -10,7 +10,7 @@ nom_watt = 0.5
 capacity = 19*2 # Watt
 
 dh_p_req = 0
-ttc_p_req = 20
+ttc_p_req = 85.6
 adcs_p_req = 0
 pl_p_req = 96.1
 tm_p_req = 30
