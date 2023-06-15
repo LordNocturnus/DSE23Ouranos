@@ -47,7 +47,8 @@ class Orb:
         self.m_dh = 1
 
         # Power
-        self.t_mission = 25  # Mission Timeline Tool
+        self.t_mission = 23.6  # Mission Timeline Tool
+        self.t_payload = 150  # Payload lifetime in months
         self.P_comms = 120
         self.P_prop = 40
         self.P_adcs = 37.5
@@ -69,8 +70,8 @@ class Orb:
         self.mixture_ratio = 1.65
         self.mass_AV = 1000  # Atmospheric vehicle mass (import from AV class)
         self.mass_combined = self.mass + self.mass_AV  # Mass of combined systems
-        self.deltaV_transfer = 1223.9  # Combined systems deltaV
-        self.deltaV_insertion = 493  # Delta V after splitting up at Uranus
+        self.deltaV_transfer = 170 # Combined systems deltaV
+        self.deltaV_insertion = 1300 + 100  # Delta V after splitting up at Uranus, Moon discovery and ADCS
         self.Isp = 321  # Isp of the orbiter thrusters
         self.T = 445  # Orbiter thrust
         self.material = [4430, 880 * 10**6, 970 * 10**6, 113.8 * 10**9]
@@ -78,12 +79,16 @@ class Orb:
         # ADCS
         self.m_adcs = 30
 
-        # COST
-        self.cost_dh = 41400000
-        self.cost_ops = ...
-        self.cost_comms = ...
+        # COST  page 297 SMAD
+        self.launch_cost = 150000000
+        self.cost_dh = 41400000  # Arnaud
+        self.cost_comms = comms.total_cost(self.m_comms)
         self.cost_ADCS = ...
-        self.cost_payload = ...
+        self.cost_payload = (328 * self.m_payload**0.426 * self.P_payload**0.414 * self.t_payload**0.375 * 1000) * 1.34 * 0.951 * 1.39
+            #1000000 + 31000000  # Magnetometer (https://gi.copernicus.org/preprints/gi-2017-53/gi-2017-53-AC1-supplement.pdf,
+                                                # Camera (https://www.bhphotovideo.com/explora/photography/features/cameras-on-37-interplanetary-spacecraft)
+        self.cost_ground_station = 2.01 * self.cost_dh  # SMAD
+        self.cost_ops = 5980638 * self.t_mission + self.cost_ground_station  # SMAD
 
 
         # Iteration
@@ -94,7 +99,10 @@ class Orb:
             # self.burn_transfer = prop.burntimecombined(self.T, self.mass, self.deltaV_transfer, self.total_dry_mass, self.deltaV_insertion, self.Isp)
             self.burn_insertion = prop.burntimeorbiter(self.T, self.mass, self.deltaV_insertion, self.total_dry_mass, self.deltaV_transfer, self.Isp)
             self.f_lat, self.f_ax = strt.natural_frequency(self.l_tanks, self.r_tanks, max(self.t_cy_o, self.t_cy_f), self.material, self.mass, self.mass_AV)
-            self.total_cost = (self.cost_str + self.cost_thermal + self.cost_rtg) * 1.2 / (10**6)  # Nasa Green Book
+            self.cost_orbiter = self.cost_str + self.cost_thermal + self.cost_rtg + self.cost_comms + self.cost_prop + \
+                                self.cost_dh + self.cost_payload + self.cost_test_assembly
+            self.total_cost = (self.cost_orbiter + self.cost_test_assembly + self.cost_ops + self.launch_cost)\
+                               * 1.2 / (10**6)  # Nasa Green Book
 
 
     def mass_prop(self, m_dry):
@@ -137,27 +145,46 @@ class Orb:
         self.prop_mass *= 1.25  # Nasa Green Book
         self.mass_combined = self.mass + self.mass_AV
         self.cost_prop = prop.total_cost(self.m_ox, self.m_fuel)
-        self.cost_str = strt.total_cost(self.m_structure)
+        self.cost_str = strt.total_cost(self.m_structure + self.m_tanks)
         self.cost_thermal = thm.total_cost(self.m_louvres, self.m_thermal_shield)
+        self.cost_test_assembly = 10.4 * 1000 * 1.7 * 0.951 * self.mass
 
     def __str__(self):
-        return f'Orbiter Dry Mass: {self.mass}\n' \
-               f'Total Dry Mass: {self.total_dry_mass}\n' \
-               f'Orbiter Wet Mass: {self.total_wet_mass}\n' \
-               f'Propellant Mass: {self.prop_mass}\n' \
-               f'Atmospheric Vehicle Mass: {self.mass_AV}\n' \
-               f'Structure Mass: {self.m_structure}\n' \
-               f'Comms Mass: {self.m_comms}\n' \
-               f'Payload Mass: {self.m_payload}\n' \
-               f'DH Mass: {self.m_dh}\n' \
-               f'ADCS Mass: {self.m_adcs}\n' \
-               f'Power Mass: {self.m_power}\n' \
-               f'Thermal Mass: {self.m_thermal}\n' \
-               f'Tanks Mass: {self.m_tanks}\n' \
-               f'Length Tanks: {self.l_tanks}\n' \
-               f'Radius Tanks: {self.r_tanks}\n' \
-               f'Total Cost: {self.total_cost}'
+        return f'Total dry mass: {self.total_dry_mass}\n' \
+               f'Total wet mass: {self.total_wet_mass}\n' \
+               f'Total cost: {self.total_cost}\n' \
+               f'Total Power: {self.P_req}'
+
+    def mass_breakdwon(self):
+        print(f'Orbiter Dry Mass: {self.mass}\n'
+               f'Total Dry Mass: {self.total_dry_mass}\n'
+               f'Orbiter Wet Mass: {self.total_wet_mass}\n'
+               f'Propellant Mass: {self.prop_mass}\n'
+               f'Atmospheric Vehicle Mass: {self.mass_AV}\n'
+               f'Structure Mass: {self.m_structure}\n'
+               f'Comms Mass: {self.m_comms}\n'
+               f'Payload Mass: {self.m_payload}\n'
+               f'DH Mass: {self.m_dh}\n'
+               f'ADCS Mass: {self.m_adcs}\n'
+               f'Power Mass: {self.m_power}\n'
+               f'Thermal Mass: {self.m_thermal}\n'
+               f'Tanks Mass: {self.m_tanks}')
+
+    def cost_breakdown(self):
+        print(f'Total cost: {self.total_cost} M€\n'
+              f'Orbiter Cost: {self.cost_orbiter / 10**6} M€ \n'
+              f'Launch cost: {self.launch_cost / 10**6} M€\n'
+              f'Operational cost: {self.cost_ops / 10**6} M€\n'
+              f'Ground station cost {self.cost_ground_station / 10**6} M€\n'
+              f'Assembly cost: {self.cost_test_assembly / 10**6} M€\n'
+              f'Payload cost: {self.cost_payload / 10**6} M€\n'
+              f'Data Handling cost: {self.cost_dh / 10**6} M€\n'
+              f'Propulsion cost: {self.cost_prop / 10**6} M€\n'
+              f'Communication cost: {self.cost_comms / 10**6} M€\n'
+              f'Power cost: {self.cost_rtg / 10**6} M€\n'
+              f'Thermal cost: {self.cost_thermal / 10**6} M€\n'
+              f'Structure cost: {self.cost_str / 10**6} M€\n')
 
 if __name__ == "__main__":
     orbiter = Orb()
-    print(orbiter.cost_str)
+    print(orbiter.cost_breakdown())

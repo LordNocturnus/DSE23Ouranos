@@ -16,8 +16,8 @@ f_ax_min = 25  # Falcon Heavy user manual
 d_fairing = 5.2  # https://www.spacex.com/vehicles/falcon-heavy/
 h_fairing = 13.1  # https://www.spacex.com/vehicles/falcon-heavy/
 
-cost_kg = 45 * 0.92535  # https://www.navstarsteel.com/titanium-grade-5-sheet.html
-manuf_cost = 2063 * 0.92535  # Based on cost found in source and previous cst/kg of alluminum (check thermal) https://www.osti.gov/servlets/purl/62626
+cost_kg = 45 * 0.951  # https://www.navstarsteel.com/titanium-grade-5-sheet.html
+manuf_cost = 2063 * 0.951  # Based on cost found in source and previous cst/kg of alluminum (check thermal) https://www.osti.gov/servlets/purl/62626
 
 def axial_loads(axial, sigma_y, r):
     """
@@ -224,8 +224,7 @@ def final_architecture(material, propellant, margin, m_AV):
                   f'Axial Compression --> {axial_check_compr}\n'
                   f'Axial Shock --> {axial_shock}')
         else:
-            print(f'Stress checks passed')
-        return l_tot, max(r_f, r_o), m_tot_structure, t_cylind_o, t_cylind_f, t_caps_o, t_caps_f, m_tanks
+            return l_tot, max(r_f, r_o), m_tot_structure, t_cylind_o, t_cylind_f, t_caps_o, t_caps_f, m_tanks
     else:
         raise TypeError(f'The variable "propellant" should be a list[tuple, ...] and the variable "material" should be a list[float, ...]')
 
@@ -248,11 +247,10 @@ def natural_frequency(l_tot, r, t, material, m_orb, m_AV):
     f_lat = 0.276 * np.sqrt((material[3] * I) / (m_AV * l_tot**3 + 0.236 * m_orb * l_tot**3))
     f_ax = 0.160 * np.sqrt((np.pi * r**2 * material[3]) / (m_AV * l_tot + 0.333 * m_orb * l_tot))
     if f_ax > f_ax_min and f_lat > f_lat_min:
-        print(f'Frequency checks passed')
-
+        return f_lat, f_ax
     else:
         print(f'DANGER! Resonance could occur')
-    return f_lat, f_ax
+
 
 def total_cost(mass_tot):
     """
@@ -260,7 +258,7 @@ def total_cost(mass_tot):
     :param mass_tot: Total orbiter mass
     :return: Total cost
     """
-    return mass_tot * cost_kg + manuf_cost * mass_tot
+    return mass_tot * cost_kg + 22.26 * mass_tot * 0.951 * 1000 * 1.39
 
 
 
