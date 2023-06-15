@@ -164,6 +164,7 @@ def power_phases(A_rec, A_emit, n_rtg, planet_list=planets_list, alpha=alpha, ep
     """
     areas = []
     d_rtg = 0
+    p_diss_uranus = 0
     for planet in planet_list:
         r = planet_list[planet][4]
         solar = False if planet == 'Venus' else True
@@ -172,7 +173,13 @@ def power_phases(A_rec, A_emit, n_rtg, planet_list=planets_list, alpha=alpha, ep
         power_diss = power_dissipated(power_em, power_abs)
         if planet == 'Uranus':
             d_rtg = distance_rtg(n_rtg, p_rtg_tot, power_diss, A_rec, alpha)
+            p_diss_uranus = power_diss
         else:
+            diff_power = abs(p_diss_uranus - power_diss)
+            print(diff_power)
+            S_radiator = diff_power / 180
+            m_radiator = S_radiator * 15
+            print(m_radiator, planet)
             areas.append((f'{planet}', louvres_area(power_diss, A_rec, alpha, d_rtg, A_rtg, p_rtg_tot, n_rtg, A_single_l)))
             #m_heater = - power_diss / (6 / 0.0001) * 2
     return d_rtg, areas

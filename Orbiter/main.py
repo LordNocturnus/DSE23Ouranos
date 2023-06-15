@@ -189,5 +189,11 @@ class Orb:
               f'Structure cost: {self.cost_str / 10**6} M€\n')
 
 if __name__ == "__main__":
+    alpha = 0.09  # Absorptivity (Aluminized Kapton foil from SMAD or ADSEE I reader)
+    epsilon = 0.8
     orbiter = Orb()
-    print(str(orbiter))
+    p_emitted = thm.power_emitted(orbiter.A_emit, epsilon, orbiter.T_operational)
+    p_absorbed = thm.power_absorbed(200, orbiter.A_rec, alpha, epsilon, 'Mars')
+    p_req = thm.power_dissipated(p_emitted, p_absorbed)
+    p_gen = 4500 * orbiter.n_rtg * orbiter.A_rec * alpha / (4 * np.pi * orbiter.d_rtg**2)
+    print(p_req, p_gen)
