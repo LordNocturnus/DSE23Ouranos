@@ -4,10 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2b86ebf-5d83-4d32-9a14-4b2f954033b7" name="Changes" comment="started writing some propellant mass calculations but not sure if they are correct so still needs a lot of work">
+    <list default="true" id="e2b86ebf-5d83-4d32-9a14-4b2f954033b7" name="Changes" comment="Burntime update">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Orbiter/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Orbiter/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Orbiter/propulsion/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Orbiter/propulsion/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -174,7 +173,7 @@
     <SUITE FILE_PATH="coverage/main_py$main.coverage" NAME="main Coverage Results" MODIFIED="1686324900739" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/atmospheric_vehicle/aeroshell/structure" />
     <SUITE FILE_PATH="coverage/main_py$Aeroshell_sizing_UI.coverage" NAME="Aeroshell_sizing_UI Coverage Results" MODIFIED="1685977901310" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$USER_HOME$/Downloads" />
     <SUITE FILE_PATH="coverage/DSE23Oreanos$main__3_.coverage" NAME="main (3) Coverage Results" MODIFIED="1686571200433" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/atmospheric_vehicle/aeroshell/structure" />
-    <SUITE FILE_PATH="coverage/DSE23Oreanos$main__1_.coverage" NAME="main (1) Coverage Results" MODIFIED="1686830894427" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Orbiter" />
-    <SUITE FILE_PATH="coverage/DSE23Oreanos$main.coverage" NAME="main Coverage Results" MODIFIED="1686822463876" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Orbiter/comms" />
+    <SUITE FILE_PATH="coverage/DSE23Oreanos$main__1_.coverage" NAME="main (1) Coverage Results" MODIFIED="1686832973655" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Orbiter" />
+    <SUITE FILE_PATH="coverage/DSE23Oreanos$main.coverage" NAME="main Coverage Results" MODIFIED="1686831436753" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Orbiter/power" />
   </component>
 </project>
