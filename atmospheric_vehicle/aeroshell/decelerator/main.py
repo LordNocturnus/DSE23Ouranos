@@ -33,49 +33,56 @@ def decelerator_sizing(target_time, target_pressure, totalmass, heatshieldmass, 
                                                                  [termination_settings], acc=acc)
 
     print("finished first sim")
+    print(ballistic_dep_vars[-1])
+    print(ballistic_dep_vars[-2])
 
     gram = GRAM()
     gram.run()
     target_alt = np.asarray(gram.data.Height_km[gram.data.Pressure_Pa >= target_pressure], dtype=float)[0] * 1000
+    print(target_alt)
 
-    termination_settings = propagation_setup.propagator.dependent_variable_termination(
+    termination_altitude_settings = propagation_setup.propagator.dependent_variable_termination(
         dependent_variable_settings=propagation_setup.dependent_variable.altitude("Capsule", "Uranus"),
         limit_value=target_alt,
         use_as_lower_limit=True)
 
+    termination_mach_settings = propagation_setup.propagator.dependent_variable_termination(
+        dependent_variable_settings=propagation_setup.dependent_variable.mach_number("Capsule", "Uranus"),
+        limit_value=0.9,
+        use_as_lower_limit=True)
+
     parachute_diameter = diameter
-
-    """plt.plot(dep_vars[:, 0], dep_vars[:, 1])
-    plt.show()
-    plt.plot(dep_vars[:, 0], dep_vars[:, 2])
-    plt.show()
-    plt.plot(dep_vars[:, 0], dep_vars[:, 3])
-    plt.show()
-    plt.plot(dep_vars[:, 0], dep_vars[:, 4])
-    plt.show()
-
-    plt.plot(dep_vars[:, 0], dep_vars[:, 11])
-    plt.show()
-    plt.plot(dep_vars[:, 0], dep_vars[:, 12])
-    plt.show()#"""
 
     for _ in range(0, steps):
 
         def drag(var):
-            for m in parachute_c_d:
-                if var[0] >= m[0]:
-                    return m[1]
+            print(var[1])
+            if var[0] >= 1.0:
+                return 0.45
+            return 0.4
 
-        aero_coefficient_setting = environment_setup.aerodynamic_coefficients.custom_aerodynamic_force_coefficients(
+        """aero_coefficient_setting = environment_setup.aerodynamic_coefficients.custom_aerodynamic_force_coefficients(
             force_coefficient_function=drag,
             reference_area=np.pi * (parachute_diameter / 2) ** 2,
-            independent_variable_names=[environment.AerodynamicCoefficientsIndependentVariables.mach_number_dependent])
+            independent_variable_names=[environment.AerodynamicCoefficientsIndependentVariables.mach_number_dependent,
+                                        environment.AerodynamicCoefficientsIndependentVariables.altitude_dependent])"""
+
+        aero_coefficient_setting = environment_setup.aerodynamic_coefficients.constant(
+            np.pi * (parachute_diameter / 2) ** 2,
+            constant_force_coefficient=[0.45, 0.0, 0.0],
+            are_coefficients_in_aerodynamic_frame=True,
+            are_coefficients_in_negative_axis_direction=True
+        )
 
         dep_vars = atmospheric_model.Entry_model.entry_sim(totalmass - heatshieldmass, aero_coefficient_setting,
-                                                           ballistic_dep_vars[-1, -1], ballistic_dep_vars[-1, 2],
-                                                           ballistic_dep_vars[-1, 3], ballistic_dep_vars[-1, 4],
-                                                           ballistic_dep_vars[-1, -3], ballistic_dep_vars[-1, -2],
-                                                           [termination_settings], acc=acc)
+                                                           ballistic_dep_vars[-2, -1], ballistic_dep_vars[-2, 2],
+                                                           ballistic_dep_vars[-2, 3], ballistic_dep_vars[-2, 4],
+                                                           ballistic_dep_vars[-2, -3], ballistic_dep_vars[-2, -2],
+                                                           [termination_altitude_settings,
+                                                            termination_mach_settings], acc=acc)
+
+        print("finished second sim")
+
         parachute_diameter *= target_time / (dep_vars[-1, 0] - dep_vars[dep_vars[:, 1] <= 0.0][0, 0])
         print(parachute_diameter)
 
@@ -125,5 +132,5 @@ def decelerator_sizing(target_time, target_pressure, totalmass, heatshieldmass, 
 
 if __name__ == "__main__":
     print(decelerator_sizing(2 * 3600, 20*10**5, 603, 255, [[1.0, 0.45], [0.0, 0.4]], 2.0, 4.5, 3.03327727e+07,
-                             5.45941114e-01, -2.33346601e-02, 2.65992642e+04, -5.91036848e-01, -2.96367147e+00,
+                             5.45941114e-01, -2.33346601e-02, 2.65992642e+04, -5.91036848e-01, -2.96367147e+00, acc=10,
                              steps=1))
