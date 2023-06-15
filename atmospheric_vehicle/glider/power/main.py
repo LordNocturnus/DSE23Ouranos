@@ -5,7 +5,7 @@ n_cab = 0.9
 vol_energy = 1000e3
 spec_energy = 710 #https://www.eaglepicher.com/sites/default/files/LCF-514%200222.pdf
 margin = 0.2
-days=1+8/24+33/60
+days=1+8/24+33/60/24
 nom_watt = 0.5
 capacity = 19*2 # Watt
 
