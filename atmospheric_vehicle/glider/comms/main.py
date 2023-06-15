@@ -52,14 +52,14 @@ if __name__ == "__main__":
     max_r_ao = 100000  # km
     l_fs_ao = l_fs(freq_ao, max_r_ao * 1000)  # dB
     print("l_fs:", l_fs_ao)
-    r_rx_ao = 1.25  # m
+    r_rx_ao = 2.4  # m
     s_rx_ao = s(r_rx_ao)  # m^2
     g_rx_ao = unit_to_db(s_rx_ao)  # dB
     print("g_rx:", g_rx_ao)
     l_rx = unit_to_db(1 / n_rx)  # dB
     print("l_rx:", l_rx)
     l_m = 0*unit_to_db(1 / 0.9)
-    p_tx_ao = 2*10.7  # W
+    p_tx_ao = 10.7  # W
     p_tx_ao = unit_to_db(p_tx_ao)  # dB
     print("p_tx:", p_tx_ao)
     p_rx_ao = p_rx(p_tx_ao, g_tx_ao, l_tx, l_fs_ao, l_m, g_rx_ao, l_rx)
