@@ -49,10 +49,10 @@ class Orb:
         # Power
         self.t_mission = 23.6  # Mission Timeline Tool
         self.t_payload = 150  # Payload lifetime in months
-        self.P_comms = 120
-        self.P_prop = 40
-        self.P_adcs = 37.5
-        self.P_dh = 27
+        self.P_comms = 240
+        self.P_prop = 35
+        self.P_adcs = 150
+        self.P_dh = 46
         self.P_payload = 38.2
         self.P_thermal = 0
         self.P_pw = 25
@@ -135,7 +135,7 @@ class Orb:
         diff = 1000
         while diff > 1 * 10**-3:
             self.mass_prop(self.mass)
-            self.P_req = (self.P_comms + self.P_pw + self.P_dh + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop) * 1.2
+            self.P_req = self.P_comms + self.P_pw + self.P_dh + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop
             self.power()
             self.thermal()
             new_orbiter_mass = self.m_structure + self.m_tanks + self.m_power + self.m_thermal + self.m_payload + self.m_dh + self.m_comms + self.m_adcs
@@ -189,4 +189,3 @@ class Orb:
 
 if __name__ == "__main__":
     orbiter = Orb()
-    print(orbiter.__str__())
