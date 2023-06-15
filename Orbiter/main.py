@@ -74,7 +74,7 @@ class Orb:
         self.deltaV_insertion = 1300 + 100  # Delta V after splitting up at Uranus, Moon discovery and ADCS
         self.Isp = 321  # Isp of the orbiter thrusters
         self.T = 425 # Orbiter thrust
-        self.m_prop = 4.5  # Main engine mass in kg
+        self.m_engine = 4.5  # Main engine mass in kg
         self.material = [4430, 880 * 10**6, 970 * 10**6, 113.8 * 10**9]
 
         # ADCS
@@ -139,7 +139,7 @@ class Orb:
             self.P_req = self.P_comms + self.P_pw + self.P_dh + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop
             self.power()
             self.thermal()
-            new_orbiter_mass = self.m_structure + self.m_tanks + self.m_power + self.m_thermal + self.m_payload + self.m_dh + self.m_comms + self.m_adcs + self.m_prop
+            new_orbiter_mass = self.m_structure + self.m_tanks + self.m_power + self.m_thermal + self.m_payload + self.m_dh + self.m_comms + self.m_adcs + self.m_engine
             diff = abs(new_orbiter_mass - self.mass)
             self.mass = new_orbiter_mass
         self.mass *= 1.25  # Nasa Green Book
