@@ -9,14 +9,11 @@ boltzman = 5.67 * 10 ** (-8)
 # Planet list [Sun distance, radius, albedo factor, radiating temperature, *closest approach during gravity assist]
 # Radius and distance to sun https://www.jpl.nasa.gov/edu/pdfs/scaless_reference.pdf
 # Albedo and Temperature  ADSEE reader --> ECSS-S standards
-planets_list = {'Uranus': [2872500000, 51118 / 2, 0.51, 58.2],
-                'Venus': [108200000, 12104 / 2, 0.65, 227, 200],
-                'Earth': [149600000, 12756 / 2, 0.44, 255, 200],
+planets_list = {'Uranus': [2872500000, 51118 / 2, 0.51, 58.2, 20],
                 'Mars': [227900000, 6792 / 2, 0.15, 210.1, 200],
-                'Jupiter': [778600000, 142984 / 2, 0.52, 109.5, 200]}
+                'Jupiter': [778600000, 142984 / 2, 0.52, 109.5, 30011]}
 
 # Inputs
-r_orbit = 200  # Radius of orbit at Uranus in km (smallest possible)
 alpha = 0.09  # Absorptivity (Aluminized Kapton foil from SMAD or ADSEE I reader)
 epsilon = 0.8  # Emissivity (Aluminized Kapton foil from SMAD or ADSEE I reader)
 T_operational = 283.15  # Operational temperature of payload instruments in K
@@ -149,7 +146,7 @@ def louvres_area(p_diss, A_rec, alpha, d_rtg_uranus, A_rtg, p_rtg_tot, n_rtg, A_
     return n_lv
 
 
-def power_phases(A_rec, A_emit, n_rtg, planet_list=planets_list, r=r_orbit, alpha=alpha, epsilon=epsilon, p_rtg_tot=p_rtg_tot, A_single_l=A_single_l, T_operational=T_operational, A_rtg=A_rtg):
+def power_phases(A_rec, A_emit, n_rtg, planet_list=planets_list, alpha=alpha, epsilon=epsilon, p_rtg_tot=p_rtg_tot, A_single_l=A_single_l, T_operational=T_operational, A_rtg=A_rtg):
     """
     Function that determines the rtg distance at Uranus and the number of closed louvres cells for the
     different mission phases. RTG distance is only computed for Uranus because this is the driving
@@ -168,7 +165,7 @@ def power_phases(A_rec, A_emit, n_rtg, planet_list=planets_list, r=r_orbit, alph
     areas = []
     d_rtg = 0
     for planet in planet_list:
-        r = r if planet == 'Uranus' else planet_list[planet][4]
+        r = planet_list[planet][4]
         solar = False if planet == 'Venus' else True
         power_abs = power_absorbed(r, A_rec, alpha, epsilon, planet, planet_list, solar=solar)
         power_em = power_emitted(A_emit, epsilon, T_operational)
@@ -177,6 +174,7 @@ def power_phases(A_rec, A_emit, n_rtg, planet_list=planets_list, r=r_orbit, alph
             d_rtg = distance_rtg(n_rtg, p_rtg_tot, power_diss, A_rec, alpha)
         else:
             areas.append((f'{planet}', louvres_area(power_diss, A_rec, alpha, d_rtg, A_rtg, p_rtg_tot, n_rtg, A_single_l)))
+            #m_heater = - power_diss / (6 / 0.0001) * 2
     return d_rtg, areas
 
 def total_cost(m_louvres, m_shield):
@@ -184,7 +182,7 @@ def total_cost(m_louvres, m_shield):
 
 
 if __name__ == "__main__":
-    ...
     # d_rtg, areas = power_phases(planets_list, r_orbit, A_rec, A_emit, alpha, epsilon, n_rtg, p_rtg_tot, A_single_l)
     # print(areas)
+    power_diss = power_dissipated()
 
