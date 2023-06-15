@@ -70,4 +70,3 @@ class GliderStructureTests(TestCase):
         self.assertAlmostEqual(a, 0.6875 * np.pi / 180, 6)
 
     # mass function checked analytically, everything correct
-    
