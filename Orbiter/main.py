@@ -187,4 +187,4 @@ class Orb:
 
 if __name__ == "__main__":
     orbiter = Orb()
-    print(orbiter.cost_breakdown())
+    print(orbiter.mass_breakdwon())
