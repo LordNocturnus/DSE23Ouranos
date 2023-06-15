@@ -25,8 +25,8 @@ spice.load_kernel(_path + '/../GRAM/GRAM_Suite_1_5/SPICE/spk/satellites/ura116xl
 # spice.load_kernel(_path+'/Gravity.tpc')
 
 
-def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_path_angle, heading_angle,
-              termination_settings, simulation_start_epoch=6000.0, max_simulation_time=1 * constants.JULIAN_DAY,
+def entry_sim(mass, aero_coefficient_settings, alt, lat, lon, speed, flight_path_angle, heading_angle,
+              termination_settings, simulation_start_epoch=6000.0, max_simulation_time=1 / 2 * constants.JULIAN_DAY,
               acc=1):
 
     # define bodies in simulation
@@ -45,7 +45,7 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
 
     # Modify the atmosphere to match GRAM
     gram = GRAM.GRAM()
-    gram.altitudes = np.arange(7000, -290 - acc, -acc)
+    gram.altitudes = np.arange(-290, 7000 + acc, acc)
     gram.lat = np.full_like(gram.altitudes, np.rad2deg(lat))
     gram.long = np.full_like(gram.altitudes, np.rad2deg((lon + 2 * np.pi) % (2 * np.pi)))
     gram.time = np.zeros_like(gram.altitudes)
@@ -60,25 +60,7 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
              "molar_mass": np.asarray(gram.data.AverageMolecularWeight)}
 
     atmos = pd.DataFrame(atmos, dtype=float)
-    # atmos.to_csv(_path + "/atmos_data.csv", index=False)
-
-    density = sp.interpolate.interp1d(gram.data.Height_km * 1000, gram.data.Density_kgm3)
-
-    #def density(h):
-    #    return np.asarray(gram.data.Density_kgm3[gram.data.Height_km <= h / 1000])[0]
-
-    constant_temperature = np.asarray(gram.data.Density_kgm3[gram.data.Height_km <= 0.0])[0]
-    specific_gas_constant = np.asarray(gram.data.Density_kgm3[gram.data.Height_km <= 0.0])[0]
-    ratio_of_specific_heats = np.asarray(gram.data.Density_kgm3[gram.data.Height_km <= 0.0])[0]
-
-    body_settings.get("Uranus").atmosphere_settings = environment_setup.atmosphere.custom_constant_temperature(
-        density,
-        constant_temperature,
-        specific_gas_constant,
-        ratio_of_specific_heats)
-
-    """body_settings.get("Uranus").atmosphere_settings = environment_setup.atmosphere.exponential(
-        40.061 * 1000, 3.788e-01, 76.4, 3456.0, 1.632)
+    atmos.to_csv(_path + "/atmos_data.csv", index=False, header=False, sep=" ")
 
     body_settings.get("Uranus").atmosphere_settings = environment_setup.atmosphere.tabulated(
         _path + "/atmos_data.csv", [environment_setup.atmosphere.AtmosphereDependentVariables.tabulated_density,
@@ -86,7 +68,7 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
                                     environment_setup.atmosphere.AtmosphereDependentVariables.tabulated_temperature,
                                     environment_setup.atmosphere.AtmosphereDependentVariables.tabulated_gas_constant,
                                     environment_setup.atmosphere.AtmosphereDependentVariables.tabulated_specific_heat_ratio,
-                                    environment_setup.atmosphere.AtmosphereDependentVariables.tabulated_molar_mass])"""
+                                    environment_setup.atmosphere.AtmosphereDependentVariables.tabulated_molar_mass])  # """
 
     # Create system of bodies from the body settings
     bodies = environment_setup.create_system_of_bodies(body_settings)
@@ -99,9 +81,7 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
     bodies.get("Capsule").mass = mass
 
     # Create aerodynamic coefficient interface settings, and add to vehicle
-    aero_coefficient_settings = environment_setup.aerodynamic_coefficients.constant(
-        reference_area=np.pi * (diameter / 2) ** 2,
-        constant_force_coefficient=[drag_coefficient, 0.0, 0.0])
+
     environment_setup.add_aerodynamic_coefficient_interface(bodies, "Capsule", aero_coefficient_settings)
 
     print("Setup Capsule")
@@ -160,7 +140,7 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
                                    propagation_setup.dependent_variable.latitude("Capsule", "Uranus"),
                                    propagation_setup.dependent_variable.longitude("Capsule", "Uranus"),
                                    propagation_setup.dependent_variable.airspeed("Capsule", "Uranus"),
-                                   propagation_setup.dependent_variable.total_acceleration("Capsule"),
+                                   propagation_setup.dependent_variable.total_acceleration_norm("Capsule"),
                                    propagation_setup.dependent_variable.mach_number("Capsule", "Uranus"),
                                    propagation_setup.dependent_variable.density("Capsule", "Uranus"),
                                    propagation_setup.dependent_variable.dynamic_pressure("Capsule"),
@@ -200,32 +180,126 @@ def entry_sim(mass, drag_coefficient, diameter, alt, lat, lon, speed, flight_pat
     return result2array(dependent_variables)
 
 
-if __name__ == "__main__":
-    angle = -45
+class CapsuleDrag:
+    def __init__(self, dia, r1, angle, lat, lon, acc=1):
+        gram = GRAM.GRAM()
+        gram.altitudes = np.arange(7000, -290 - acc, -acc)
+        gram.lat = np.full_like(gram.altitudes, np.rad2deg(lat))
+        gram.long = np.full_like(gram.altitudes, np.rad2deg((lon + 2 * np.pi) % (2 * np.pi)))
+        gram.time = np.zeros_like(gram.altitudes)
+        gram.run()
+        self.SpecificHeatRatio = sp.interpolate.interp1d(gram.data.Height_km * 1000, gram.data.SpecificHeatRatio)
+        self.Pressure_Pa = sp.interpolate.interp1d(gram.data.Height_km * 1000, gram.data.Pressure_Pa)
+        self.diameter = dia
+        self.area = np.pi * (dia / 2) ** 2
+        self.r1 = r1
+        self.angle = angle
 
-    termination_altitude_settings = propagation_setup.propagator.dependent_variable_termination(
+    def drag_coefficient(self, var):  # Mach, specific heat ratio, freestream pressure
+        self.mach = var[0]
+        self.gamma = self.SpecificHeatRatio(var[1])
+        self.p_inf = self.Pressure_Pa(var[1])
+        drag = sp.integrate.quad(lambda y: self.p_bar(y) * 2 * np.pi * y, 0.0, self.diameter / 2)[0]
+        return [drag / (1 / 2 * self.gamma * self.mach ** 2 * self.area) + 1 / (1 / 2 * self.gamma * self.mach ** 2),
+                0.0, 0.0]
+
+    def beta(self, y):
+        if y <= np.sin(self.angle) * self.r1:
+            return np.sin(y / self.r1)
+        else:
+            return self.angle
+
+    def p_star_bar(self):  # Mach, specific heat ratio, freestream pressure
+        return (2 / (self.gamma + 1)) ** (self.gamma / (self.gamma - 1))
+
+    def p_0_stag(self):  # Mach, specific heat ratio, freestream pressure
+        upper = ((self.gamma + 1) / 2 * self.mach ** 2) ** (self.gamma / (self.gamma - 1))
+        lower = (2 * self.gamma / (self.gamma + 1) * self.mach ** 2 - (self.gamma - 1) /
+                 (self.gamma + 1)) ** (1 / (self.gamma - 1))
+        return upper / lower
+
+    def p_inf_bar(self):
+        return 1 / (1 + self.p_0_stag())
+
+    def s(self, y):
+        if y <= np.sin(self.angle) * self.r1:
+            return np.arcsin(y / self.r1) * self.r1
+        else:
+            return self.angle * self.r1 + (y - self.r1 * np.sin(self.angle) / np.cos(self.angle))
+
+    def s_star(self):
+        return self.angle * self.r1 + (self.diameter / 2 - self.r1 * np.sin(self.angle) / np.cos(self.angle))
+
+    def p_fd_bar(self, y):
+        return 1 - np.exp(-self.Lambda(y)) * (1 - self.p_star_bar()) + 1 / 16 * ((self.s(y) / self.s_star()) ** 2 -
+                                                                                 np.exp(-self.Lambda(y)))
+
+    def Lambda(self, y):
+        return 5 * np.sqrt(np.log(self.s_star() / self.s(y)))
+
+    def R_N(self, y):
+        if y <= np.sin(self.angle) * self.r1:
+            return self.r1
+        else:
+            return y / np.sin(self.angle)
+
+    def R_max(self):
+        return self.diameter / (2 * np.sin(self.angle))
+
+    def p_bar(self, y):
+        s_ratio = self.s(y) / self.s_star()
+        p1 = self.p_inf_bar()
+        p2 = (1 - self.p_inf_bar()) * np.cos(self.beta(y)) ** 2
+        p3 = (1 - self.p_fd_bar(y)) * ((np.cos(self.beta(y)) ** 2 - self.p_star_bar()) / (1 - self.p_star_bar()))
+        p4 = (1 - self.R_N(y) / self.R_max()) * (np.sin(self.beta(y)) ** 2 * (1 - s_ratio) + 1 / 2 * s_ratio * (
+                self.p_fd_bar(y) - 1 + s_ratio * np.sin(self.beta(y)) ** 2 + p3))
+        return (p1 + p2 - p3 + p4) * self.p_0_stag()
+
+
+if __name__ == "__main__":
+    drag = CapsuleDrag(4.5, 1.125, np.deg2rad(20), 5.45941114e-01, -2.33346601e-02)
+
+    aero_coefficient_setting = environment_setup.aerodynamic_coefficients.custom_aerodynamic_force_coefficients(
+        force_coefficient_function=drag.drag_coefficient,
+        reference_area=np.pi * (drag.diameter / 2) ** 2,
+        independent_variable_names=[environment.AerodynamicCoefficientsIndependentVariables.mach_number_dependent,
+                                    environment.AerodynamicCoefficientsIndependentVariables.altitude_dependent])
+
+    termination_altitude_setting = propagation_setup.propagator.dependent_variable_termination(
         dependent_variable_settings=propagation_setup.dependent_variable.altitude("Capsule", "Uranus"),
-        limit_value=-150000,
+        limit_value=0.0,
         use_as_lower_limit=True)
 
-    dependent_variables_array = entry_sim(500, 1.53, 4.5, 3.02877105e+07, -6.40748300e-02, -1.63500310e+00 + 2 * np.pi,
-                                          1.93919454e+04, np.deg2rad(angle), -2.35413606e+00,
-                                          [termination_altitude_settings])
+    termination_mach_setting = propagation_setup.propagator.dependent_variable_termination(
+        dependent_variable_settings=propagation_setup.dependent_variable.mach_number("Capsule", "Uranus"),
+        limit_value=2.0,
+        use_as_lower_limit=True)
 
-    plt.plot(dependent_variables_array[:, 0], dependent_variables_array[:, 1])
-    plt.show()
+    dependent_variables_array = entry_sim(500, aero_coefficient_setting, 3.03327727e+07, 5.45941114e-01,
+                                          -2.33346601e-02, 2.65992642e+04, -5.91036848e-01, -2.96367147e+00,
+                                          [termination_altitude_setting, termination_mach_setting], acc=1)
 
-    gram = GRAM.GRAM()
-    gram.time = dependent_variables_array[:, 0]
-    gram.altitudes = dependent_variables_array[:, 1] / 1000
-    gram.lat = np.rad2deg(dependent_variables_array[:, 2])
-    gram.long = np.rad2deg((dependent_variables_array[:, 2] + 2 * np.pi) % (2 * np.pi))
-    gram.run()
-
-    plt.plot(np.log(dependent_variables_array[:, -2]), dependent_variables_array[:, 1], label="exp")
-    plt.plot(np.log(gram.data.Density_kgm3), dependent_variables_array[:, 1], label="gram")
+    """plt.plot(dependent_variables_array[:, 0], dependent_variables_array[:, 1])
     plt.grid()
-    plt.legend()
     plt.show()
 
-    print("finished")
+    plt.plot(dependent_variables_array[:, 1], dependent_variables_array[:, 4])
+    plt.grid()
+    plt.show()
+
+    plt.plot(dependent_variables_array[:, 1], dependent_variables_array[:, -3])
+    plt.grid()
+    plt.show()
+
+    plt.plot(dependent_variables_array[:, 1], dependent_variables_array[:, -1])
+    plt.grid()
+    plt.show()
+
+    c_d = np.zeros_like(dependent_variables_array[:, 1])
+    for i,_ in enumerate(c_d):
+        c_d[i] = drag.drag_coefficient([dependent_variables_array[i, -3], dependent_variables_array[i, 1]])[0]
+    plt.plot(dependent_variables_array[:, -3], c_d)
+    plt.grid()
+    plt.show()
+
+    print("finished")#"""
