@@ -155,27 +155,16 @@ class interplanetary_trajectory:
         self.departure_semi_major_axis = departure_orbit[0]
         self.departure_eccentricity = departure_orbit[1]
 
+        self.target_periapsis = target_periapsis
+
+        # Create simplified system of bodies
+        self.bodies = environment_setup.create_simplified_system_of_bodies()
 
         arrival_apoapsis = 583000000
         arrival_periapsis = 25380000+10e6
 
         arrival_semi_major_axis = (arrival_apoapsis + arrival_periapsis) / 1
         arrival_eccentricity = 1-arrival_periapsis/arrival_semi_major_axis
-
-        #verification cassini orbit data
-        # Define departure orbit
-        #self.departure_semi_major_axis = np.inf
-        #self.departure_eccentricity = 0
-
-        # Define insertion orbit
-        #arrival_semi_major_axis = 1.0895e8 / 0.02
-        #arrival_eccentricity = 0.98
-
-
-        self.target_periapsis = target_periapsis
-
-        # Create simplified system of bodies
-        self.bodies = environment_setup.create_simplified_system_of_bodies()
 
 # Define the trajectory settings for both the legs and at the nodes
         self.transfer_leg_settings, self.transfer_node_settings = transfer_trajectory.mga_settings_unpowered_unperturbed_legs(
@@ -216,34 +205,9 @@ class interplanetary_trajectory:
                 legs_tof_lb[i] = 3 * constants.JULIAN_YEAR
                 legs_tof_ub[i] = 20 * constants.JULIAN_YEAR
 
-        #V&V cassini bounds
-        '''
-        # Lower and upper bound on departure date
-        self.departure_date_lb = -1000.5 * constants.JULIAN_DAY
-        self.departure_date_ub = -0.5 * constants.JULIAN_DAY
+            self.legs_tof_lb = legs_tof_lb
+            self.legs_tof_ub = legs_tof_ub
 
-        # List of lower and upper on time of flight for each leg
-        legs_tof_lb = np.zeros(5)
-        legs_tof_ub = np.zeros(5)
-        # Venus first fly-by
-        legs_tof_lb[0] = 30 * constants.JULIAN_DAY
-        legs_tof_ub[0] = 400 * constants.JULIAN_DAY
-        # Venus second fly-by
-        legs_tof_lb[1] = 100 * constants.JULIAN_DAY
-        legs_tof_ub[1] = 470 * constants.JULIAN_DAY
-        # Earth fly-by
-        legs_tof_lb[2] = 30 * constants.JULIAN_DAY
-        legs_tof_ub[2] = 400 * constants.JULIAN_DAY
-        # Jupiter fly-by
-        legs_tof_lb[3] = 400 * constants.JULIAN_DAY
-        legs_tof_ub[3] = 2000 * constants.JULIAN_DAY
-        # Saturn fly-by
-        legs_tof_lb[4] = 1000 * constants.JULIAN_DAY
-        legs_tof_ub[4] = 6000 * constants.JULIAN_DAY
-        '''
-        self.legs_tof_lb = legs_tof_lb
-        self.legs_tof_ub = legs_tof_ub
-        
 
         ###########################################################################
         # Setup optimization
@@ -277,7 +241,7 @@ class interplanetary_trajectory:
 
             # Create pygmo algorithm object
             algo = pg.algorithm(pg.de(gen=number_of_generations, seed=optimization_seed, F=0.55,CR=0.7,variant=4))
-            
+
             # To print the algorithm's information: uncomment the next line
             # print(algo)
 
@@ -328,19 +292,9 @@ class interplanetary_trajectory:
         #print('Earth-Earth time of flight [days]: ', best_decision_variables[3])
         #print('Earth-Jupiter time of flight [days]: ', best_decision_variables[4])
         #print('Jupiter-Uranus time of flight [days]: ', best_decision_variables[5])
-        '''
-        # Extract the best individual, V&V
-        print('\n########### CHAMPION INDIVIDUAL ###########\n')
-        print('Total Delta V [m/s]: ', self.pop.champion_f[0])
-        best_decision_variables = self.pop.champion_x/constants.JULIAN_DAY
-        print('Departure time w.r.t J2000 [days]: ', best_decision_variables[0])
-        print('Earth-Venus time of flight [days]: ', best_decision_variables[1])
-        print('Venus-Venus time of flight [days]: ', best_decision_variables[2])
-        print('Venus-Earth time of flight [days]: ', best_decision_variables[3])
-        print('Earth-Jupiter time of flight [days]: ', best_decision_variables[4])
-        print('Jupiter-Saturn time of flight [days]: ', best_decision_variables[5])
-        '''
+
         # Plot fitness over generations
+        '''
         fig, ax = plt.subplots(figsize=(8, 4))
         ax.plot(np.arange(0, self.number_of_evolutions), np.float_(self.fitness_list) / 1000, label='Function value: Feval')
         # Plot champion
@@ -358,31 +312,29 @@ class interplanetary_trajectory:
         plt.tight_layout()
         plt.legend()
         plt.show()
-
+        '''
         # Reevaluate the transfer trajectory using the champion design variables
         node_times, leg_free_parameters, node_free_parameters = convert_trajectory_parameters(self.transfer_trajectory_object, self.pop.champion_x,self.target_periapsis)
         self.transfer_trajectory_object.evaluate(node_times, leg_free_parameters, node_free_parameters)
+
+        delta_v_nodes = self.transfer_trajectory_object.delta_v_per_node
+
+        print (delta_v_nodes)
 
         # Extract the state history
         state_history = self.transfer_trajectory_object.states_along_trajectory(500)
         fly_by_states = np.array([state_history[node_times[i]] for i in range(len(node_times))])
         self.state_history = result2array(state_history)
         au = 1.5e11
-
-        delta_v_nodes = self.transfer_trajectory_object.delta_v_per_node
-
-        #periapsis_heights = self.transfer_trajectory_object.node_parameters
-
-        print (delta_v_nodes)
-
+        '''
         # Plot the state history
         fig = plt.figure(figsize=(8,5))
         ax = fig.add_subplot(111)
         ax.plot(self.state_history[:, 1] / au, self.state_history[:, 2] / au)
         ax.scatter(fly_by_states[0, 0] / au, fly_by_states[0, 1] / au, color='blue', label='Earth departure')
-        ax.scatter(fly_by_states[1, 0] / au, fly_by_states[1, 1] / au, color='Red', label='Mars fly-by')
-        ax.scatter(fly_by_states[2, 0] / au, fly_by_states[2, 1] / au, color='Brown', label='Jupiter fly-by')
-        ax.scatter(fly_by_states[3, 0] / au, fly_by_states[3, 1] / au, color='Blue', label='Uranus arrival')
+        ax.scatter(fly_by_states[1, 0] / au, fly_by_states[1, 1] / au, color='green', label='Venus fly-by')
+        ax.scatter(fly_by_states[2, 0] / au, fly_by_states[2, 1] / au, color='green')
+        #ax.scatter(fly_by_states[3, 0] / au, fly_by_states[3, 1] / au, color='brown', label='Earth fly-by')
         #ax.scatter(fly_by_states[4, 0] / au, fly_by_states[4, 1] / au, color='red', label='Jupiter fly-by')
         #ax.scatter(fly_by_states[5, 0] / au, fly_by_states[5, 1] / au, color='grey', label='Saturn arrival')
         ax.scatter([0], [0], color='orange', label='Sun')
@@ -391,6 +343,7 @@ class interplanetary_trajectory:
         ax.set_aspect('equal')
         ax.legend(bbox_to_anchor=[1, 1])
         plt.show()
+        '''
     def output(self,time_difference:float):
         spice.load_standard_kernels()
         path = os.path.dirname(__file__)
@@ -399,10 +352,11 @@ class interplanetary_trajectory:
         print("The departure burn will be",self.pop.champion_f[0],'delta v')
         time_of_encounter = self.state_history[-1,0]
         time_of_separation = time_of_encounter-time_difference
+        print (time_of_separation/constants.JULIAN_YEAR)
         i = 0
         notfound = True
         while notfound:
-            if self.state_history[i,0] > time_of_separation:
+            if self.state_history[i,0] >= time_of_separation:
                 cartesianstate = self.state_history[i,1:]
                 notfound = False
                 position = cartesianstate[:3]
@@ -431,15 +385,105 @@ class interplanetary_trajectory:
 if __name__ == "__main__":
     print("Hello, world")
     #planets = ['Earth','Venus','Earth','Earth','Jupiter','Uranus']
-    #planets = ['Earth','Uranus']
-    planets = ['Earth','Mars','Jupiter','Uranus']
-    #verification
-    #planets = ['Earth', 'Venus', 'Venus', 'Earth', 'Jupiter', 'Saturn']
+    #planets = ['Earth','Mars','Jupiter','Saturn','Uranus']
+    planets = ['Earth']
+    firstplanets = ['Venus','Earth','Mars','Jupiter','Saturn']
+    secondplanets1 = ['Venus','Earth','Mars','Jupiter','Saturn']
+    innerplanets = ['Venus','Earth','Mars']
     earthorbit = (6521000,0)
     periapsis = 30000000
     launching = (30*constants.JULIAN_YEAR,40*constants.JULIAN_YEAR)
-    trajectory = interplanetary_trajectory(planets,earthorbit,periapsis,launching)
-    trajectory.optimize(25)
-    trajectory.plot()
-    state = trajectory.output(constants.JULIAN_DAY * 4)
-    print(state)
+    for firstplanet in firstplanets:
+        if firstplanet in innerplanets:
+            for secondplanet in secondplanets1:
+                if secondplanet == 'Venus' or secondplanet == 'Earth':
+                    for thirdplanet in secondplanets1[1:]:
+                        for fourthplanet in secondplanets1[3:]:
+                            if fourthplanet == 'Jupiter':
+                                
+                                planets = ['Earth',firstplanet,secondplanet,thirdplanet,fourthplanet,'Saturn','Uranus']
+                                print(planets)
+                                trajectory = interplanetary_trajectory(planets,earthorbit,periapsis,launching)
+                                trajectory.optimize(25)
+                                trajectory.plot()
+                                planets = ['Earth',firstplanet,secondplanet,thirdplanet,fourthplanet,'Uranus']
+                                print(planets)
+                                trajectory = interplanetary_trajectory(planets,earthorbit,periapsis,launching)
+                                trajectory.optimize(25)
+                                trajectory.plot()
+                            else:
+                                planets = ['Earth',firstplanet,secondplanet,thirdplanet,fourthplanet,'Uranus']
+                                print(planets)
+                                trajectory = interplanetary_trajectory(planets,earthorbit,periapsis,launching)
+                                trajectory.optimize(25)
+                                trajectory.plot()                                
+                            #state = trajectory.output(constants.JULIAN_DAY * 12)
+                            #state = trajectory.output(0)
+                elif secondplanet == 'Mars':
+                    for thirdplanet in secondplanets1[3:]:
+
+                            if thirdplanet == 'Jupiter':
+                                planets = ['Earth',firstplanet,secondplanet,thirdplanet,'Saturn','Uranus']
+                                print (planets)
+                                trajectory = interplanetary_trajectory(planets,earthorbit,periapsis,launching)
+                                trajectory.optimize(25)
+                                trajectory.plot()
+
+                                planets = ['Earth',firstplanet,secondplanet,thirdplanet,'Uranus']
+                                print (planets)
+                                trajectory = interplanetary_trajectory(planets,earthorbit,periapsis,launching)
+                                trajectory.optimize(25)
+                                trajectory.plot()
+                            else:
+                                planets = ['Earth',firstplanet,secondplanet,thirdplanet,'Uranus']
+                                print (planets)
+                                trajectory = interplanetary_trajectory(planets,earthorbit,periapsis,launching)
+                                trajectory.optimize(25)
+                                trajectory.plot()
+
+
+                else:
+                    if secondplanet == 'Jupiter':
+                        planets = ['Earth',firstplanet,secondplanet,'Saturn','Uranus']
+                        print(planets)
+                        trajectory = interplanetary_trajectory(planets,earthorbit,periapsis,launching)
+                        trajectory.optimize(25)                    
+                        trajectory.plot()
+                        planets = ['Earth',firstplanet,secondplanet,'Uranus']
+                        print(planets)
+                        trajectory = interplanetary_trajectory(planets,earthorbit,periapsis,launching)
+                        trajectory.optimize(25)                    
+                        trajectory.plot()
+                    else:
+                        planets = ['Earth',firstplanet,secondplanet,'Uranus']
+                        print(planets)
+                        trajectory = interplanetary_trajectory(planets,earthorbit,periapsis,launching)
+                        trajectory.optimize(25)                    
+                        trajectory.plot()
+                
+
+        else:
+            if firstplanet == 'Jupiter':
+
+                planets = ['Earth',firstplanet,'Saturn','Uranus']
+                print (planets)
+                trajectory = interplanetary_trajectory(planets,earthorbit,periapsis,launching)
+                trajectory.optimize(25)
+                trajectory.plot()
+                planets = ['Earth',firstplanet,'Uranus']
+                print (planets)
+                trajectory = interplanetary_trajectory(planets,earthorbit,periapsis,launching)
+                trajectory.optimize(25)
+                trajectory.plot()
+            else:
+                planets = ['Earth',firstplanet,'Uranus']
+                print (planets)
+                trajectory = interplanetary_trajectory(planets,earthorbit,periapsis,launching)
+                trajectory.optimize(25)
+                trajectory.plot()
+
+    #planets = ['Earth','Jupiter','Uranus']
+    #planets = ['Earth','Venus','Venus','Jupiter','Uranus']
+
+
+    #print(state)
