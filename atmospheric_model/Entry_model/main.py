@@ -21,9 +21,6 @@ _path = os.path.dirname(__file__)
 spice.load_standard_kernels()
 spice.load_kernel(_path + '/../GRAM/GRAM_Suite_1_5/SPICE/spk/satellites/ura116xl.bsp')
 
-angle = np.deg2rad(20)
-diameter = 4.5
-
 # spice.load_kernel(_path+'/Gravity.tpc')
 
 

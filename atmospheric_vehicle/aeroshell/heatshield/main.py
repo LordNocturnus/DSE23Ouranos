@@ -23,15 +23,18 @@ def heatshield_sizing(diameter, heat_load, interface_velocity, peak_heat_flux):
 
     PICA_thickness = 1.8686 * (heat_load / (interface_velocity ** 2)) ** 0.1879 / 100
     PICA_density = 0.352 * 100**3 / 1000  # 0.352 - 0.701 g/cm^3
+    PICA_cost_per_kg = 2.4 * 0.91
 
     if 3.27 / 100 >= PICA_thickness:
         print("PICA thin")
         PICA_thickness = 3.27 / 100
-    PICA_volume = volume(diameter, radius1, max(radius2, PICA_thickness * 1.01), 0.0, PICA_thickness)
+    PICA_volume = volume(diameter, radius1, max(radius2, PICA_thickness * 1.01), 0.0, PICA_thickness) * 1.117
     PICA_weight = PICA_volume * PICA_density
+    PICA_cost = PICA_weight * PICA_cost_per_kg
 
-    CP_thickness = 1.1959 * (heat_load / (interface_velocity ** 2)) ** 0.2102 / 100
+    CP_thickness = 1.1959 * (heat_load / (interface_velocity ** 2)) ** 0.2102 / 100 * 1.166
     CP_density = 1.31 * 100**3 / 1000  # 1.31 - 1.55 g/cm^3
+    Phenolic_cost_per_kg = 1.37 * 0.91 / 0.453592
     HT_424_thickness = 0.0381 / 100
     HT_424_density = 0.66 / HT_424_thickness
     ACC6_thickness = 0.25 / 100
@@ -50,29 +53,12 @@ def heatshield_sizing(diameter, heat_load, interface_velocity, peak_heat_flux):
     ACC6_weight = ACC6_volume * ACC6_density
     CP_total_weight = CP_weight + HT_424_weight + ACC6_weight
 
-    PICA = True
-    CP = True
-    if PICA_thickness <= radius2:
-        PICA = True
-
-    if CP_thickness + HT_424_thickness + ACC6_thickness <= radius2:
-        CP = True
-
-    if CP and PICA:
-        if CP_total_weight > PICA_weight:
-            print("choose PICA")
-            return PICA_weight, PICA_thickness
-        else:
-            print("choose CP")
-        return CP_total_weight, CP_thickness + HT_424_thickness + ACC6_thickness
-    elif PICA:
+    if CP_total_weight > PICA_weight:
         print("choose PICA")
-        return PICA_weight, PICA_thickness
-    elif CP:
+        return PICA_weight, PICA_thickness, PICA_cost
+    else:
         print("choose CP")
         return CP_total_weight, CP_thickness + HT_424_thickness + ACC6_thickness
-    else:
-        raise ValueError("No heatshield feasible")
 
 
 def volume(diameter, radius1, radius2, depth, thickness):
@@ -111,28 +97,6 @@ def volume(diameter, radius1, radius2, depth, thickness):
     edge = s3(l3, depth, radius1, radius2, _bottom_angle, _top_angle, diameter)
     edged = s3(l3d, depth + thickness, radius1, radius2, _bottom_angle, _top_angle, diameter)
     vneg += sp.integrate.quad(lambda x: np.pi * ((edge - edged) / (l3 - l3d) * (-l3 + x) + edge) ** 2, l3d, l3)[0]
-    """print(vpos, vneg)
-
-    plt.plot(np.linspace(l0, l1, 1000), s1(np.linspace(l0, l1, 1000), depth, radius1, radius2, _bottom_angle,
-                                           _top_angle, diameter))
-    plt.plot(np.linspace(l0d, l1d, 1000), s1(np.linspace(l0d, l1d, 1000), depth + thickness, radius1, radius2,
-                                             _bottom_angle, _top_angle, diameter))
-
-    plt.plot(np.linspace(l1, l2, 1000), s2(np.linspace(l1, l2, 1000), depth, radius1, radius2, _bottom_angle,
-                                           _top_angle, diameter))
-    plt.plot(np.linspace(l1d, l2d, 1000), s2(np.linspace(l1d, l2d, 1000), depth + thickness, radius1, radius2,
-                                             _bottom_angle, _top_angle, diameter))
-
-    plt.plot(np.linspace(l2, l3, 1000), s3(np.linspace(l2, l3, 1000), depth, radius1, radius2, _bottom_angle,
-                                           _top_angle, diameter))
-    plt.plot(np.linspace(l2d, l3d, 1000), s3(np.linspace(l2d, l3d, 1000), depth + thickness, radius1, radius2,
-                                             _bottom_angle, _top_angle, diameter))
-
-    plt.plot(np.linspace(l3d, l3, 1000), (edge - edged) / (l3 - l3d) * (-l3 + np.linspace(l3d, l3, 1000)) + edge)
-    plt.grid()
-    plt.xlim(-2.5, 3)
-    plt.ylim(-0.5, 5)
-    plt.show() #"""
 
     return vpos - vneg
 
@@ -163,7 +127,7 @@ def simulate_entry_heating(mass, diameter, alt, lat, lon, speed, flight_path_ang
 
     termination_mach_setting = propagation_setup.propagator.dependent_variable_termination(
         dependent_variable_settings=propagation_setup.dependent_variable.mach_number("Capsule", "Uranus"),
-        limit_value=2.0,
+        limit_value=2.7,
         use_as_lower_limit=True)
     dependent_variables_array = atmospheric_model.Entry_model.entry_sim(mass, aero_coefficient_setting, alt, lat, lon,
                                                                         speed, flight_path_angle, heading_angle,
@@ -194,15 +158,18 @@ def simulate_entry_heating(mass, diameter, alt, lat, lon, speed, flight_path_ang
 def itterate_heatshield(mass, diameter, alt, lat, lon, speed, flight_path_angle,
                         heading_angle, acc=1, steps=5):
     hmass = 0
+    p = 0
+    a = 0
+    t = 0
+    cost = 0
     for _ in range(0, steps):
         h, q, p, a = simulate_entry_heating(mass + hmass, diameter, alt, lat, lon, speed, flight_path_angle,
                                             heading_angle, acc)
-        hmass, t = heatshield_sizing(diameter, h, speed, q)
+        hmass, t, cost = heatshield_sizing(diameter, h, speed, q)
 
-    return hmass, p, a, t
+    return hmass, p, a, t, cost
 
 
 if __name__ == "__main__":
-
-    print(itterate_heatshield(400, 3, 3.03327727e+07, 5.45941114e-01, -2.33346601e-02, 2.65992642e+04,
-                              -5.91036848e-01, -2.96367147e+00, 30, 1))
+    print(itterate_heatshield(663.1 - 255, 3, 3.03327727e+07, 5.45941114e-01, -2.33346601e-02, 2.65992642e+04,
+                              -5.91036848e-01, -2.96367147e+00, 1, 3))
