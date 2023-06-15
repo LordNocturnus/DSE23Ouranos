@@ -106,7 +106,7 @@ def buckling(E, l, I, p_load):
     :param E: Young's Modulus
     :param l: Length of plate
     :param I: Moment of inertia plate
-    :param sigma_y: Yield stress
+    :param p_load: Pressure loads during entry
     :return: bool if buckling criteria is respected
     """
     return p_load < np.pi**2 * E * I / (l**2)
@@ -124,7 +124,7 @@ def backshell_geometry(peak_load, load_entry, p_load=p_load, r_thermal=r_thermal
     :param load_entry: Maximum entry loads experienced by the capsule
     :param p_load: Pressure loads experienced during entry
     :param r_thermal: Thermal shield radius
-    :param h_glider: Height of the glider in the folded configuration
+    :param h_folded_wings: Height of the glider in the folded configuration
     :return: Backshell mass !!!! ADD MASS OF THERMAL SHIELD SUPPORTING STRUCTURE !!!!! (Use volume function from heatshild code)
     """
 
@@ -175,6 +175,7 @@ def bending_bottom(load_entry, l_thermal_shield, sigma_y):
     Method to calculate the thickness necessary to withstand entry loads
     :param load_entry: Entry loads
     :param l_thermal_shield: Size of the thermal shield
+    :param sigma_y: Yield strength of the selected material
     :return: Required minimum thickness to withstand entry loads
     """
     return np.sqrt(load_entry * l_thermal_shield / (2 * l_thermal_shield * sigma_y))
@@ -223,7 +224,7 @@ def total_mass(peak_load_para, p_load, load_entry, peak_T, r_thermal, h_folded_w
 
 
 def total_cost(m_back):
-    return m_back * back_cost_kg + m_back * cost_manu_all
+    return m_back * back_cost_kg + 22.26 * m_back * 0.951 * 1000 * 1.39
 
 
 
