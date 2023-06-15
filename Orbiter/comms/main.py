@@ -103,6 +103,9 @@ def uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoise, k, wavelength=wavelenght
     Eb = 10 ** (Eb / 10)
     return EbN0
 
+def total_cost(total_mass):
+    return 237.93 * 1000 * total_mass * 1.43 * 0.951
+
 
 if __name__ == "__main__":
     ...
