@@ -8,8 +8,8 @@ from Volume import *
 
 # Loads values
 load_peak_para = 311
-load_peak_entry = 311
-p_load = 2 * 10 ** 6
+load_peak_entry = 995.4
+p_load = 46388
 delta_T = 100
 
 # Mass Budget
@@ -112,7 +112,7 @@ def buckling(E, l, I, p_load):
     return p_load < np.pi**2 * E * I / (l**2)
 
 
-def backshell_geometry(peak_load, load_entry, peak_T, p_load=p_load, r_thermal=r_thermal, h_glider=h_folded_wings):
+def backshell_geometry(peak_load, load_entry, p_load=p_load, r_thermal=r_thermal, h_folded_wings=h_folded_wings):
     """
     Function that determines all geometrical properties and mass of the backshell. Multiple things are computed,
     during integration, it should be decided what is the most useful return, if one is actually needed. As of now the
@@ -121,13 +121,10 @@ def backshell_geometry(peak_load, load_entry, peak_T, p_load=p_load, r_thermal=r
     top one that has the top radius equal to the parachute radius (in folded configuration). Taper ratio is selected
     manually to determine the transition from one truncated cone to the other.
     :param peak_load: Peak parachute load experienced during entry (from decelerator analysis)
+    :param load_entry: Maximum entry loads experienced by the capsule
     :param p_load: Pressure loads experienced during entry
-    :param sigma_y: Yield stress of the chosen material
-    :param taper: Taper ratio of the different elements of the backshell
     :param r_thermal: Thermal shield radius
     :param h_glider: Height of the glider in the folded configuration
-    :param h_parachute: Height of the parachute in the folded configuration
-    :param r_parachute: Radius of the parachute in the folded configuration
     :return: Backshell mass !!!! ADD MASS OF THERMAL SHIELD SUPPORTING STRUCTURE !!!!! (Use volume function from heatshild code)
     """
 
@@ -141,7 +138,7 @@ def backshell_geometry(peak_load, load_entry, peak_T, p_load=p_load, r_thermal=r
 
     # Calculate the angle at the base of the truncated cones
     a_top = angle_cone(r_top_big, r_top_small, h_parachute)
-    a_bottom = angle_cone(r_bottom_big, r_bottom_small, h_glider)
+    a_bottom = angle_cone(r_bottom_big, r_bottom_small, h_folded_wings)
 
     # Calculate thickness based on pressure loads. Use personalised formula
     t_top = t_pressure(p_load, r_top_big, a_top, sigma_y_backshell) * 1.3
@@ -155,14 +152,14 @@ def backshell_geometry(peak_load, load_entry, peak_T, p_load=p_load, r_thermal=r
     I_top = 1/12 * t_top * (h_parachute / np.cos(a_top))**3
     A_top = np.pi * (r_top_big + r_top_small) * h_parachute / np.cos(a_top)
     buck_top = buckling(E_backshell, I_top, h_parachute / np.cos(a_top), p_load * A_top)
-    I_bottom = 1/12 * t_bottom * h_glider / np.cos(a_bottom)
+    I_bottom = 1/12 * t_bottom * h_folded_wings / np.cos(a_bottom)
     A_bottom = np.pi * (r_bottom_big + r_bottom_small) * h_folded_wings / np.cos(a_bottom)
-    buck_bottom = buckling(E_backshell, I_bottom, h_glider / np.cos(a_bottom), p_load * A_bottom)
+    buck_bottom = buckling(E_backshell, I_bottom, h_folded_wings / np.cos(a_bottom), p_load * A_bottom)
 
     if buck_bottom and buck_top:
         # Calculate the volume of the thin walled structure by subtraction
         volume_top = volume_truncated(r_top_big, r_top_small, h_parachute) - volume_truncated(r_top_big - t_top, r_top_small - t_top, h_parachute - 2 * t_top)
-        volume_bottom = volume_truncated(r_bottom_big, r_bottom_small, h_glider) - volume_truncated(r_bottom_big - t_bottom, r_bottom_small - t_bottom, h_glider - 2 * t_bottom)
+        volume_bottom = volume_truncated(r_bottom_big, r_bottom_small, h_folded_wings) - volume_truncated(r_bottom_big - t_bottom, r_bottom_small - t_bottom, h_folded_wings - 2 * t_bottom)
 
         # Calculate backshell mass
         mass_backshell = (volume_top + volume_bottom) * rho_backshell
@@ -221,7 +218,7 @@ def total_mass(peak_load_para, p_load, load_entry, peak_T, r_thermal, h_folded_w
              bottom shell thickness
     """
     mass_insulator, t_insulator = mass_insulator_shell(peak_T)
-    mass_back, t_top, t_bottom, t_bottom_shell = backshell_geometry(peak_load_para, load_entry, peak_T, p_load, r_thermal, h_folded_wings)
+    mass_back, t_top, t_bottom, t_bottom_shell = backshell_geometry(peak_load_para, load_entry, p_load, r_thermal, h_folded_wings)
     return mass_back * 1.5, mass_insulator * 1.5, t_insulator, t_top, t_bottom, t_bottom_shell
 
 
@@ -232,4 +229,6 @@ def total_cost(m_back):
 
 
 if __name__ == "__main__":
-    mass_back = total_mass(load_peak_para, p_load, load_peak_entry, 250, r_thermal, h_folded_wings)[0]
+    mass_back, mass_insulator = total_mass(load_peak_para, p_load, load_peak_entry, 250, r_thermal, h_folded_wings)[:2]
+    print(mass_back + mass_insulator)
+    print(total_cost(mass_back))
