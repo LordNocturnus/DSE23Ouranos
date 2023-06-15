@@ -43,8 +43,8 @@ def eigenvalue_phugoid_q_dot_zero_alpha_zero(mu_c=mu_c, C_X_u=C_X_u, C_Z_u=C_Z_u
 
 
 def eigenvalue_phugoid_q_dot_zero_alpha_dot_zero(mu_c=mu_c, C_Z_alpha=C_Z_alpha, C_m_q=C_m_q, C_m_alpha=C_m_alpha,
-                                                 C_X_u=C_X_u, C_m_u=C_m_u, C_X_alpha=C_X_alpha, C_Z_u=C_Z_u, C_Z_0=C_Z_0,
-                                                 ):
+                                                 C_X_u=C_X_u, C_m_u=C_m_u, C_X_alpha=C_X_alpha, C_Z_u=C_Z_u,
+                                                 C_Z_0=C_Z_0):
     A = 2 * mu_c * (C_Z_alpha * C_m_q - 2 * mu_c * C_m_alpha)
     B = 2 * mu_c * (C_X_u * C_m_alpha - C_m_u * C_X_alpha) + C_m_q * (C_Z_u * C_X_alpha - C_X_u * C_Z_alpha)
     C = C_Z_0 * (C_m_u * C_Z_alpha - C_Z_u * C_m_alpha)

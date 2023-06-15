@@ -5,7 +5,7 @@ g_u = 8.69  # m/s^2
 p_max = 20 * 10 ** 5  # Pa
 
 # Glider Variables
-m = 72  # kg
+m = 300  # kg
 S = 4.495  # m^2
 b = 6  # m
 chord = 1  # m
@@ -21,7 +21,7 @@ C_D_opt = 2 * C_D_0
 
 # Deployment Variables
 gamma_0_deploy = -np.pi / 2  # rad
-V_capsule = 80  # m/s
+V_capsule = 30  # m/s
 V_0_deploy = V_capsule  # m/s
 C_D_deploy = 0.03
 C_L_deploy = 0.7498

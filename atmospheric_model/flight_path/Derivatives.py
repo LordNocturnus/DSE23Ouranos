@@ -1,10 +1,25 @@
+import numpy as np
+from atmospheric_model.flight_path.GliderVariables import m, b
+
+# General Paramters
+I_x = 625.3693
+I_y = 218.2010
+I_z = 818.955
+J_xz = np.sqrt(I_x * I_x + I_z*I_z)
+
+k_x = np.sqrt(I_x/m)
+k_y = np.sqrt(I_y/m)
+k_z = np.sqrt(I_z/m)
+k_xz = J_xz/m
+
+
 # Dimensionless parameters
 mu_c = 0.1
 mu_b = 0.2
-K_X_2 = 0.3
-K_Y_2 = 0.4
-K_Z_2 = 0.5
-K_XZ = 0.6
+K_X_2 = (k_x/b) * (k_x/b)
+K_Y_2 = (k_y/b) * (k_y/b)
+K_Z_2 =(k_z/b) * (k_z/b)
+K_XZ = J_xz/(b*b)
 
 # Stability Derivatives
 C_X_u = 0.7
