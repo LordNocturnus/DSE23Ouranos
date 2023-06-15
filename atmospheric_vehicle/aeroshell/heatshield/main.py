@@ -184,8 +184,6 @@ def simulate_entry_heating(mass, diameter, alt, lat, lon, speed, flight_path_ang
     h = sp.integrate.quad(lambda x: q_func(x), dependent_variables_array[0, 0],
                           dependent_variables_array[-1, 0])[0]
 
-    plt.plot(dependent_variables_array[:, 0], q_c + q_r)
-    plt.show()
 
     print(h, max(q_c + q_r))
     drag.gamma = np.asarray(gram.data.SpecificHeatRatio)
