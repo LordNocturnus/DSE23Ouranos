@@ -70,7 +70,7 @@ class Orb:
         self.mixture_ratio = 1.65
         self.mass_AV = 1000  # Atmospheric vehicle mass (import from AV class)
         self.mass_combined = self.mass + self.mass_AV  # Mass of combined systems
-        self.deltaV_transfer = 170 # Combined systems deltaV
+        self.deltaV_transfer = 170  # Combined systems deltaV
         self.deltaV_insertion = 1300 + 100  # Delta V after splitting up at Uranus, Moon discovery and ADCS
         self.Isp = 321  # Isp of the orbiter thrusters
         self.T = 445  # Orbiter thrust
@@ -96,7 +96,7 @@ class Orb:
             self.iteration()
             self.total_dry_mass = self.mass_combined
             self.total_wet_mass = self.total_dry_mass + self.prop_mass
-            # self.burn_transfer = prop.burntimecombined(self.T, self.mass, self.deltaV_transfer, self.total_dry_mass, self.deltaV_insertion, self.Isp)
+            self.burn_transfer = prop.burntimecombined(self.T, self.mass, self.deltaV_transfer, self.total_dry_mass, self.deltaV_insertion, self.Isp)
             self.burn_insertion = prop.burntimeorbiter(self.T, self.mass, self.deltaV_insertion, self.total_dry_mass, self.deltaV_transfer, self.Isp)
             self.f_lat, self.f_ax = strt.natural_frequency(self.l_tanks, self.r_tanks, max(self.t_cy_o, self.t_cy_f), self.material, self.mass, self.mass_AV)
             self.cost_orbiter = self.cost_str + self.cost_thermal + self.cost_rtg + self.cost_comms + self.cost_prop + \
@@ -153,7 +153,9 @@ class Orb:
         return f'Total dry mass: {self.total_dry_mass}\n' \
                f'Total wet mass: {self.total_wet_mass}\n' \
                f'Total cost: {self.total_cost}\n' \
-               f'Total Power: {self.P_req}'
+               f'Total Power: {self.P_req}\n' \
+               f'Burn time transfer: {self.burn_transfer}\n' \
+               f'Burn orbit insertion: {self.burn_insertion}'
 
     def mass_breakdwon(self):
         print(f'Orbiter Dry Mass: {self.mass}\n'
@@ -187,4 +189,4 @@ class Orb:
 
 if __name__ == "__main__":
     orbiter = Orb()
-    print(orbiter.cost_breakdown())
+    print(orbiter.__str__())
