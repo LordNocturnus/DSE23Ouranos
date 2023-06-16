@@ -6,15 +6,15 @@ the top surface of the backshell due to parachute deployment.
 import numpy as np
 from Volume import *
 
-# Loads values
-load_peak_para = 311
-load_peak_entry = 995.4
-p_load = 46388
-delta_T = 100
-
 # Mass Budget
-m_thermal_para = 330 + 30
+m_thermal_para = 710  #330 + 30 + 68.98
 m_glider = 300
+
+# Loads values
+load_peak_para = 924.23 * (m_thermal_para + m_glider)
+load_peak_entry = 1321.21
+p_load = 159641
+delta_T = 200
 
 # Size Constraints
 h_folded_wings = 1.5
@@ -141,8 +141,8 @@ def backshell_geometry(peak_load, load_entry, p_load=p_load, r_thermal=r_thermal
     a_bottom = angle_cone(r_bottom_big, r_bottom_small, h_folded_wings)
 
     # Calculate thickness based on pressure loads. Use personalised formula
-    t_top = t_pressure(p_load, r_top_big, a_top, sigma_y_backshell) * 1.3
-    t_bottom = t_pressure(p_load, r_bottom_big, a_bottom, sigma_y_backshell) * 1.3
+    t_top = max(t_pressure(p_load, r_top_big, a_top, sigma_y_backshell) * 1.3, 1 * 10**-3)
+    t_bottom = max(t_pressure(p_load, r_bottom_big, a_bottom, sigma_y_backshell) * 1.3, 1.3 * 10**-3)
 
     # Calculate thickness based on pressure loads. Use traditional formula for thin walled cylinders
     # t_top = t_hoop(p_load, r_top_big, sigma_y)
@@ -201,7 +201,7 @@ def mass_insulator_shell(peak_T):
     Method to calculate the mass of the insulator layer for entry
     :return: Total mass of insulation layer to survive entry
     """
-    t_bottom = bending_bottom(load_peak_entry * (m_glider + m_thermal_para), r_thermal * 2, sigma_y_insulator)
+    t_bottom = max(bending_bottom(load_peak_entry * (m_glider + m_thermal_para), r_thermal * 2, sigma_y_insulator), 1 * 10**-3)
     v_bottom_shell = volume(t_heatshield, t_bottom, r_thermal * 2)
     thermal_loads(alpha_insulator, peak_T, E_insulator, sigma_y_insulator)
     return v_bottom_shell * rho_insulator, t_bottom
@@ -230,6 +230,7 @@ def total_cost(m_back):
 
 
 if __name__ == "__main__":
-    mass_back, mass_insulator = total_mass(load_peak_para, p_load, load_peak_entry, 250, r_thermal, h_folded_wings)[:2]
+    mass_back, mass_insulator, t_insulator, t_top, t_bottom, t_bottom_shell = total_mass(load_peak_para, p_load, load_peak_entry, 250, r_thermal, h_folded_wings)
+    print(mass_back, mass_insulator, t_insulator, t_top, t_bottom, t_bottom_shell)
     print(mass_back + mass_insulator)
     print(total_cost(mass_back))
