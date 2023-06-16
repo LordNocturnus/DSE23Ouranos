@@ -41,7 +41,7 @@ class Orb:
     def __init__(self, optimisation=True):
         # Payload
         self.T_operational = 283.15  # Operational temperature of payload instruments in K
-        self.m_payload = 30.17
+        self.m_payload = 75.3
         
         # Data Handling
         self.m_dh = 1
@@ -53,7 +53,7 @@ class Orb:
         self.P_prop = 35
         self.P_adcs = 150
         self.P_dh = 46
-        self.P_payload = 38.2
+        self.P_payload = 147.04
         self.P_thermal = 0
         self.P_pw = 25
 
@@ -72,8 +72,8 @@ class Orb:
         self.mass_combined = self.mass + self.mass_AV  # Mass of combined systems
         self.deltaV_transfer = 170  # Combined systems deltaV
         self.deltaV_insertion = 1300 + 100  # Delta V after splitting up at Uranus, Moon discovery and ADCS
-        self.Isp = 321  # Isp of the orbiter thrusters
-        self.T = 425 # Orbiter thrust
+        self.Isp = 317  # Isp of the orbiter thrusters
+        self.T = 635 # Orbiter thrust
         self.m_engine = 4.5  # Main engine mass in kg
         self.material = [4430, 880 * 10**6, 970 * 10**6, 113.8 * 10**9]
 
@@ -108,7 +108,7 @@ class Orb:
 
     def mass_prop(self, m_dry):
         self.prop_mass = prop.mass_prop(m_dry, self.deltaV_insertion, self.mass_combined, self.deltaV_transfer,
-                                        self.Isp)[2]
+                                        self.Isp)[2] * 1.25
         self.m_fuel = self.prop_mass / (1 + self.mixture_ratio)
         self.m_ox = self.prop_mass - self.m_fuel
         self.prop_properties = [(3 * 10 ** 6, self.m_ox, 1431), (3 * 10 ** 6, self.m_fuel, 874)]
@@ -143,7 +143,7 @@ class Orb:
             diff = abs(new_orbiter_mass - self.mass)
             self.mass = new_orbiter_mass
         self.mass *= 1.25  # Nasa Green Book
-        self.prop_mass *= 1.25  # Nasa Green Book
+        # self.prop_mass *= 1.25  # Nasa Green Book
         self.mass_combined = self.mass + self.mass_AV
         self.cost_prop = prop.total_cost(self.m_ox, self.m_fuel)
         self.cost_str = strt.total_cost(self.m_structure + self.m_tanks)
@@ -156,7 +156,11 @@ class Orb:
                f'Total cost: {self.total_cost}\n' \
                f'Total Power: {self.P_req}\n' \
                f'Burn time transfer: {self.burn_transfer}\n' \
-               f'Burn orbit insertion: {self.burn_insertion}'
+               f'Burn orbit insertion: {self.burn_insertion}\n' \
+               f'm_tanks: {self.m_tanks}\n' \
+               f'Fuel mass: {self.m_fuel}\n' \
+               f'Oxidizer mass: {self.m_ox}\n' \
+               f'r tanks: {self.r_tanks}'
 
     def mass_breakdwon(self):
         print(f'Orbiter Dry Mass: {self.mass}\n'
@@ -196,4 +200,5 @@ if __name__ == "__main__":
     p_absorbed = thm.power_absorbed(200, orbiter.A_rec, alpha, epsilon, 'Mars')
     p_req = thm.power_dissipated(p_emitted, p_absorbed)
     p_gen = 4500 * orbiter.n_rtg * orbiter.A_rec * alpha / (4 * np.pi * orbiter.d_rtg**2)
-    print(p_req, p_gen)
+    # print(p_req, p_gen)
+    print(str(orbiter))
