@@ -108,7 +108,7 @@ class Orb:
 
     def mass_prop(self, m_dry):
         self.prop_mass = prop.mass_prop(m_dry, self.deltaV_insertion, self.mass_combined, self.deltaV_transfer,
-                                        self.Isp)[2]
+                                        self.Isp)[2] * 1.25
         self.m_fuel = self.prop_mass / (1 + self.mixture_ratio)
         self.m_ox = self.prop_mass - self.m_fuel
         self.prop_properties = [(3 * 10 ** 6, self.m_ox, 1431), (3 * 10 ** 6, self.m_fuel, 874)]
@@ -125,12 +125,9 @@ class Orb:
     def thermal(self):
         self.A_rec = self.l_tanks * self.r_tanks
         self.A_emit = 2 * np.pi * self.r_tanks * self.l_tanks + np.pi * self.r_tanks ** 2
-        self.m_louvres = 0.001 * np.pi * self.n_rtg * l_rtg * w_rtg * 2700
-        self.d_rtg, self.n_l_closed = thm.power_phases(self.A_rec, self.A_emit, self.n_rtg, T_operational=self.T_operational)
-        self.m_thermal_shield = np.pi * self.r_tanks**2 * 0.1143 * 400 + 20  # Spin and eject device from Beppi colombo (MOSIF)
-        self.m_thermal = self.m_louvres + self.m_thermal_shield  # 0.1143 thickness of shield https://science.nasa.gov/technology/technology-highlights/heat-shield-protect-mission-to-sun
-                                                                                  # 400 is density of carbon phoam https://www.cfoam.com/wp-content/uploads/Carbon-Foams-amp16111p029-3.pdf
-
+        self.d_rtg, self.m_radiator, self.m_louvres = thm.power_phases(self.A_rec, self.A_emit, self.n_rtg, T_operational=self.T_operational)
+        self.m_kapton = self.A_emit * 0.001 * 1.55 * 1000
+        self.m_thermal = self.m_louvres + self.m_radiator + self.m_kapton
 
     def iteration(self):
         diff = 1000
@@ -143,11 +140,10 @@ class Orb:
             diff = abs(new_orbiter_mass - self.mass)
             self.mass = new_orbiter_mass
         self.mass *= 1.25  # Nasa Green Book
-        self.prop_mass *= 1.25  # Nasa Green Book
         self.mass_combined = self.mass + self.mass_AV
         self.cost_prop = prop.total_cost(self.m_ox, self.m_fuel)
         self.cost_str = strt.total_cost(self.m_structure + self.m_tanks)
-        self.cost_thermal = thm.total_cost(self.m_louvres, self.m_thermal_shield)
+        self.cost_thermal = thm.total_cost(self.m_louvres, self.m_thermal)
         self.cost_test_assembly = 10.4 * 1000 * 1.7 * 0.951 * self.mass
 
     def __str__(self):
@@ -189,11 +185,5 @@ class Orb:
               f'Structure cost: {self.cost_str / 10**6} M€\n')
 
 if __name__ == "__main__":
-    alpha = 0.09  # Absorptivity (Aluminized Kapton foil from SMAD or ADSEE I reader)
-    epsilon = 0.8
     orbiter = Orb()
-    p_emitted = thm.power_emitted(orbiter.A_emit, epsilon, orbiter.T_operational)
-    p_absorbed = thm.power_absorbed(200, orbiter.A_rec, alpha, epsilon, 'Mars')
-    p_req = thm.power_dissipated(p_emitted, p_absorbed)
-    p_gen = 4500 * orbiter.n_rtg * orbiter.A_rec * alpha / (4 * np.pi * orbiter.d_rtg**2)
-    print(p_req, p_gen)
+    
