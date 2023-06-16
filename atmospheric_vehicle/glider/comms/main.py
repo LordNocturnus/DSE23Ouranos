@@ -49,7 +49,7 @@ if __name__ == "__main__":
     l_tx = unit_to_db(1 / n_tx)  # dB
     print("l_tx:", l_tx)
     freq_ao = 405e6  # Hz
-    max_r_ao = 100000  # km
+    max_r_ao = 240000  # km
     l_fs_ao = l_fs(freq_ao, max_r_ao * 1000)  # dB
     print("l_fs:", l_fs_ao)
     r_rx_ao = 2.4  # m
@@ -59,11 +59,11 @@ if __name__ == "__main__":
     l_rx = unit_to_db(1 / n_rx)  # dB
     print("l_rx:", l_rx)
     l_m = 0*unit_to_db(1 / 0.9)
-    p_tx_ao = 10.7  # W
+    p_tx_ao = 3*10.7  # W
     p_tx_ao = unit_to_db(p_tx_ao)  # dB
     print("p_tx:", p_tx_ao)
     p_rx_ao = p_rx(p_tx_ao, g_tx_ao, l_tx, l_fs_ao, l_m, g_rx_ao, l_rx)
-    bit_rate_ao = 2126  # bps
+    bit_rate_ao = 2226  # bps
     print("p_rx:", db_to_unit(p_rx_ao))
     e_b_ao = e_b(db_to_unit(p_rx_ao), bit_rate_ao)
     print("e_b:", e_b_ao)
