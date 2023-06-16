@@ -94,7 +94,7 @@ class orbital_trajectory:
         state[1] = final_eccentricity"""
         self.initial_periapsis = desired_periapsis
 
-        semi_major_axis = - 5793939212817970/(v_inf**2)
+        semi_major_axis = - self.uranus_gravitational_parameter/(v_inf**2)
         eccentricity = 1-desired_periapsis/semi_major_axis
         semi_latus_rectum = semi_major_axis*(eccentricity**2 -1)
         true_anomaly = np.arccos(semi_latus_rectum/(eccentricity*self.initial_radius)-1/eccentricity)
@@ -116,9 +116,7 @@ class orbital_trajectory:
         if desired_periapsis < 25367000:
             raise ValueError("Periapsis location is too low, radisus of Uranus is 25362000 meters. Orbiter would encounter the atmosphere.")
         v_inf = self.v_inf + velocity_increase
-        initial_semi_major_axis = - 5793939212817970/(v_inf**2)
-        initial_eccentricity = 1-self.initial_periapsis/initial_semi_major_axis
-        semi_major_axis =- 5793939212817970/((v_inf+velocity_increase)**2)
+        semi_major_axis =- self.uranus_gravitational_parameter/((v_inf+velocity_increase)**2)
         eccentricity = 1-desired_periapsis/semi_major_axis
         initial_state_capsule = self.initial_state_capsule[:3]
         def getorbithelper(input,semi_major,ecc,refpos):
@@ -142,8 +140,6 @@ class orbital_trajectory:
         #print (output)
         print('output is',getorbithelper((argument_of_periapsis,true_anomaly),semi_major_axis,eccentricity,initial_state_capsule))
 
-        #true_anomaly = np.arccos(semi_latus_rectum/(eccentricity*self.initial_radius)-1/eccentricity)
-        true_anomaly = self.true_anomaly
 
         state = np.array([semi_major_axis,eccentricity,0,argument_of_periapsis,0,true_anomaly])
 
@@ -458,9 +454,7 @@ class orbital_trajectory:
 
         plt.plot(np.arange(stop=len(telemetry_distance) * 10, start = 0, step = 10)/3600, telemetry_angle/np.pi * 180)
         plt.show()
-        plt.plot(np.arange(stop=len(telemetry_distance) * 10, start = 0, step = 10)/3600,self.position_circ_array/np.pi * 180)
 
-        plt.show()
 
     def plot_orbital_trajectory(self):
         if not hasattr(self,"states_capsule_array"):
