@@ -8,6 +8,7 @@ import tudatpy
 from tudatpy.kernel.trajectory_design import transfer_trajectory
 from tudatpy.kernel import constants
 from tudatpy.kernel.numerical_simulation import environment_setup, propagation_setup, propagation
+from tudatpy.kernel import astro
 from tudatpy.kernel import numerical_simulation
 from tudatpy.kernel.interface import spice
 from tudatpy.util import result2array
@@ -15,6 +16,7 @@ from tudatpy.util import result2array
 # Pygmo imports
 import pygmo as pg
 import os
+import scipy.optimize as opt
 
 
 
@@ -23,11 +25,54 @@ path = os.path.dirname(__file__)
 spice.load_kernel(path+'/ura111.bsp')
 spice.load_kernel(path+'/Gravity.tpc')
 
-print(constants)
+#print(constants)
 
-print(spice.get_body_cartesian_state_at_epoch("Uranus","Sun","ECLIPJ2000","None",30*constants.JULIAN_YEAR))
+#print(spice.get_body_cartesian_state_at_epoch("Uranus","Sun","ECLIPJ2000","None",30*constants.JULIAN_YEAR))
 
-print(spice.compute_rotation_matrix_between_frames("ECLIPJ2000","IAU_URANUS",30*constants.JULIAN_YEAR))
+#print(spice.compute_rotation_matrix_between_frames("ECLIPJ2000","IAU_URANUS",30*constants.JULIAN_YEAR))
+
+dv = 1000
+
+peri1 = 25000000
+peri2 = 30000000
+
+gravparam = 5793939212817970.0
+v_inf = 4000
+r = 1e9
+
+semi_major_1 = -gravparam/(v_inf**2)
+ecc1 = 1 -peri1/semi_major_1
+
+arg1 = 0
+semi_latus_rectum1 = semi_major_1 * ( ecc1**2 -1)
+true_anom1 = np.arccos(semi_latus_rectum1/(ecc1*r)-1/ecc1)
+state = np.array([semi_major_1,ecc1,0,arg1,0,true_anom1])
+
+cartesianstate1 = astro.element_conversion.keplerian_to_cartesian(state,gravparam)
+cartesianpos1 = cartesianstate1[:3]
+
+semi_major_2 = -gravparam/((v_inf+dv)**2)
+ecc2 = 1 - peri2/semi_major_2
+
+def getorbithelper(input,semi_major,ecc,refpos):
+    arg = input[0]
+    true_anom = input[1]
+
+    refposx = refpos[0]
+    refposy = refpos[1]
+    state = np.array([semi_major,ecc,0,arg,0,true_anom])
+    gravparam = 5793939212817970.0
+    cartesianstate = astro.element_conversion.keplerian_to_cartesian(state,gravparam)
+    errorx = cartesianstate[0]-refposx
+    errory = cartesianstate[1]-refposy
+    return errorx,errory
+
+initguess = np.array([0.0,true_anom1])
+optimal = opt.fsolve(getorbithelper,initguess,(semi_major_1,ecc1,cartesianpos1))
+
+print(getorbithelper(optimal,semi_major_1,ecc1,cartesianpos1))
+
+
 
 
 '''
