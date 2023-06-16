@@ -21,7 +21,6 @@ _path = os.path.dirname(__file__)
 spice.load_standard_kernels()
 spice.load_kernel(_path + '/../GRAM/GRAM_Suite_1_5/SPICE/spk/satellites/ura116xl.bsp')
 
-
 # spice.load_kernel(_path+'/Gravity.tpc')
 
 
@@ -68,7 +67,7 @@ def entry_sim(mass, aero_coefficient_settings, alt, lat, lon, speed, flight_path
                                     environment_setup.atmosphere.AtmosphereDependentVariables.tabulated_temperature,
                                     environment_setup.atmosphere.AtmosphereDependentVariables.tabulated_gas_constant,
                                     environment_setup.atmosphere.AtmosphereDependentVariables.tabulated_specific_heat_ratio,
-                                    environment_setup.atmosphere.AtmosphereDependentVariables.tabulated_molar_mass])  # """
+                                    environment_setup.atmosphere.AtmosphereDependentVariables.tabulated_molar_mass])#"""
 
     # Create system of bodies from the body settings
     bodies = environment_setup.create_system_of_bodies(body_settings)
@@ -195,11 +194,11 @@ class CapsuleDrag:
         self.r1 = r1
         self.angle = angle
 
-    def drag_coefficient(self, var):  # Mach, specific heat ratio, freestream pressure
+    def drag_coefficient(self, var): # Mach, specific heat ratio, freestream pressure
         self.mach = var[0]
         self.gamma = self.SpecificHeatRatio(var[1])
         self.p_inf = self.Pressure_Pa(var[1])
-        drag = sp.integrate.quad(lambda y: self.p_bar(y) * 2 * np.pi * y, 0.0, self.diameter / 2)[0]
+        drag = sp.integrate.quad(lambda y: self.p_bar(y) * 2 * np.pi * y * np.cos(self.beta(y)), 0.0, self.diameter / 2)[0]
         return [drag / (1 / 2 * self.gamma * self.mach ** 2 * self.area) + 1 / (1 / 2 * self.gamma * self.mach ** 2),
                 0.0, 0.0]
 
@@ -209,12 +208,12 @@ class CapsuleDrag:
         else:
             return self.angle
 
-    def p_star_bar(self):  # Mach, specific heat ratio, freestream pressure
+    def p_star_bar(self): # Mach, specific heat ratio, freestream pressure
         return (2 / (self.gamma + 1)) ** (self.gamma / (self.gamma - 1))
 
-    def p_0_stag(self):  # Mach, specific heat ratio, freestream pressure
-        upper = ((self.gamma + 1) / 2 * self.mach ** 2) ** (self.gamma / (self.gamma - 1))
-        lower = (2 * self.gamma / (self.gamma + 1) * self.mach ** 2 - (self.gamma - 1) /
+    def p_0_stag(self): # Mach, specific heat ratio, freestream pressure
+        upper = ((self.gamma + 1) / 2 * self.mach**2) ** (self.gamma / (self.gamma - 1))
+        lower = (2*self.gamma / (self.gamma + 1) * self.mach**2 - (self.gamma - 1) /
                  (self.gamma + 1)) ** (1 / (self.gamma - 1))
         return upper / lower
 
@@ -251,7 +250,7 @@ class CapsuleDrag:
         p1 = self.p_inf_bar()
         p2 = (1 - self.p_inf_bar()) * np.cos(self.beta(y)) ** 2
         p3 = (1 - self.p_fd_bar(y)) * ((np.cos(self.beta(y)) ** 2 - self.p_star_bar()) / (1 - self.p_star_bar()))
-        p4 = (1 - self.R_N(y) / self.R_max()) * (np.sin(self.beta(y)) ** 2 * (1 - s_ratio) + 1 / 2 * s_ratio * (
+        p4 = (1 - self.R_N(y) / self.R_max()) * (np.sin(self.beta(y)) ** 2 * (1 - s_ratio) + 1/2 * s_ratio * (
                 self.p_fd_bar(y) - 1 + s_ratio * np.sin(self.beta(y)) ** 2 + p3))
         return (p1 + p2 - p3 + p4) * self.p_0_stag()
 
