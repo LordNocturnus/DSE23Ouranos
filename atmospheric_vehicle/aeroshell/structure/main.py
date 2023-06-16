@@ -6,23 +6,24 @@ the top surface of the backshell due to parachute deployment.
 import numpy as np
 from Volume import *
 
-# Loads values
-load_peak_para = 311
-load_peak_entry = 995.4
-p_load = 46388
-delta_T = 100
-
 # Mass Budget
-m_thermal_para = 330 + 30
+m_thermal_para = 710  #330 + 30 + 68.98
 m_glider = 300
 
+# Loads values
+load_peak_para = 924.23 * (m_thermal_para + m_glider)
+load_peak_entry = 1321.21
+p_load = 159641
+delta_T = 200
+
 # Size Constraints
-h_folded_wings = 1.5
+t_heatshield = 0.0226
+h_folded_wings = 2
 h_parachute = 0.5
-r_thermal = 4.5 / 2
+r_thermal = 1.5
 r_parachute = 0.3
 _radius1 = 1.125
-_radius2 = 0.126
+_radius2 = 0.05 + 0.04 + t_heatshield
 
 # Capsule Properties
 # cd_capsule = 1.3
@@ -32,8 +33,8 @@ _radius2 = 0.126
 # Huygens Titan --> cd = 1.34 (Based on ballistic coefficient, geometry and mass)(Made an average of the ballistic coeff.)
 # Galileo Jupiter -> cd = 0.74 (Based on ballistic coefficient, surface area and mass)
 # theta_capsule = 60 * np.pi / 180
-taper_ratio_bottom = 0.3
-taper_ratio_top = 0.5
+taper_ratio_bottom = 0.44
+taper_ratio_top = 0.44
 
 # Material Properties
 # -- Alluminum honeycomb with graphite eopxy -- Mars rover (https://spaceflight101.com/msl/msl-aeroshell-and-heat-shield/)
@@ -63,7 +64,11 @@ def angle_cone(r_big, r_small, height):
     :param height: height of the cone
     :return: angle between hypotenuse and base
     """
-    return np.arctan2(r_big - r_small, height)
+    if height == 0:
+        raise ZeroDivisionError(f'The height has to be a positive value')
+    if r_big <= 0 or r_small <= 0 or height < 0:
+        raise ValueError(f'The dimensions of the capsule should be positive values')
+    return np.arctan((r_big - r_small) / height)
 
 def t_pressure(p, r_big, a, sigma_y):
     """
@@ -75,7 +80,11 @@ def t_pressure(p, r_big, a, sigma_y):
     :param sigma_y: Yield stress of selected material
     :return: Required minimum thickness
     """
-    return p * r_big * 2 / (2 * np.cos(a) * (sigma_y - 0.6 * p))
+    if a == np.pi/2:
+        raise ZeroDivisionError(f'Capsule side angle equals 90 degrees, change the idealised geometry')
+    elif sigma_y == 0.6 * abs(p):
+        raise ZeroDivisionError(f'Formula no longer valid due to material properties')
+    return abs(p) * r_big * 2 / (2 * np.cos(a) * (sigma_y - 0.6 * abs(p)))
 
 def t_hoop(p, r_big, sigma_y):
     """
@@ -97,6 +106,8 @@ def volume_truncated(r_big, r_small, h):
     :param h: Height of cone
     :return: Volume of truncated cone
     """
+    if r_big <= 0 or r_small <= 0 or h <= 0:
+        raise ValueError(f'Dimensions of the cone should be positive')
     return (1 / 3) * np.pi * h * (r_small ** 2 + r_small * r_big + r_big ** 2)
 
 
@@ -109,7 +120,11 @@ def buckling(E, l, I, p_load):
     :param p_load: Pressure loads during entry
     :return: bool if buckling criteria is respected
     """
-    return p_load < np.pi**2 * E * I / (l**2)
+    if l == 0:
+        raise ZeroDivisionError(f'The length of the sheet should be higher than 0')
+    elif l < 0 or I <= 0 or E <= 0:
+        raise ValueError(f'The geometrical and material properties of the sheet should be a positive value')
+    return abs(p_load) <= np.pi**2 * E * I / (l**2)
 
 
 def backshell_geometry(peak_load, load_entry, p_load=p_load, r_thermal=r_thermal, h_folded_wings=h_folded_wings):
@@ -141,8 +156,8 @@ def backshell_geometry(peak_load, load_entry, p_load=p_load, r_thermal=r_thermal
     a_bottom = angle_cone(r_bottom_big, r_bottom_small, h_folded_wings)
 
     # Calculate thickness based on pressure loads. Use personalised formula
-    t_top = t_pressure(p_load, r_top_big, a_top, sigma_y_backshell) * 1.3
-    t_bottom = t_pressure(p_load, r_bottom_big, a_bottom, sigma_y_backshell) * 1.3
+    t_top = max(t_pressure(p_load, r_top_big, a_top, sigma_y_backshell) * 1.2, 1 * 10**-3)
+    t_bottom = max(t_pressure(p_load, r_bottom_big, a_bottom, sigma_y_backshell) * 1.2, 1 * 10**-3)
 
     # Calculate thickness based on pressure loads. Use traditional formula for thin walled cylinders
     # t_top = t_hoop(p_load, r_top_big, sigma_y)
@@ -163,9 +178,11 @@ def backshell_geometry(peak_load, load_entry, p_load=p_load, r_thermal=r_thermal
 
         # Calculate backshell mass
         mass_backshell = (volume_top + volume_bottom) * rho_backshell
-        t_bottom_shell = max(bending_bottom(load_entry, r_thermal * 2, sigma_y_backshell), 1 * 10**-3)
+        t_bottom_shell = max(bending_bottom(load_entry, r_thermal * 2, sigma_y_backshell), 1 * 10**-3, bending_pressure(p_load, r_thermal * 2, sigma_y_backshell))
+        I_backshell = np.pi * (r_thermal * 2)**4 / 64
+        print(buckling(E_backshell, r_thermal * 2, I_backshell, peak_load * np.pi * r_thermal**2))
         mass_bottom_shell = volume(t_heatshield, t_bottom_shell, r_thermal * 2) * rho_backshell
-        return mass_backshell + mass_bottom_shell, t_top, t_bottom, t_bottom_shell
+        return (mass_backshell + mass_bottom_shell) * 1.2, t_top, t_bottom, t_bottom_shell
     else:
         print(f'Buckling requirements is not satisfied')
 
@@ -178,7 +195,7 @@ def bending_bottom(load_entry, l_thermal_shield, sigma_y):
     :param sigma_y: Yield strength of the selected material
     :return: Required minimum thickness to withstand entry loads
     """
-    return np.sqrt(load_entry * l_thermal_shield / (2 * l_thermal_shield * sigma_y))
+    return np.sqrt(load_entry * l_thermal_shield * 3 / (l_thermal_shield * sigma_y))
 
 
 def thermal_loads(alpha, peak_T, E, sigma_y):
@@ -190,7 +207,7 @@ def thermal_loads(alpha, peak_T, E, sigma_y):
     :param sigma_y: Yield strength of material considered
     :return: Bool for compliance with temperature change
     """
-    if sigma_y > alpha * (peak_T + 273.15 - 4) * E:
+    if sigma_y >= alpha * (peak_T + 273.15 - 4) * E:
         print(f'Thermal check passed')
     else:
         print(f'Thermal check not passed')
@@ -201,10 +218,12 @@ def mass_insulator_shell(peak_T):
     Method to calculate the mass of the insulator layer for entry
     :return: Total mass of insulation layer to survive entry
     """
-    t_bottom = bending_bottom(load_peak_entry * (m_glider + m_thermal_para), r_thermal * 2, sigma_y_insulator)
-    v_bottom_shell = volume(t_heatshield, t_bottom, r_thermal * 2)
+    # t_entry = bending_bottom(load_peak_entry * (m_glider + m_thermal_para), r_thermal * 2, sigma_y_insulator)
+    # t_pressure = bending_pressure(p_load, r_thermal * 2, sigma_y_insulator)
+    t_bottom = 0.8 * max(bending_bottom(load_peak_entry * (m_glider + m_thermal_para), r_thermal * 2, sigma_y_insulator), bending_pressure(p_load, r_thermal * 2, sigma_y_insulator))
+    v_bottom_shell = volume(t_heatshield, t_bottom, r_thermal * 2) #+ volume(t_heatshield, t_entry, r_thermal * 2 * 0.5)
     thermal_loads(alpha_insulator, peak_T, E_insulator, sigma_y_insulator)
-    return v_bottom_shell * rho_insulator, t_bottom
+    return v_bottom_shell * rho_insulator * 1.2, t_bottom
 
 
 def total_mass(peak_load_para, p_load, load_entry, peak_T, r_thermal, h_folded_wings):
@@ -220,16 +239,17 @@ def total_mass(peak_load_para, p_load, load_entry, peak_T, r_thermal, h_folded_w
     """
     mass_insulator, t_insulator = mass_insulator_shell(peak_T)
     mass_back, t_top, t_bottom, t_bottom_shell = backshell_geometry(peak_load_para, load_entry, p_load, r_thermal, h_folded_wings)
-    return mass_back * 1.5, mass_insulator * 1.5, t_insulator, t_top, t_bottom, t_bottom_shell
+    return mass_back, mass_insulator, t_insulator, t_top, t_bottom, t_bottom_shell
 
 
 def total_cost(m_back):
     return m_back * back_cost_kg + 22.26 * m_back * 0.951 * 1000 * 1.39
 
-
+def bending_pressure(p_entry, l_thermal, sigma_y):
+    return np.sqrt((3 * p_entry * l_thermal**2 / (2 * l_thermal * sigma_y)))
 
 
 if __name__ == "__main__":
-    mass_back, mass_insulator = total_mass(load_peak_para, p_load, load_peak_entry, 250, r_thermal, h_folded_wings)[:2]
+    mass_back, mass_insulator, t_insulator, t_top, t_bottom, t_bottom_shell = total_mass(load_peak_para, p_load, load_peak_entry, 250, r_thermal, h_folded_wings)
+    print(mass_back, mass_insulator, t_insulator, t_top, t_bottom, t_bottom_shell)
     print(mass_back + mass_insulator)
-    print(total_cost(mass_back))

@@ -2,9 +2,9 @@ import numpy as np
 import scipy as sp
 
 
-_dia = 4.5
+_dia = 3
 _radius1 = 1.125
-_radius2 = 0.126
+_radius2 = 0.05 + 0.04 + 0.0226
 _bottom_angle = np.deg2rad(20)
 _top_angle = np.deg2rad(59.73)
 
