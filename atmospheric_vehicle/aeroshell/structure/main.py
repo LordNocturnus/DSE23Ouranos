@@ -17,12 +17,13 @@ p_load = 159641
 delta_T = 200
 
 # Size Constraints
-h_folded_wings = 1.5
+t_heatshield = 0.0226
+h_folded_wings = 2
 h_parachute = 0.5
-r_thermal = 4.5 / 2
+r_thermal = 1.5
 r_parachute = 0.3
 _radius1 = 1.125
-_radius2 = 0.126
+_radius2 = 0.05 + 0.04 + t_heatshield
 
 # Capsule Properties
 # cd_capsule = 1.3
@@ -32,8 +33,8 @@ _radius2 = 0.126
 # Huygens Titan --> cd = 1.34 (Based on ballistic coefficient, geometry and mass)(Made an average of the ballistic coeff.)
 # Galileo Jupiter -> cd = 0.74 (Based on ballistic coefficient, surface area and mass)
 # theta_capsule = 60 * np.pi / 180
-taper_ratio_bottom = 0.3
-taper_ratio_top = 0.5
+taper_ratio_bottom = 0.44
+taper_ratio_top = 0.44
 
 # Material Properties
 # -- Alluminum honeycomb with graphite eopxy -- Mars rover (https://spaceflight101.com/msl/msl-aeroshell-and-heat-shield/)
@@ -178,8 +179,10 @@ def backshell_geometry(peak_load, load_entry, p_load=p_load, r_thermal=r_thermal
         # Calculate backshell mass
         mass_backshell = (volume_top + volume_bottom) * rho_backshell
         t_bottom_shell = max(bending_bottom(load_entry, r_thermal * 2, sigma_y_backshell), 1 * 10**-3, bending_pressure(p_load, r_thermal * 2, sigma_y_backshell))
+        I_backshell = np.pi * (r_thermal * 2)**4 / 64
+        print(buckling(E_backshell, r_thermal * 2, I_backshell, peak_load * np.pi * r_thermal**2))
         mass_bottom_shell = volume(t_heatshield, t_bottom_shell, r_thermal * 2) * rho_backshell
-        return (mass_backshell + mass_bottom_shell) * 1.1, t_top, t_bottom, t_bottom_shell
+        return (mass_backshell + mass_bottom_shell) * 1.2, t_top, t_bottom, t_bottom_shell
     else:
         print(f'Buckling requirements is not satisfied')
 
@@ -220,7 +223,7 @@ def mass_insulator_shell(peak_T):
     t_bottom = 0.8 * max(bending_bottom(load_peak_entry * (m_glider + m_thermal_para), r_thermal * 2, sigma_y_insulator), bending_pressure(p_load, r_thermal * 2, sigma_y_insulator))
     v_bottom_shell = volume(t_heatshield, t_bottom, r_thermal * 2) #+ volume(t_heatshield, t_entry, r_thermal * 2 * 0.5)
     thermal_loads(alpha_insulator, peak_T, E_insulator, sigma_y_insulator)
-    return v_bottom_shell * rho_insulator * 1.1, t_bottom
+    return v_bottom_shell * rho_insulator * 1.2, t_bottom
 
 
 def total_mass(peak_load_para, p_load, load_entry, peak_T, r_thermal, h_folded_wings):
