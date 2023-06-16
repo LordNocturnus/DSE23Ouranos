@@ -74,7 +74,7 @@ class Orb:
         self.deltaV_insertion = 1300 + 100  # Delta V after splitting up at Uranus, Moon discovery and ADCS
         self.Isp = 321  # Isp of the orbiter thrusters
         self.T = 425 # Orbiter thrust
-        self.m_prop = 4.5  # Main engine mass in kg
+        self.m_engine = 4.5  # Main engine mass in kg
         self.material = [4430, 880 * 10**6, 970 * 10**6, 113.8 * 10**9]
 
         # ADCS
@@ -85,7 +85,7 @@ class Orb:
         self.cost_dh = 41400000  # Arnaud
         self.cost_comms = comms.total_cost(self.m_comms)
         self.cost_ADCS = ...
-        self.cost_payload = (328 * self.m_payload**0.426 * self.P_payload**0.414 * self.t_payload**0.375 * 1000) * 1.34 * 0.951 * 1.39
+        self.cost_payload = 0  # (328 * self.m_payload**0.426 * self.P_payload**0.414 * self.t_payload**0.375 * 1000) * 1.34 * 0.951 * 1.39
             #1000000 + 31000000  # Magnetometer (https://gi.copernicus.org/preprints/gi-2017-53/gi-2017-53-AC1-supplement.pdf,
                                                 # Camera (https://www.bhphotovideo.com/explora/photography/features/cameras-on-37-interplanetary-spacecraft)
         self.cost_ground_station = 2.01 * self.cost_dh  # SMAD
@@ -108,7 +108,7 @@ class Orb:
 
     def mass_prop(self, m_dry):
         self.prop_mass = prop.mass_prop(m_dry, self.deltaV_insertion, self.mass_combined, self.deltaV_transfer,
-                                        self.Isp)[2]
+                                        self.Isp)[2] * 1.25
         self.m_fuel = self.prop_mass / (1 + self.mixture_ratio)
         self.m_ox = self.prop_mass - self.m_fuel
         self.prop_properties = [(3 * 10 ** 6, self.m_ox, 1431), (3 * 10 ** 6, self.m_fuel, 874)]
@@ -123,14 +123,11 @@ class Orb:
         self.cost_rtg = pwr.costRTG(self.P_req, self.t_mission)
 
     def thermal(self):
-        self.A_rec = self.l_tanks * self.r_tanks
+        self.A_rec = self.l_tanks * self.r_tanks * 2
         self.A_emit = 2 * np.pi * self.r_tanks * self.l_tanks + np.pi * self.r_tanks ** 2
-        self.m_louvres = 0.001 * np.pi * self.n_rtg * l_rtg * w_rtg * 2700
-        self.d_rtg, self.n_l_closed = thm.power_phases(self.A_rec, self.A_emit, self.n_rtg, T_operational=self.T_operational)
-        self.m_thermal_shield = np.pi * self.r_tanks**2 * 0.1143 * 400 + 20  # Spin and eject device from Beppi colombo (MOSIF)
-        self.m_thermal = self.m_louvres + self.m_thermal_shield  # 0.1143 thickness of shield https://science.nasa.gov/technology/technology-highlights/heat-shield-protect-mission-to-sun
-                                                                                  # 400 is density of carbon phoam https://www.cfoam.com/wp-content/uploads/Carbon-Foams-amp16111p029-3.pdf
-
+        self.d_rtg, self.m_radiator, self.m_louvres = thm.power_phases(self.A_rec, self.A_emit, self.n_rtg, T_operational=self.T_operational)
+        self.m_kapton = self.A_emit * 0.001 * 1.55 * 1000
+        self.m_thermal = self.m_louvres + self.m_radiator + self.m_kapton
 
     def iteration(self):
         diff = 1000
@@ -139,15 +136,14 @@ class Orb:
             self.P_req = self.P_comms + self.P_pw + self.P_dh + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop
             self.power()
             self.thermal()
-            new_orbiter_mass = self.m_structure + self.m_tanks + self.m_power + self.m_thermal + self.m_payload + self.m_dh + self.m_comms + self.m_adcs + self.m_prop
+            new_orbiter_mass = self.m_structure + self.m_tanks + self.m_power + self.m_thermal + self.m_payload + self.m_dh + self.m_comms + self.m_adcs + self.m_engine
             diff = abs(new_orbiter_mass - self.mass)
             self.mass = new_orbiter_mass
         self.mass *= 1.25  # Nasa Green Book
-        self.prop_mass *= 1.25  # Nasa Green Book
         self.mass_combined = self.mass + self.mass_AV
         self.cost_prop = prop.total_cost(self.m_ox, self.m_fuel)
         self.cost_str = strt.total_cost(self.m_structure + self.m_tanks)
-        self.cost_thermal = thm.total_cost(self.m_louvres, self.m_thermal_shield)
+        self.cost_thermal = thm.total_cost(self.m_louvres, self.m_thermal)
         self.cost_test_assembly = 10.4 * 1000 * 1.7 * 0.951 * self.mass
 
     def __str__(self):
@@ -190,4 +186,4 @@ class Orb:
 
 if __name__ == "__main__":
     orbiter = Orb()
-    print(str(orbiter))
+    print(orbiter.total_cost)
