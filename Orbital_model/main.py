@@ -23,8 +23,7 @@ import os
 #start of actual program
 
 #some placeholder values
-duration_of_entry = 180
-atmospheric_mission_time = constants.JULIAN_DAY/24*17
+
 
 #loading ephemeris
 spice.load_standard_kernels()
@@ -184,7 +183,7 @@ class orbital_trajectory:
 
         time_to_periapsis = astro.element_conversion.delta_mean_anomaly_to_elapsed_time(delta_mean_anomaly,self.uranus_gravitational_parameter,initial_state_capsule_keplerian[0])
 
-        #print (time_to_periapsis/constants.JULIAN_DAY)
+        print ('separated time is',time_to_periapsis/constants.JULIAN_DAY)
 
         timenotfound = True
         simulation_end_epoch = time_to_periapsis
@@ -385,6 +384,8 @@ class orbital_trajectory:
 
         telemetry_vector = np.zeros((len(atmospheric_mission_orbiter_x),3))
         telemetry_angle= np.zeros_like(atmospheric_mission_orbiter_x)
+        telemetry_angle_orbiter=np.zeros_like(atmospheric_mission_orbiter_x)
+        telemetry_rate_orbiter=np.zeros(len(atmospheric_mission_orbiter_x)-1)
         telemetry_distance = np.zeros_like(atmospheric_mission_orbiter_x)
 
         position_glider_circ = astro.element_conversion.cartesian_to_spherical(glider_position)
@@ -402,7 +403,7 @@ class orbital_trajectory:
         self.position_glider = position_glider[:,:3]
         self.position_circ_array = position_circ_array
         
-
+        ref_pos_x = np.array([1,0,0])
         input_angle = np.zeros_like(atmospheric_mission_orbiter_x)
 
         for i in range(len(telemetry_vector)):
@@ -413,6 +414,12 @@ class orbital_trajectory:
             telemetry_distance[i] = np.sqrt(telemetry_vector[i,0] ** 2 + telemetry_vector[i,1] ** 2 + telemetry_vector[i,2] ** 2 )
             input_angle[i] = np.inner(telemetry_vector[i],self.position_glider[i])/(telemetry_distance[i]*np.linalg.norm(self.position_glider[i]))
             telemetry_angle[i] = np.arccos(np.inner(telemetry_vector[i],self.position_glider[i])/(telemetry_distance[i]*np.linalg.norm(self.position_glider[i])))
+            telemetry_angle_orbiter[i] = np.arccos(np.inner(telemetry_vector[i],ref_pos_x)/(telemetry_distance[i]))
+
+        for j in range(len(telemetry_rate_orbiter)):
+            telemetry_rate_orbiter[j] = (telemetry_angle_orbiter[j+1]-telemetry_angle_orbiter[j])/step_size
+
+        self.telemetry_rate = telemetry_rate_orbiter
 
         telemetry_distance_max = np.max(telemetry_distance)
 
@@ -455,6 +462,9 @@ class orbital_trajectory:
         plt.plot(np.arange(stop=len(telemetry_distance) * 10, start = 0, step = 10)/3600, telemetry_angle/np.pi * 180)
         plt.show()
 
+        plt.plot(np.arange(stop=len(telemetry_distance) * 10-10, start = 0, step = 10)/3600, self.telemetry_rate/np.pi * 180)
+        plt.show()
+
 
     def plot_orbital_trajectory(self):
         if not hasattr(self,"states_capsule_array"):
@@ -494,10 +504,20 @@ if __name__ == "__main__":
     initial_state_orbiter_keplerian = np.array([-490000000,1.062,0,0,0,np.pi/2])
 
 
-    initialstate = np.array([-1.08630339e+10 , 1.24446912e+10 , 7.25305409e+10, -6.57253947e+02 ,7.13997881e+02 , 4.13553122e+03])
+    #initialstate = np.array([-1.08630339e+10 , 1.24446912e+10 , 7.25305409e+10, -6.57253947e+02 ,7.13997881e+02 , 4.13553122e+03])
     initialstate = np.array([ 5.56602204e+10 ,-6.77611749e+09 , 4.14614543e+10 , 3.43624785e+02, 4.30808807e+02-100, -4.20999416e+03+1000])
+    #propervalues
     v_inf = 4237
-    initial_radius = 1e9
+    initial_radius = 3e9
+    peri_capsule = 25380000-6e6
+    v_manoeuvre = -24.5
+    peri = 30362000. + 10.1e6
+    apo = 5830000000.
+    #testing
+    initial_radius=6e9
+    v_manoeuvre = -13.
+    duration_of_entry = 180
+    atmospheric_mission_time = constants.JULIAN_DAY/24*12
     '''    periapsis = 25362000
     semi_major_axis = - 5793939212817970/(v_inf**2)
     eccentricity = 1-periapsis/semi_major_axis
@@ -517,19 +537,19 @@ if __name__ == "__main__":
 
     trajectory = orbital_trajectory(v_inf=v_inf,r_initial=initial_radius)
 
-    trajectory.initial_manoeuvre_capsule(25380000-5e6)
+    trajectory.initial_manoeuvre_capsule(peri_capsule)
 
-    capsulestate = trajectory.capsule_trajectory(atmosphere_height=5e6,step_size=10)
+    capsulestate = trajectory.capsule_trajectory(atmosphere_height=1e6,step_size=10)
 
     #print ('capsule state is',capsulestate)
-    #print('Entry angle is',capsulestate[4]*180/np.pi)
+    print('Entry angle is',capsulestate[4]*180/np.pi)
 
     capsulestatecartesian = astro.element_conversion.spherical_to_cartesian(capsulestate)
 
-    initialmanoeuvre = trajectory.initial_manoeuvre_orbiter(30362000,0)
+    initialmanoeuvre = trajectory.initial_manoeuvre_orbiter(peri,v_manoeuvre)
     #initialmanoeuvre = trajectory.initial_manoeuvre_orbiter(82664830)
 
-    capturedeltav, orbital_period = trajectory.get_capture_delta_v(58300000000000000)
+    capturedeltav, orbital_period = trajectory.get_capture_delta_v(apo)
     #capturedeltav, orbital_period = trajectory.get_capture_delta_v(82664830)
 
     #print(capturedeltav,orbital_period)
