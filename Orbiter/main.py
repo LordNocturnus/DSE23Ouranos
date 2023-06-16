@@ -41,7 +41,7 @@ class Orb:
     def __init__(self, optimisation=True):
         # Payload
         self.T_operational = 283.15  # Operational temperature of payload instruments in K
-        self.m_payload = 30.17
+        self.m_payload = 75.3
         
         # Data Handling
         self.m_dh = 1
@@ -53,7 +53,7 @@ class Orb:
         self.P_prop = 35
         self.P_adcs = 150
         self.P_dh = 46
-        self.P_payload = 38.2
+        self.P_payload = 147.04
         self.P_thermal = 0
         self.P_pw = 25
 
@@ -71,10 +71,10 @@ class Orb:
         self.mass_AV = 1000  # Atmospheric vehicle mass (import from AV class)
         self.mass_combined = self.mass + self.mass_AV  # Mass of combined systems
         self.deltaV_transfer = 170  # Combined systems deltaV
-        self.deltaV_insertion = 1300 + 100  # Delta V after splitting up at Uranus, Moon discovery and ADCS
+        self.deltaV_insertion = 1600 + 500 + 100  # Delta V after splitting up at Uranus, Moon discovery and ADCS
         self.Isp = 321  # Isp of the orbiter thrusters
-        self.T = 425 # Orbiter thrust
-        self.m_engine = 4.5  # Main engine mass in kg
+        self.T = 425  # Orbiter thrust
+        self.m_engine = 4.3  # Main engine mass in kg
         self.material = [4430, 880 * 10**6, 970 * 10**6, 113.8 * 10**9]
 
         # ADCS
@@ -104,7 +104,6 @@ class Orb:
                                 self.cost_dh + self.cost_payload + self.cost_test_assembly
             self.total_cost = (self.cost_orbiter + self.cost_test_assembly + self.cost_ops + self.launch_cost)\
                                * 1.2 / (10**6)  # Nasa Green Book
-
 
     def mass_prop(self, m_dry):
         self.prop_mass = prop.mass_prop(m_dry, self.deltaV_insertion, self.mass_combined, self.deltaV_transfer,
@@ -186,4 +185,4 @@ class Orb:
 
 if __name__ == "__main__":
     orbiter = Orb()
-    print(orbiter.total_cost)
+    print(orbiter.mass_breakdwon())
