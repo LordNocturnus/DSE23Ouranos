@@ -85,7 +85,7 @@ class Orb:
         self.cost_dh = 41400000  # Arnaud
         self.cost_comms = comms.total_cost(self.m_comms)
         self.cost_ADCS = ...
-        self.cost_payload = (328 * self.m_payload**0.426 * self.P_payload**0.414 * self.t_payload**0.375 * 1000) * 1.34 * 0.951 * 1.39
+        self.cost_payload = 0  # (328 * self.m_payload**0.426 * self.P_payload**0.414 * self.t_payload**0.375 * 1000) * 1.34 * 0.951 * 1.39
             #1000000 + 31000000  # Magnetometer (https://gi.copernicus.org/preprints/gi-2017-53/gi-2017-53-AC1-supplement.pdf,
                                                 # Camera (https://www.bhphotovideo.com/explora/photography/features/cameras-on-37-interplanetary-spacecraft)
         self.cost_ground_station = 2.01 * self.cost_dh  # SMAD
@@ -123,7 +123,7 @@ class Orb:
         self.cost_rtg = pwr.costRTG(self.P_req, self.t_mission)
 
     def thermal(self):
-        self.A_rec = self.l_tanks * self.r_tanks
+        self.A_rec = self.l_tanks * self.r_tanks * 2
         self.A_emit = 2 * np.pi * self.r_tanks * self.l_tanks + np.pi * self.r_tanks ** 2
         self.d_rtg, self.m_radiator, self.m_louvres = thm.power_phases(self.A_rec, self.A_emit, self.n_rtg, T_operational=self.T_operational)
         self.m_kapton = self.A_emit * 0.001 * 1.55 * 1000
@@ -186,4 +186,4 @@ class Orb:
 
 if __name__ == "__main__":
     orbiter = Orb()
-    
+    print(orbiter.total_cost)
