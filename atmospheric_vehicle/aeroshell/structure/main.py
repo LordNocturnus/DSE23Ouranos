@@ -63,7 +63,11 @@ def angle_cone(r_big, r_small, height):
     :param height: height of the cone
     :return: angle between hypotenuse and base
     """
-    return np.arctan2(r_big - r_small, height)
+    if height == 0:
+        raise ZeroDivisionError(f'The height has to be a positive value')
+    if r_big <= 0 or r_small <= 0 or height < 0:
+        raise ValueError(f'The dimensions of the capsule should be positive values')
+    return np.arctan((r_big - r_small) / height)
 
 def t_pressure(p, r_big, a, sigma_y):
     """
@@ -75,7 +79,11 @@ def t_pressure(p, r_big, a, sigma_y):
     :param sigma_y: Yield stress of selected material
     :return: Required minimum thickness
     """
-    return p * r_big * 2 / (2 * np.cos(a) * (sigma_y - 0.6 * p))
+    if a == np.pi/2:
+        raise ZeroDivisionError(f'Capsule side angle equals 90 degrees, change the idealised geometry')
+    elif sigma_y == 0.6 * abs(p):
+        raise ZeroDivisionError(f'Formula no longer valid due to material properties')
+    return abs(p) * r_big * 2 / (2 * np.cos(a) * (sigma_y - 0.6 * abs(p)))
 
 def t_hoop(p, r_big, sigma_y):
     """
@@ -97,6 +105,8 @@ def volume_truncated(r_big, r_small, h):
     :param h: Height of cone
     :return: Volume of truncated cone
     """
+    if r_big <= 0 or r_small <= 0 or h <= 0:
+        raise ValueError(f'Dimensions of the cone should be positive')
     return (1 / 3) * np.pi * h * (r_small ** 2 + r_small * r_big + r_big ** 2)
 
 
@@ -109,7 +119,11 @@ def buckling(E, l, I, p_load):
     :param p_load: Pressure loads during entry
     :return: bool if buckling criteria is respected
     """
-    return p_load < np.pi**2 * E * I / (l**2)
+    if l == 0:
+        raise ZeroDivisionError(f'The length of the sheet should be higher than 0')
+    elif l < 0 or I <= 0 or E <= 0:
+        raise ValueError(f'The geometrical and material properties of the sheet should be a positive value')
+    return p_load <= np.pi**2 * E * I / (l**2)
 
 
 def backshell_geometry(peak_load, load_entry, p_load=p_load, r_thermal=r_thermal, h_folded_wings=h_folded_wings):
@@ -141,8 +155,8 @@ def backshell_geometry(peak_load, load_entry, p_load=p_load, r_thermal=r_thermal
     a_bottom = angle_cone(r_bottom_big, r_bottom_small, h_folded_wings)
 
     # Calculate thickness based on pressure loads. Use personalised formula
-    t_top = max(t_pressure(p_load, r_top_big, a_top, sigma_y_backshell) * 1.3, 1 * 10**-3)
-    t_bottom = max(t_pressure(p_load, r_bottom_big, a_bottom, sigma_y_backshell) * 1.3, 1.3 * 10**-3)
+    t_top = max(t_pressure(p_load, r_top_big, a_top, sigma_y_backshell) * 1.2, 1 * 10**-3)
+    t_bottom = max(t_pressure(p_load, r_bottom_big, a_bottom, sigma_y_backshell) * 1.2, 1 * 10**-3)
 
     # Calculate thickness based on pressure loads. Use traditional formula for thin walled cylinders
     # t_top = t_hoop(p_load, r_top_big, sigma_y)
