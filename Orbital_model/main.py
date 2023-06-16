@@ -66,7 +66,7 @@ class orbital_trajectory:
         self.bodies.create_empty_body("Orbiter")
         self.uranus_gravitational_parameter = self.bodies.get("Uranus").gravitational_parameter
         self.v_inf = v_inf
-        self.initial_radius = initial_radius
+        self.initial_radius = r_initial
         print('gravitational parameter is',self.uranus_gravitational_parameter)
         rotational_period_Uranus = 17*3600 +14 * 60
         self.velocity_atmosphere = 2*np.pi*self.radiusUranus/rotational_period_Uranus
@@ -100,7 +100,7 @@ class orbital_trajectory:
         true_anomaly = np.arccos(semi_latus_rectum/(eccentricity*self.initial_radius)-1/eccentricity)
         self.true_anomaly = true_anomaly
 
-        state = [semi_major_axis,eccentricity,0,0,0,true_anomaly]
+        state = [semi_major_axis,eccentricity,0.0,0,0,true_anomaly]
 
         self.initial_state_capsule = astro.element_conversion.keplerian_to_cartesian(state,self.uranus_gravitational_parameter)
         if np.inner(self.initial_state_capsule[:3],self.initial_state_capsule[3:]) > 0:
@@ -143,24 +143,28 @@ class orbital_trajectory:
         semi_major_axis =initial_semi_major_axis
         eccentricity = 1-desired_periapsis/semi_major_axis
         initial_state_capsule = self.initial_state_capsule[:3]
-        def get_periapsis_argument_helperfunc(argument,semi_major_ax,ecc,true_anom,gravparam,initialstate):
+        def get_periapsis_argument_helperfunc(input,semi_major_ax,ecc,true_anom,gravparam,initialstate):
 
 
             semi_latus_rectum = semi_major_ax*(ecc**2 -1)
 
-            argument = float(argument)
-            state = np.array([semi_major_ax,ecc,np.pi,0,argument,true_anom])
+            argument = float(input[0])
+            longitude = float(input[1])
+            state = np.array([semi_major_ax,ecc,np.pi,argument,longitude,true_anom])
             cartesianstate = astro.element_conversion.keplerian_to_cartesian(state,gravparam)
             return np.linalg.norm(cartesianstate[:3]-initialstate)
-        #output = opt.minimize(get_periapsis_argument_helperfunc,0.0,(semi_major_axis,eccentricity,true_anomaly,self.uranus_gravitational_parameter,initial_state_capsule),bounds = ((0.0,2*np.pi)))#,tol=1)
-        argument_of_periapsis = 0#float(output.x)
-        #print (output)
+        bounds = opt.Bounds(-np.pi,np.pi)
+        initialguess = np.array([0.1,0.1])
+        output = opt.minimize(get_periapsis_argument_helperfunc,initialguess,(semi_major_axis,eccentricity,true_anomaly,self.uranus_gravitational_parameter,initial_state_capsule),bounds=bounds)
+        argument_of_periapsis = float(output.x[0])
+        longitude = float(output.x[1])
+        print (output)
         print('output is',get_periapsis_argument_helperfunc(argument_of_periapsis,semi_major_axis,eccentricity,true_anomaly,self.uranus_gravitational_parameter,initial_state_capsule))
 
         #true_anomaly = np.arccos(semi_latus_rectum/(eccentricity*self.initial_radius)-1/eccentricity)
         true_anomaly = self.true_anomaly
 
-        state = [semi_major_axis,eccentricity,0,0,argument_of_periapsis,true_anomaly]
+        state = [semi_major_axis,eccentricity,0,argument_of_periapsis,longitude,true_anomaly]
 
         self.initial_state_orbiter = astro.element_conversion.keplerian_to_cartesian(state,self.uranus_gravitational_parameter)
         if np.inner(self.initial_state_orbiter[:3],self.initial_state_orbiter[3:]) > 0:
