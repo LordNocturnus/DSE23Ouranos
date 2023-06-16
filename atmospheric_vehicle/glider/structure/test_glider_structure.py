@@ -45,7 +45,7 @@ class GliderStructureTests(TestCase):
         self.assertEqual(c_w[15], 0.749)
 
     def test_calculate_tau_xz_torque(self):
-    #Xcentr_tot correctness checked on analytical calculations, found a missing /2
+    #Xcentr_tot correctness checked on analytical calculations, found a missing /2 for L_res
         L_res = L_distr * (c_w_root + c_w_tip) * b_w / 4
         self.assertAlmostEqual(abs(Ty[0]), abs(L_res * (Xcentr_tot[0] - t[0] / 2 - a_2[0] / 2)))
         self.assertAlmostEqual(Am[0], t[0] * (np.pi / 8 * t[0] + a_2[0] + a_3[0] / 2))
@@ -60,7 +60,7 @@ class GliderStructureTests(TestCase):
     def test_calculate_sigma_thermal(self):
         self.assertAlmostEqual(max_delta, 117)
 
-    def test_calculate_sigma_xz_buckling(self):
+    def test_calculate_sigma_xz_buckling(self): # found error in using thin-walled approx: didn't neglect one 2nd order term
         self.assertAlmostEqual(S_shear[0], (c_w[0] + c_w[1]) * db / 2)
         self.assertAlmostEqual(t_t_I[0], (c_w[0] + c_w[1]) * db / 2 * 12 / (np.pi ** 2 * E * t[1]))
 
