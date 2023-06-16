@@ -46,4 +46,4 @@ def calc_glider_parameters(time, altitudedistance, speed, mass, rho, g, cl_0, cl
 
 
 if __name__ == "__main__":
-    print(calc_glider_parameters(8 * 3600, 200000, 200, 187, 0.055, 8.7, 0.771, 0.096, 0.0083, 0.8, 0.4))
+    print(calc_glider_parameters(12 * 3600, 200000, 200, 187, 0.055, 8.7, 0.771, 0.096, 0.0083, 0.8, 0.4))
