@@ -60,7 +60,7 @@ def t_hoop_sphere(p, r, sigma_y, margin):
     :param sigma_y: Yield strength of the selected material
     :return: Required minimum thickness to withstand pressure loads
     """
-    if isinstance(r, int):
+    if isinstance(r, float):
         if r >= 0 and sigma_y > 0 and margin >= 0:
             return abs(p) * r / (2 * sigma_y) * (1 + margin)
         elif r < 0:
@@ -91,7 +91,7 @@ def t_hoop_cylind(p, r, sigma_y, margin):
     :param sigma_y: Yield strength of the selected material
     :return: Required minimum thickness to withstand pressure loads
     """
-    if isinstance(r, int):
+    if isinstance(r, float):
         if r >= 0 and sigma_y > 0 and margin >= 0:
             return abs(p) * r / sigma_y * (1 + margin)
         elif r < 0:
@@ -115,6 +115,11 @@ def t_hoop_cylind(p, r, sigma_y, margin):
             raise ValueError(f'The margin of safety needs to be a positive value')
 
 
+def buckling_check(r, t, sigma_y, E):
+    phi = 1/16 * np.sqrt(r/t)
+    gamma = 1 - 0.901 * (1 - np.exp(-phi))
+    return sigma_y * 0.9 >= 0.6 * gamma * E * t / r
+
 def geometry_mass(material, propellant, margin, plot=True):
     """
     Function to calculate all the geometrical property of the tank and its mass. Tank is
@@ -133,7 +138,6 @@ def geometry_mass(material, propellant, margin, plot=True):
 
         # Generate range of possible value for radius to use for calculations
         r = np.arange(0.1, 1.5, 0.05)
-
         # Calculate all geometrical properties based on geometry and propellant pressurisation
         l = (v_tot - 4/3 * np.pi * r**3) / (np.pi * r**2)
         r = r[l >= 0]
@@ -218,7 +222,8 @@ def final_architecture(material, propellant, margin, m_AV):
         axial_check_compr = axial_loads(acc_axial_compr * m_AV, material[1], min(r_f, r_o))
         lateral_check = lateral_loads(acc_lateral * m_AV, material[1], l_tot)
         axial_shock = axial_loads(acc_shock * m_AV, material[2], min(r_f, r_o))
-        if not axial_shock or not axial_check_compr or not axial_check_tens or not lateral_check:
+        buck_check = buckling_check(r_f, t_cylind_f, material[2], material[3])
+        if not axial_shock or not axial_check_compr or not axial_check_tens or not lateral_check or not buck_check:
             print(f'DANGER! Stress checks not passed:\n'
                   f'Axial Tension --> {axial_check_tens}\n'
                   f'Axial Compression --> {axial_check_compr}\n'
@@ -266,7 +271,10 @@ def total_cost(mass_tot):
 
 
 if __name__ == '__main__':
-    ...
+    prop_properties = [(3 * 10 ** 6, 318.1, 1431), (3 * 10 ** 6, 188.2, 874)]
+    material = [2810, 505*10**6, 505*10**6, 72*10**9]
+    print(geometry_mass(material, prop_properties[1], 0.3, False))
+
     # Material Properties: https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MTP641
 
 

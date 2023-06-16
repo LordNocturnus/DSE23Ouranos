@@ -32,7 +32,7 @@ def mmoi(cyl_r, cyl_h, cyl_com, cyl_mass, tank_r, tanks_mass, ox_mass, ox_com, f
         com = (cyl_com * cyl_mass + ox_com * (tank_mass + ox_mass) + fuel_com * (tank_mass + fuel_mass) +
                caps_com_wrt_orbiter * caps_mass)/(cyl_mass + 2 * tank_mass + ox_mass + fuel_mass + caps_mass)
     if tanks_full and not caps_attached:
-        com = (cyl_com * cyl_mass + ox_com * (tank_mass + ox_mass) + fuel_com * (tank_mass + fuel_mass))/\
+        com = (cyl_com * cyl_mass + ox_com * (tank_mass + ox_mass) + fuel_com * (tank_mass + fuel_mass)) / \
               (cyl_mass + 2 * tank_mass + ox_mass + fuel_mass)
     if caps_attached and not tanks_full:
         com = (cyl_com * cyl_mass + ox_com * tank_mass + fuel_com * tank_mass +
@@ -82,13 +82,18 @@ def mmoi(cyl_r, cyl_h, cyl_com, cyl_mass, tank_r, tanks_mass, ox_mass, ox_com, f
         fuel_tank_i_yy += tank_mass * ((com[0] - fuel_com[0]) ** 2 + (com[2] - fuel_com[2]) ** 2)
         fuel_tank_i_zz += tank_mass * ((com[0] - fuel_com[0]) ** 2 + (com[1] - fuel_com[1]) ** 2)
         fuel_mmoi = np.array([fuel_tank_i_xx, fuel_tank_i_yy, fuel_tank_i_zz])
-
     if caps_attached:
-        cop = (cyl_h + caps_h) / 2
+        cyl_area = cyl_h * cyl_r * 2
+        cyl_centroid = cyl_h / 2 + caps_h
+        caps_area = caps_h * caps_r / 2
+        caps_centroid = caps_h * 2 / 3
+        area = cyl_area + caps_area
+        cop = (caps_centroid * caps_area + cyl_centroid * cyl_area) / area
+
         caps_i_xx = 3 / 10 * caps_mass * caps_r ** 2
         caps_i_yy = caps_mass * (3 / 20 * caps_r ** 2 + 3 / 80 * caps_h ** 2)
         caps_i_zz = caps_i_yy
-        print(f"Local Capsule MMOI: {caps_i_xx, caps_i_yy, caps_i_zz}")
+        caps_mmoi_local = np.array([caps_i_xx, caps_i_yy, caps_i_zz])
         
         caps_i_xx += caps_mass * ((com[1] - caps_com_wrt_orbiter[1]) ** 2 + (com[2] - caps_com_wrt_orbiter[2]) ** 2)
         caps_i_yy += caps_mass * ((com[0] - caps_com_wrt_orbiter[0]) ** 2 + (com[2] - caps_com_wrt_orbiter[2]) ** 2)
@@ -96,9 +101,10 @@ def mmoi(cyl_r, cyl_h, cyl_com, cyl_mass, tank_r, tanks_mass, ox_mass, ox_com, f
 
         caps_mmoi = np.array([caps_i_xx, caps_i_yy, caps_i_zz])
     else:
+        area = cyl_h * cyl_r * 2
         cop = cyl_h/2
-        caps_mmoi = np.zeros(3)
-        caps_mmoi_wrt_orbiter = caps_mmoi
+        caps_mmoi_local = np.zeros(3)
+        caps_mmoi = caps_mmoi_local
     if debug:
         if caps_attached and tanks_full:
             print(f"---- MMOI with full propellant tanks and attached capsule ----")
@@ -109,14 +115,14 @@ def mmoi(cyl_r, cyl_h, cyl_com, cyl_mass, tank_r, tanks_mass, ox_mass, ox_com, f
         else:
             print(f"---- MMOI at end of life, with capsule separation and empty fuel tanks ----")
         print(f""
-              f"Centre of mass found to be {com}\n"
+              f"Total assembly centre of mass at: {com}\n"
               f"Centre of pressure at {cop}\n"
-              f"Cylinder MMOI found to be: {cyl_mmoi}\n"
-              f"Oxidiser tank MMOI found to be: {ox_mmoi}\n"
-              f"Fuel tank MMOI found to be: {fuel_mmoi}\n"
-              f"Capsule MMOI around orbiter found to be: {caps_mmoi}\n"
+              # f"Cylinder MMOI found to be: {cyl_mmoi}\n"
+              # f"Oxidiser tank MMOI found to be: {ox_mmoi}\n"
+              # f"Fuel tank MMOI found to be: {fuel_mmoi}\n"
+              f"Local capsule MMOI: {caps_mmoi_local}\n"
               f"Total MMOI found to be: {cyl_mmoi + ox_mmoi + fuel_mmoi + caps_mmoi}\n")
-    return cyl_mmoi + ox_mmoi + fuel_mmoi + caps_mmoi + caps_mmoi, com, cop
+    return cyl_mmoi + ox_mmoi + fuel_mmoi + caps_mmoi + caps_mmoi, com, cop, area
 
 
 def grav_grad_torque(mmoi, a, grav_param, phase_angle=0, true_anomaly=0):
@@ -143,8 +149,6 @@ def mag_torque_max(m, b):
     :return:
     """
     return m * b * np.ones(3)
-
-
 
 
 def ad_budget(n_suns, n_gyr, n_sts, n_hors, n_magnet, m_suns, m_gyr, m_sts, m_hors, m_magnet, 
@@ -182,16 +186,16 @@ def momentum_storage_mw(torque_dist, theta_a, period):
     return torque_dist / theta_a * period / 4
 
 
-def torque_s(sun_surface, q, mmoi):
+def torque_s(mmoi, q):
     """
     Solar disturbance torque
-    :param sun_surface: solar constant (4.1 [W/m^2] at Uranus)
     :param q: reflectance factor between 0 and 1
     :param mmoi: mass moment of inertia formula
     :return: solar disturbance torque
     """
     cp_s = mmoi[2]
     cm = mmoi[0][0]
+    sun_surface = mmoi[3]
     c = 3e8
     return 4.1 / c * sun_surface * (1 + q) * (cp_s - cm)
 
@@ -208,24 +212,25 @@ cylinder_height = 1.9
 cylinder_com = np.array([cylinder_height/2, 0, 0])
 cylinder_mass = 868
 
-tank_radius = 0.5
+
+tank_radius = 0.45
 tanks_mass = 19
 oxidiser_mass = 348
-oxidiser_com = np.array([tank_radius/2, 0, 0])
+oxidiser_com = np.array([tank_radius / 2, 0, 0])
 fuelmass = 211
-fuelcom = np.array([tank_radius*1.5, 0, 0])
+fuelcom = np.array([tank_radius * 1.5, 0, 0])
 capsule_r = 1.5
 capsule_h = 1.5
 capsule_com = np.array([capsule_h * 3 / 4, 0, 0])  # com of the capsule wrt its tip
-capsule_mass = 1230
+capsule_mass = 563
 
 mmoi_EOL = mmoi(cylinder_radius, cylinder_height, cylinder_com, cylinder_mass, tank_radius, tanks_mass,
                 oxidiser_mass, oxidiser_com, fuelmass, fuelcom, capsule_r, capsule_h, capsule_com, capsule_mass,
-                debug=False, tanks_full=False, caps_attached=False)
+                debug=True, tanks_full=False, caps_attached=False)
 
 mmoi_detached_full = mmoi(cylinder_radius, cylinder_height, cylinder_com, cylinder_mass, tank_radius, tanks_mass,
                           oxidiser_mass, oxidiser_com, fuelmass, fuelcom, capsule_r, capsule_h, capsule_com,
-                          capsule_mass, debug=False, tanks_full=True, caps_attached=False)
+                          capsule_mass, debug=True, tanks_full=True, caps_attached=False)
 
 mmoi_launch = mmoi(cylinder_radius, cylinder_height, cylinder_com, cylinder_mass, tank_radius, tanks_mass,
                    oxidiser_mass, oxidiser_com, fuelmass, fuelcom, capsule_r, capsule_h, capsule_com, capsule_mass,
@@ -240,5 +245,5 @@ if __name__ == "__main__":
     # h_rw = rw_sizing(dist_t, orbital_period)
     # h_mw = momentum_storage_mw(dist_t, 0.02, orbital_period)
     # print(h_rw, h_mw)
-    sol_torque = torque_s(4.1, 1, mmoi_launch)
+    sol_torque = torque_s(mmoi_EOL, 1)
     print(sol_torque*m_time)
