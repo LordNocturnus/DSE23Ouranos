@@ -159,6 +159,9 @@ class interplanetary_trajectory:
         arrival_apoapsis = 583000000
         arrival_periapsis = 25380000+10e6
 
+        arrival_apoapsis = 82664830
+        arrival_periapsis = 82664830
+
         arrival_semi_major_axis = (arrival_apoapsis + arrival_periapsis) / 1
         arrival_eccentricity = 1-arrival_periapsis/arrival_semi_major_axis
 
