@@ -17,10 +17,10 @@ t_comm = 4 * 365 * 24 * 60 * 60 #  comms time in seconds
 # antenna spacecraft:
 d_antenna = 4.8 # antenna diameter in m
 eta_antenna = 0.55
-P = 60 # transmitting power in W
+P = 100 # transmitting power in W
 L_l = 0.9 # loss factor spacecraft
 PointingAccuracy = 0.0572958 # pointing accuracy in deg
-DR = 19500 # downlink data rate in bps
+DR = 15000 # downlink data rate in bps
 f = 32 # Downlink frequency in GHz
 wavelengthdown = c / (f * 10 ** 9)
 
