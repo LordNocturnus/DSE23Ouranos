@@ -1,4 +1,5 @@
 #Library Import
+import matplotlib.pyplot as plt
 import numpy as np
 
 #Estimating Wing Geometry
@@ -7,14 +8,17 @@ import numpy as np
 
 class aerodynamicproperties():
     def __init__(self):
-        self.b_w = 6 #[m]
-        self.b_h = 1.3025 #[m]
-        self.W_S_avg = 224.482 #[N/m^2]
-        self.m = 112 #[kg]
+        self.b_w = 5.822 #[m]
+        self.b_h = 1.51 #[m]
+        self.m_w = 83.276
+        self.m_fuselage = 7.234
+        self.W_S_avg = 279.3 #[N/m^2]
+        self.m = 142.4 #[kg]
         self.oswald = 0.8
-        self.g_ur = 9.01 #[m/s^2]
-        self.c_r_w = 0.785 #[m]
-        self.c_r_h = 1.5 #[m]
+        self.g_ur = 8.7 #[m/s^2]
+        self.c_r_w = 0.337 #[m]
+        self.c_r_h = 0.082 #[m] ratio obtained
+
         self.Re_low_bar = 3.21*(10**6)
         self.Re_high_bar = 5.41*(10**6)
         self.Viscosity_low_bar = 2.29*(10**(-5)) #[m^2/s]
@@ -25,11 +29,11 @@ class aerodynamicproperties():
         self.Temp_high_bar = 193 #[k]
         self.alpha_low_range = -8.5 #[deg]
         self.alpha_high_range = 9.5 #[deg]
-        self.V_glider_low_bar = 80 #[m/s]
+        self.V_glider_low_bar = 200 #[m/s]
         self.V_glider_high_bar= 0 #[m/s]
         self.rho_low_bar = 0.05 #[kg/m^3]
         self.rho_high_bar = 3.012 #[kg/m^3]
-        self.S_avg_h = 1.357 #[m]
+        # self.S_avg_h = 1.357 #[m]
         self.C_L_over_C_D = 38.202 # value obtained from Noah's atmospheric flight model
         self.C_L_max_range = 0.45 # value obtained from literature
         self.C_m_0 = 0
@@ -45,14 +49,16 @@ class aerodynamicproperties():
         self.p_dynamic_high_bar = 0.5*self.rho_high_bar*(self.V_glider_high_bar**2)
 
         #determine Wing area and Tip Chord for Wing:
+
         self.S_avg_w = (1/self.W_S_avg)*(W) #[m^2]
         self.c_t_w = ((self.S_avg_w/2)-((self.b_w/4)*self.c_r_w))*(4/self.b_w) #[m]
-        self.c_avg_w = (self.S_avg_w/2)/(self.b_w/2)
+        self.taper_ratio = self.c_t_w/self.c_r_w
+        self.c_avg_w = 0.9 #[m]
         self.A_w = (self.b_w**2)/self.S_avg_w
 
-        self.c_t_h = ((self.S_avg_h/2)-((self.b_h/4)*self.c_r_h))*(4/self.b_h)
-        self.c_avg_h = (self.S_avg_h/2)/(self.b_h/2)
-        self.A_h = (self.b_h**2)/self.S_avg_h
+        # self.c_t_h = ((self.S_avg_h/2)-((self.b_h/4)*self.c_r_h))*(4/self.b_h)
+        # self.c_avg_h = (self.S_avg_h/2)/(self.b_h/2)
+        # self.A_h = (self.b_h**2)/self.S_avg_h
 
 
         #Stability and Control derivatives + Parameters:
@@ -64,10 +70,9 @@ class aerodynamicproperties():
         self.C_N_h_alpha = 0
         self.alpha_0 = 0 #[deg]
         self.alpha = []
-        self.C_l_alpha_ah = 4.02
-        self.C_l_alpha_h = 4.02
-        self.l_h = 2.765 #[m]
-        self.l_w = 1.5 #[m]
+        self.C_l_alpha_ah = 0.096
+        self.C_l_alpha_h = 0.12
+        self.l_w = 0.9 #[m]
         self.C_L_h = 0.45
         self.C_L_ah = 0.45
         self.C_X_0 = 0
@@ -92,13 +97,19 @@ class aerodynamicproperties():
         self.Y_v = 0 #[N]
         self.N = 0 #[N]
 
-
+        self.x_w = np.arange(0, 1.775, 0.01)
         self.V_h_over_V = 1
-        self.SM = 0.15 #[%]
-        self.x_ac = self.l_w - 0.75*self.c_avg_w
-        self.x_cg = self.l_w - (self.c_avg_w - 0.333)
+        self.SM = 0.05 #[%]
+        self.l_fuselage = 1.675
+        self.x_ac = 0.25
+        self.x_cg = np.arange(-0.1,2.1,0.1)
+        self.x_cg1 = (self.x_w*(self.m_w/self.m))/self.c_avg_w + ((self.l_fuselage*0.5*self.m_fuselage)/(self.m))/self.c_avg_w
+        self.x_lemac = self.x_w - self.c_avg_w/2
+        self.x_lemac_l_fus = self.x_lemac/self.l_fuselage
+        print(self.x_cg)
         self.de_da = 4/(self.A_w+2)
         self.z_cg = 0  # [m]
+        self.l_h = 5.3 - self.l_fuselage # [m] 5.3 from literature
     def mass_properties(self,mass,x_cg,I_xx,I_yy,I_zz,J_xz):
         self.m = mass
         self.x_cg = x_cg
@@ -106,7 +117,7 @@ class aerodynamicproperties():
         self.K_y_2 = np.sqrt(I_yy/mass)
         self.K_z_2 = np.sqrt(I_zz/mass)
         self.K_x_z = J_xz / mass
-        self.W = self.mass * 9.01 #[m/s^2]
+        self.W = self.m * self.g_ur #[m/s^2]
 
     def mainwing(self,wingspan,wing_loading,taper_ratio,x_w):
 
@@ -116,7 +127,8 @@ class aerodynamicproperties():
         self.c_t_w = self.c_avg_w /(taper_ratio+1)  
         self.c_r_w = taper_ratio * self.c_t_w      
         self.V = 0 #[m^3]
-        self.x_w = x_w
+
+
 
     def horizontal_tail(self,wingspan,surface_area,taper_ratio,l_h,z_h):
         self.b_h = wingspan
@@ -168,7 +180,10 @@ class aerodynamicproperties():
 
         return S_h_S_cont
 
-    #Stability Derivatives with respect to airspeed
+
+
+
+     #Stability Derivatives with respect to airspeed
     def stab_derivatives_speed(self):
         C_X_u_lowbar = 2*self.C_X_0 - self.d_C_D_over_d_V*self.V_glider_low_bar
         C_Z_u_lowbar = 2 * self.C_Z_0 - self.d_C_L_over_d_V * self.V_glider_low_bar
@@ -235,7 +250,20 @@ delta_e = -(1/C_m_delta_e)*(C_m_0 + (W/(p_dynamic_high_bar*S_avg))*((x_cg-x_n_fi
 if __name__ == "__main__":
     print("Hello World")
     glider = aerodynamicproperties()
+    glider1 = glider.stability_cg()
+    plt.plot(glider.x_cg,glider1)
+    plt.grid()
+    plt.show()
 
+    plt.plot(glider.x_cg1, glider.x_lemac_l_fus)
+    plt.title("Wing shift")
+    plt.grid()
+    plt.show()
+
+    # print(glider.x_cg1)
+    # print(glider.x_lemac_l_fus)
+    print(glider.x_cg)
+    print(glider1)
     #print(glider.stability_cg(C_l_alpha_h, C_l_alpha_ah, downwash_vs_alpha(A_w), l_h, c_avg_w, V_h_over_V, x_ac, SM, x_cg))
     '''
     print(glider.stability_cg())
