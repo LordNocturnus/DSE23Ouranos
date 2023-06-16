@@ -57,9 +57,22 @@ class Test(TestCase):
 
     def test_buckling1(self):
         self.assertTrue(buckling(100, 1, 10, 1000))
-        self.assertTrue(buckling(1, 1, 1, np.pi**2))
+        self.assertTrue(buckling(100, 1, 10, -1000))
+        self.assertTrue(buckling(1, 1, 1, np.pi ** 2))
 
     def test_buckling2(self):
         with self.assertRaises(ZeroDivisionError):
             a = buckling(1, 0, 1, 1)
-            
+
+    def test_buckling3(self):
+        with self.assertRaises(ValueError):
+            a = buckling(-1, 1, 1, 1)
+
+    def test_buckling4(self):
+        with self.assertRaises(ValueError):
+            a = buckling(1, 1, -1, 1)
+
+    def test_buckling5(self):
+        with self.assertRaises(ValueError):
+            a = buckling(1, -1, 1, 1)
+

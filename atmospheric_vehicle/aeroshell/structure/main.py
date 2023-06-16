@@ -123,7 +123,7 @@ def buckling(E, l, I, p_load):
         raise ZeroDivisionError(f'The length of the sheet should be higher than 0')
     elif l < 0 or I <= 0 or E <= 0:
         raise ValueError(f'The geometrical and material properties of the sheet should be a positive value')
-    return p_load <= np.pi**2 * E * I / (l**2)
+    return abs(p_load) <= np.pi**2 * E * I / (l**2)
 
 
 def backshell_geometry(peak_load, load_entry, p_load=p_load, r_thermal=r_thermal, h_folded_wings=h_folded_wings):
@@ -177,9 +177,9 @@ def backshell_geometry(peak_load, load_entry, p_load=p_load, r_thermal=r_thermal
 
         # Calculate backshell mass
         mass_backshell = (volume_top + volume_bottom) * rho_backshell
-        t_bottom_shell = max(bending_bottom(load_entry, r_thermal * 2, sigma_y_backshell), 1 * 10**-3)
+        t_bottom_shell = max(bending_bottom(load_entry, r_thermal * 2, sigma_y_backshell), 1 * 10**-3, bending_pressure(p_load, r_thermal * 2, sigma_y_backshell))
         mass_bottom_shell = volume(t_heatshield, t_bottom_shell, r_thermal * 2) * rho_backshell
-        return mass_backshell + mass_bottom_shell, t_top, t_bottom, t_bottom_shell
+        return (mass_backshell + mass_bottom_shell) * 1.1, t_top, t_bottom, t_bottom_shell
     else:
         print(f'Buckling requirements is not satisfied')
 
@@ -192,7 +192,7 @@ def bending_bottom(load_entry, l_thermal_shield, sigma_y):
     :param sigma_y: Yield strength of the selected material
     :return: Required minimum thickness to withstand entry loads
     """
-    return np.sqrt(load_entry * l_thermal_shield / (2 * l_thermal_shield * sigma_y))
+    return np.sqrt(load_entry * l_thermal_shield * 3 / (l_thermal_shield * sigma_y))
 
 
 def thermal_loads(alpha, peak_T, E, sigma_y):
@@ -204,7 +204,7 @@ def thermal_loads(alpha, peak_T, E, sigma_y):
     :param sigma_y: Yield strength of material considered
     :return: Bool for compliance with temperature change
     """
-    if sigma_y > alpha * (peak_T + 273.15 - 4) * E:
+    if sigma_y >= alpha * (peak_T + 273.15 - 4) * E:
         print(f'Thermal check passed')
     else:
         print(f'Thermal check not passed')
@@ -215,10 +215,12 @@ def mass_insulator_shell(peak_T):
     Method to calculate the mass of the insulator layer for entry
     :return: Total mass of insulation layer to survive entry
     """
-    t_bottom = max(bending_bottom(load_peak_entry * (m_glider + m_thermal_para), r_thermal * 2, sigma_y_insulator), 1 * 10**-3)
-    v_bottom_shell = volume(t_heatshield, t_bottom, r_thermal * 2)
+    # t_entry = bending_bottom(load_peak_entry * (m_glider + m_thermal_para), r_thermal * 2, sigma_y_insulator)
+    # t_pressure = bending_pressure(p_load, r_thermal * 2, sigma_y_insulator)
+    t_bottom = 0.8 * max(bending_bottom(load_peak_entry * (m_glider + m_thermal_para), r_thermal * 2, sigma_y_insulator), bending_pressure(p_load, r_thermal * 2, sigma_y_insulator))
+    v_bottom_shell = volume(t_heatshield, t_bottom, r_thermal * 2) #+ volume(t_heatshield, t_entry, r_thermal * 2 * 0.5)
     thermal_loads(alpha_insulator, peak_T, E_insulator, sigma_y_insulator)
-    return v_bottom_shell * rho_insulator, t_bottom
+    return v_bottom_shell * rho_insulator * 1.1, t_bottom
 
 
 def total_mass(peak_load_para, p_load, load_entry, peak_T, r_thermal, h_folded_wings):
@@ -234,17 +236,17 @@ def total_mass(peak_load_para, p_load, load_entry, peak_T, r_thermal, h_folded_w
     """
     mass_insulator, t_insulator = mass_insulator_shell(peak_T)
     mass_back, t_top, t_bottom, t_bottom_shell = backshell_geometry(peak_load_para, load_entry, p_load, r_thermal, h_folded_wings)
-    return mass_back * 1.5, mass_insulator * 1.5, t_insulator, t_top, t_bottom, t_bottom_shell
+    return mass_back, mass_insulator, t_insulator, t_top, t_bottom, t_bottom_shell
 
 
 def total_cost(m_back):
     return m_back * back_cost_kg + 22.26 * m_back * 0.951 * 1000 * 1.39
 
-
+def bending_pressure(p_entry, l_thermal, sigma_y):
+    return np.sqrt((3 * p_entry * l_thermal**2 / (2 * l_thermal * sigma_y)))
 
 
 if __name__ == "__main__":
     mass_back, mass_insulator, t_insulator, t_top, t_bottom, t_bottom_shell = total_mass(load_peak_para, p_load, load_peak_entry, 250, r_thermal, h_folded_wings)
     print(mass_back, mass_insulator, t_insulator, t_top, t_bottom, t_bottom_shell)
     print(mass_back + mass_insulator)
-    print(total_cost(mass_back))
