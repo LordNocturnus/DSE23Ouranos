@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 # Lists for Gliding Flight
 V_flight_path = []
 h_flight_path = []
-t_flight_path = []
+t_flight_path = [0]
 
 # Lists for Deployement Trajectory
 V_deploy = [V_0_deploy]
@@ -30,14 +30,13 @@ if __name__ == "__main__":
     gram = GRAM.GRAM()
     # gram.runs = 10
     # gram.densityperturbation = 1.0  # Between 0.0 and 2.0, 1.0 = 3 sigma
-    gram.altitudes = np.arange(70, -150, -0.01)
+    gram.altitudes = np.arange(54, -150, -0.01)
     gram.time = np.zeros_like(gram.altitudes)
     gram.lat = np.zeros_like(gram.altitudes)
     gram.long = np.zeros_like(gram.altitudes)
     gram.run()
 
-
-    density = sp.interpolate.interp1d(np.asarray(gram.altitudes), np.asarray(gram.data.Density_kgm3))
+    #density = sp.interpolate.interp1d(np.asarray(gram.altitudes), np.asarray(gram.data.Density_kgm3))
 
     # Finding indexes for the relevant pressures
     index_1 = gram.data.Pressure_Pa[gram.data.Pressure_Pa > 10 ** 4].index
@@ -48,6 +47,7 @@ if __name__ == "__main__":
 
     # Find heights from indexes
     height = gram.data.Height_km[index]
+    density = gram.data.Density_kgm3[index]
 
     # Find maximum and minimum index to convert to list
     index_min = min(index)
@@ -55,82 +55,82 @@ if __name__ == "__main__":
     points = np.arange(index_min, index_max + 1, 1)
 
     ### DEPLOYMENT TRAJECTORY CALCULATIONS ###
-    while t_deploy[-1] < 1000:
-        n += 1
-
-        dh = V_deploy[-1] * dt * np.sin(gamma_deploy_list[-1])
-        dx = V_deploy[-1] * dt * np.cos(gamma_deploy_list[-1])
-
-        h = h_deploy[-1] + dh
-        x = x_deploy[-1] + dx
-        s = np.sqrt(h * h + x * x)
-
-        h_deploy.append(h)
-        x_deploy.append(x)
-        s_deploy.append(s)
-
-        rho = density(h/1000)
-
-        dVdt = dV_dt(rho, V_deploy[-1], gamma_deploy_list[-1])
-        dgammadt = dgamma_dt(rho, V_deploy[-1], gamma_deploy_list[-1])
-        a.append(dVdt)
-
-        V = v_deploy(V_deploy[-1], dVdt, dt)
-        gamma = gamma_deploy(gamma_deploy_list[-1], dgammadt, dt)
-
-        V_deploy.append(V)
-        gamma_deploy_list.append(gamma)
-
-        t_deploy.append(dt * n)
-
-
-
-    print("The maximum load factor is " + str(max(a) / g_u))
-    plt.subplot(221)
-    plt.plot(t_deploy, h_deploy)
-    plt.title("Height [m]")
-    plt.subplot(222)
-    plt.plot(t_deploy, x_deploy)
-    plt.title("Horizontal distance [m]")
-    plt.subplot(223)
-    plt.plot(t_deploy, V_deploy)
-    plt.title("Velocity [m/s]")
-    plt.subplot(224)
-    plt.plot(t_deploy, np.rad2deg(gamma_deploy_list))
-    plt.title("Gamma [deg]")
-    plt.show()
-
+    # while t_deploy[-1] < 1000:
+    #     n += 1
+    #
+    #     dh = V_deploy[-1] * dt * np.sin(gamma_deploy_list[-1])
+    #     dx = V_deploy[-1] * dt * np.cos(gamma_deploy_list[-1])
+    #
+    #     h = h_deploy[-1] + dh
+    #     x = x_deploy[-1] + dx
+    #     s = np.sqrt(h * h + x * x)
+    #
+    #     h_deploy.append(h)
+    #     x_deploy.append(x)
+    #     s_deploy.append(s)
+    #
+    #     rho = density(h/1000)
+    #
+    #     dVdt = dV_dt(rho, V_deploy[-1], gamma_deploy_list[-1])
+    #     dgammadt = dgamma_dt(rho, V_deploy[-1], gamma_deploy_list[-1])
+    #     a.append(dVdt)
+    #
+    #     V = v_deploy(V_deploy[-1], dVdt, dt)
+    #     gamma = gamma_deploy(gamma_deploy_list[-1], dgammadt, dt)
+    #
+    #     V_deploy.append(V)
+    #     gamma_deploy_list.append(gamma)
+    #
+    #     t_deploy.append(dt * n)
+    #
+    #
+    #
+    # print("The maximum load factor is " + str(max(a) / g_u))
+    # plt.subplot(221)
+    # plt.plot(t_deploy, h_deploy)
+    # plt.title("Height [m]")
+    # plt.subplot(222)
+    # plt.plot(t_deploy, x_deploy)
+    # plt.title("Horizontal distance [m]")
+    # plt.subplot(223)
+    # plt.plot(t_deploy, V_deploy)
+    # plt.title("Velocity [m/s]")
+    # plt.subplot(224)
+    # plt.plot(t_deploy, np.rad2deg(gamma_deploy_list))
+    # plt.title("Gamma [deg]")
+    # plt.show()
 
     ### TRAJECTORY CALCULATIONS ###
-    #Find velocity, height, and flight time per density interval
-    # for i in points:
-    #     V_flight_path.append(velocity(density[i]))
-    #     if i < index_max:
-    #         h_flight_path.append(height[i])
-    #         t_flight_path.append(time_of_flight((height[i] - height[i + 1]) * 1000, density[i]))
-    #
-    # # Find maximum flight range
-    # total_time = sum(t_flight_path)
-    # range = range(np.abs(height[index_max]))
-    #
-    # seconds = total_time
-    # seconds_in_day = 60 * 60 * 24
-    # seconds_in_hour = 60 * 60
-    # seconds_in_minute = 60
-    #
-    # days = seconds // seconds_in_day
-    # hours = (seconds - (days * seconds_in_day)) // seconds_in_hour
-    # minutes = (seconds - (days * seconds_in_day) - (hours * seconds_in_hour)) // seconds_in_minute
-    #
-    # print("The maximum flight range is " + str(range) + " km")
-    # print("The time of flight is " + str(days) + " days, " + str(hours) + " hours, and " + str(minutes) + " minutes")
-    #
-    # # Plot altitude vs time
-    # plt.plot(t_flight_path, h_flight_path)
-    # plt.xlabel("Time [s]")
-    # plt.ylabel("Altitude [km]")
-    # plt.title("Altitude vs Time of the Glider")
-    # plt.show()
+    # Find velocity, height, and flight time per density interval
+    for i in points:
+        V_flight_path.append(velocity(density[i]))
+        if i < index_max:
+            h_flight_path.append(height[i])
+            delta_t = time_of_flight((height[i] - height[i + 1]) * 1000, density[i])
+            t_flight_path.append(t_flight_path[-1] + delta_t)
+
+    # Find maximum flight range
+    total_time = t_flight_path[-1]
+    range = range(np.abs(height[index_max]) + np.abs(height[index_min]))
+
+    seconds = total_time
+    seconds_in_day = 60 * 60 * 24
+    seconds_in_hour = 60 * 60
+    seconds_in_minute = 60
+
+    days = seconds // seconds_in_day
+    hours = (seconds - (days * seconds_in_day)) // seconds_in_hour
+    minutes = (seconds - (days * seconds_in_day) - (hours * seconds_in_hour)) // seconds_in_minute
+
+    print("The maximum flight range is " + str(range) + " km")
+    print("The time of flight is " + str(days) + " days, " + str(hours) + " hours, and " + str(minutes) + " minutes")
+
+    # Plot altitude vs time
+    plt.plot(t_flight_path[1:], h_flight_path)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Altitude [km]")
+    plt.title("Altitude vs Time of the Glider")
+    plt.show()
 
     ### EIGENVALUE CALCULATIONS ###
     # Find Eigenvalues of the Symmetric Eigenmotions

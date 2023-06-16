@@ -1,5 +1,5 @@
 import numpy as np
-from atmospheric_model.flight_path.GliderVariables import m, b
+from atmospheric_model.flight_path.GliderVariables import m_glider, b
 
 # General Paramters
 I_x = 625.3693
@@ -7,10 +7,10 @@ I_y = 218.2010
 I_z = 818.955
 J_xz = np.sqrt(I_x * I_x + I_z*I_z)
 
-k_x = np.sqrt(I_x/m)
-k_y = np.sqrt(I_y/m)
-k_z = np.sqrt(I_z/m)
-k_xz = J_xz/m
+k_x = np.sqrt(I_x/m_glider)
+k_y = np.sqrt(I_y/m_glider)
+k_z = np.sqrt(I_z/m_glider)
+k_xz = J_xz/m_glider
 
 
 # Dimensionless parameters

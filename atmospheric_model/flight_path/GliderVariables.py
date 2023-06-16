@@ -5,19 +5,19 @@ g_u = 8.69  # m/s^2
 p_max = 20 * 10 ** 5  # Pa
 
 # Glider Variables
-m = 274.9  # kg
-S = 4.49  # m^2
-b = 6  # m
-chord = 0.75  # m
+m_glider = 274.9  # kg
+S = 4.49   # m^2
+W_S = 279.3
+b = 9.2  # m
+chord = 0.9  # m
 A = b * b / S
-e = 1
-T = 1
+e = 0.8
 
 # Gliding Variables
 # gamma_glide = np.radians(-1.5)
-C_L_C_D = 110
-C_D_0 = 0.00585
-C_L_opt = np.sqrt(C_D_0 * np.pi * A * e)
+C_L_C_D = 76.8
+C_D_0 = 0.0083
+C_L_opt = 0.45
 C_D_opt = 2 * C_D_0
 
 # Deployment Variables
