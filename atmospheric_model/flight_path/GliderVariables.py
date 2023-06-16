@@ -28,3 +28,22 @@ V_x0_deploy = 0
 V_0_deploy = np.sqrt(V_x0_deploy * V_x0_deploy + V_y0_deploy * V_y0_deploy)
 C_D_deploy = 0.09
 C_L_deploy = 0.9
+
+
+def calc_glider_parameters(time, altitudedistance, speed, mass, rho, g, cl_0, cl_alpha, cd_0, e, taper):
+    cl_cd = speed * time / altitudedistance
+    cl = cl_cd * 2 * cd_0
+    cd = 2 * cd_0
+    alpha = (cl - cl_0) / cl_alpha
+    wing_loading = 1/2 * rho * speed ** 2 * cl
+    surface = mass * g / wing_loading
+    AR = cl ** 2 / (cd_0 * np.pi * e)
+    b = np.sqrt(surface * AR)
+    c_mean = b / AR
+    c_r = c_mean * 3 / (2 * (1 + taper + taper ** 2) / (1 + taper))
+    c_t = c_r * taper
+    return cl_cd, cl, cd, alpha, wing_loading, surface, AR, b, c_mean, c_r, c_t
+
+
+if __name__ == "__main__":
+    print(calc_glider_parameters(8 * 3600, 200000, 200, 187, 0.055, 8.7, 0.771, 0.096, 0.0083, 0.8, 0.4))
