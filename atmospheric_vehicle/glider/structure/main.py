@@ -292,7 +292,7 @@ def buckling_check(t_fuselage, r_fuselage, delta_p, E, l_fuselage):
         print(f'The idealised structure would fail in buckling')
 
 
-def fuselage_architecture(f_tail, l_tail, r_fuselage, l_fuselage, tau_y, delta_p, sigma_y):
+def fuselage_architecture(f_tail, l_tail, r_fuselage, l_fuselage, tau_y, delta_p, sigma_y, density_metal):
     """
     Function to calculate the final architecture of the fuselage (thickness and mass) based on load applied. Buckling
     check is performed
@@ -339,10 +339,11 @@ if __name__ == "__main__":
     alpha = 9.1 * 10 ** -6  # [1/K], coefficient of thermal expansion of material selected
 
     'Wing properties'
-    c_w_root = 0.785  # [m], root chord, given from Luigi
-    c_w_tip = 0.713  # [m], tip chord, given from Luigi
-    b_w = 6  # [m], wing span, given from Luigi
-    L_distr = 224.482  # [N/m^2], found from MSc Thesis (given from Luigi)
+    c_w_root = 0.3368  # [m], root chord, given from Luigi
+    c_w_tip = 0.1347  # [m], tip chord, given from Luigi
+    b_w = 6.1697  # [m], wing span, given from Luigi
+    load_fac = 0.91
+    L_distr = 788.832 * load_fac  # [N/m^2], found from MSc Thesis (given from Luigi)
 
     c_w = calculate_c_w(c_w_root, c_w_tip, b_w)[0]  # array of chord values that will be used for later estimations
     b_range = calculate_c_w(c_w_root, c_w_tip, b_w)[1]
@@ -355,9 +356,9 @@ if __name__ == "__main__":
     T_20 = 193  # [K], temperature at 20 bar inside Uranus's atmosphere
 
     'Simplified dimensions used for wing cross section properties calculations'
-    A = 0.28  # percentage value of segment a_2 with respect to the chord (found from geometrical sketch of airfoil)
+    A = 0.36  # percentage value of segment a_2 with respect to the chord (found from geometrical sketch of airfoil)
     B = 0.08  # percentage value of segment t with respect to the chord (same as above)
-    C = 0.68  # percentage value of segment a_3 with respect to the chord (same as above)
+    C = 0.60  # percentage value of segment a_3 with respect to the chord (same as above)
     a_2 = c_w * A  # [m], value used for the simplified airfoil cross section: will be found by analysing the actual geometry of the
     # airfoil and simplifying the central section into a hollow rectangle, set as dummy for now
     t = c_w * B  # [m], maximum thickness of airfoil. Set as dummy for now
@@ -392,8 +393,9 @@ if __name__ == "__main__":
     print('The minimum thickness required for the wings to sustain hoop stress is: ',
           t_t_hoop * 10 ** 3, ' mm')
 
-    max_t_t = max(t_t_sigma_bend_xz, t_t_torque_xz, t_t_buckling_xz, t_t_shear_yz, t_t_hoop)
-    print('The minimum thickness value needed for the wings structure to survive loads is: ', max_t_t * 10 ** 3, 'mm')
+    max_t_t = max(t_t_sigma_bend_xz, t_t_torque_xz, t_t_buckling_xz, t_t_shear_yz, 0.0008) # hoop stress not considered anymore because
+    # pressure difference will be nullified (by drilling holes), 0.8 mm is the minimum value required for metal sheets to be manufactured
+    print('The minimum thickness value needed for the wings structure is: ', max_t_t * 10 ** 3, 'mm')
 
     mass_wings = calculate_mass_wings(max_t_t, rho)
     print('The mass of the wings is: ', mass_wings, 'kg')
@@ -426,7 +428,7 @@ if __name__ == "__main__":
     cost_manuf_pkg = 1909  # [€/kg]
 
     m_fuselage, t_fuselage = fuselage_architecture(tail_load, l_tail, r_fuselage, l_fuselage, tau_y_metal, p_atmos,
-                                                   sigma_y_metal)
+                                                   sigma_y_metal, density_metal)
     print('Fuselage mass: ', m_fuselage, 'kg')
     print('Fuselage thickness: ', t_fuselage * 10**3, 'mm')
     print('Total structure mass: ', m_fuselage + mass_wings, 'kg')
