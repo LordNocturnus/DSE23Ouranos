@@ -105,11 +105,10 @@ def decelerator_sizing(target_time, target_pressure, totalmass, heatshieldmass, 
     total_weight += line_weight
     total_cost += line_cost
 
-    return ballistic_dep_vars[-1, 1] / 1000, total_weight, total_cost, load, \
-        dep_vars[dep_vars[:, 1] <= 50000][0, 4]
+    return ballistic_dep_vars[-1, 1] / 1000, total_weight, total_cost, load, dep_vars[dep_vars[:, 1] <= 50000][0, 4]
 
 
 if __name__ == "__main__":
-    print(decelerator_sizing(4 * 3600, 20*10**5, 603, 255, [0.45, 0.4], 2.0, 4.5, 3.03327727e+07 - 4000000,
+    print(decelerator_sizing(4 * 3600, 20*10**5, 162.1, 0.0, [0.45, 0.4], 2.0, 3, 3.03327727e+07,
                              5.45941114e-01, -2.33346601e-02, 2.65992642e+04, -5.91036848e-01, -2.96367147e+00, acc=1,
-                             steps=2))
+                             steps=1))

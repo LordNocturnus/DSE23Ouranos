@@ -214,6 +214,6 @@ class Aeroshell:
 if __name__ == "__main__":
     test = Aeroshell(2*10**6, 4 * 3600, 162.1, 3, [0.45, 0.4], 2.0, 0.0, 0.0, 250, 3.03327727e+07, 5.45941114e-01,
                      -2.33346601e-02, 2.65992642e+04, -5.91036848e-01, -2.96367147e+00)
-    test.simulate_decent(10)
+    test.simulate_decent(1)
     test.calculate_parachute()
     print(test.chute_weight + test.line_weight)
