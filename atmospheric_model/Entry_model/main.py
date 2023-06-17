@@ -215,7 +215,7 @@ class CapsuleDrag:
         upper = ((self.gamma + 1) / 2 * self.mach**2) ** (self.gamma / (self.gamma - 1))
         lower = (2*self.gamma / (self.gamma + 1) * self.mach**2 - (self.gamma - 1) /
                  (self.gamma + 1)) ** (1 / (self.gamma - 1))
-        return upper / lower
+        return upper / lower - 1
 
     def p_inf_bar(self):
         return 1 / (1 + self.p_0_stag())
