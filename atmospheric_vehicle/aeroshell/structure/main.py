@@ -146,7 +146,6 @@ def backshell_geometry(peak_load, load_entry, p_load=p_load, r_thermal=r_thermal
     # Calculate the big and small radius of the top truncated cone. Limit case is the parachute radius
     r_top_small = np.sqrt(max(peak_load * 1.1 / sigma_y_backshell, np.pi * r_parachute**2) / np.pi)
     r_top_big = r_top_small / (1 - taper_ratio_top)
-
     # Calculate the big and small radius of the bottom truncated cone. Limit case is the radius of the thermal shield
     r_bottom_big = r_thermal
     r_bottom_small = r_bottom_big * (1 - taper_ratio_bottom)
@@ -207,7 +206,7 @@ def thermal_loads(alpha, peak_T, E, sigma_y):
     :param sigma_y: Yield strength of material considered
     :return: Bool for compliance with temperature change
     """
-    if sigma_y >= alpha * (peak_T + 273.15 - 4) * E:
+    if sigma_y >= alpha * (peak_T) * E:
         print(f'Thermal check passed')
     else:
         print(f'Thermal check not passed')
