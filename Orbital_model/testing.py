@@ -73,7 +73,7 @@ optimal = opt.fsolve(getorbithelper,initguess,(semi_major_1,ecc1,cartesianpos1))
 print(getorbithelper(optimal,semi_major_1,ecc1,cartesianpos1))
 
 
-print(30362000. + 20e5)
+print(30362000. + 10.1e6)
 
 '''
 simulation_start_epoch = 0

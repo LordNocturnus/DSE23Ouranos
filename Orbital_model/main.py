@@ -66,7 +66,7 @@ class orbital_trajectory:
         self.uranus_gravitational_parameter = self.bodies.get("Uranus").gravitational_parameter
         self.v_inf = v_inf
         self.initial_radius = r_initial
-        #print('gravitational parameter is',self.uranus_gravitational_parameter)
+        print('gravitational parameter is',self.uranus_gravitational_parameter)
         rotational_period_Uranus = 17*3600 +14 * 60
         self.velocity_atmosphere = 2*np.pi*self.radiusUranus/rotational_period_Uranus
         self.angular_velocity_glider = 2*np.pi/rotational_period_Uranus
@@ -425,6 +425,46 @@ class orbital_trajectory:
 
         telemetry_angle_max = np.max(telemetry_angle)
 
+        maxangle = 70/180*np.pi
+
+        maxdistance = 1e20
+        
+        connectedinterval = 0
+
+        nonconnectedinterval = 0
+
+        connectedintervals = []
+        nonconnectedintervals = []
+
+        lastchange = 0
+
+        connected = True
+
+        highestcontactdistance = 0
+
+        for i in range(len(telemetry_distance)):
+            if telemetry_angle[i] < maxangle and telemetry_distance[i] < maxdistance and connected == False:
+                connected = True
+                nonconnectedintervals.append((lastchange,i*step_size))
+                lastchange = i*step_size
+            if (telemetry_angle[i] > maxangle or telemetry_distance[i] > maxdistance) and connected == True:
+                connected = False
+                connectedintervals.append((lastchange,i*step_size))
+                lastchange = i*step_size
+            if connected and (telemetry_distance[i] > highestcontactdistance):
+                highestcontactdistance = telemetry_distance[i]
+
+
+        if connected == True:
+            connectedintervals.append((lastchange,i*step_size))
+        else:
+            nonconnectedintervals.append((lastchange,i*step_size))
+
+        print('The connected intervals are',connectedintervals)
+        print('The nonconnected intervals are',nonconnectedintervals)
+        print('The maximum telemetry distance is',highestcontactdistance)
+
+
         return telemetry_distance, telemetry_distance_max, telemetry_angle, telemetry_angle_max
     
     def plot_during_atmospheric_mission(self,plot_space_track=True,plot_distance_time=True,plot_angle_time=True):
@@ -506,28 +546,30 @@ if __name__ == "__main__":
 
     #initialstate = np.array([-1.08630339e+10 , 1.24446912e+10 , 7.25305409e+10, -6.57253947e+02 ,7.13997881e+02 , 4.13553122e+03])
     initialstate = np.array([ 5.56602204e+10 ,-6.77611749e+09 , 4.14614543e+10 , 3.43624785e+02, 4.30808807e+02-100, -4.20999416e+03+1000])
-    #propervalues
+    #propervalues for first antenna, up to 11.5 hours of mission
     v_inf = 4237
-    initial_radius = 3e9
+    initial_radius = 6e9
     peri_capsule = 25380000-6e6
-    v_manoeuvre = -24.5
+    v_manoeuvre = -13.
     peri = 30362000. + 10.1e6
     apo = 5830000000.
+    atmospheric_mission_time = constants.JULIAN_DAY/24*11.5
     #testing
     initial_radius=6e9
     v_manoeuvre = -13.
     duration_of_entry = 180
-    atmospheric_mission_time = constants.JULIAN_DAY/24*12
-    '''    periapsis = 25362000
-    semi_major_axis = - 5793939212817970/(v_inf**2)
-    eccentricity = 1-periapsis/semi_major_axis
-    semi_latus_rectum = semi_major_axis*(eccentricity**2 -1)
-    true_anomaly = semi_latus_rectum/(eccentricity*initial_radius)-1/eccentricity
-    print (true_anomaly,np.pi/2)
+    peri = 30362000. + 10.1e6
+    apo = 450000000.
 
-    initialstate = np.array([semi_major_axis,eccentricity,0,0,0,true_anomaly])'''
-    #initialstate = np.array([1e10,1e10,1e10,-4000,-1000,-1000])
-    #initialstate = np.array([-1.08630339e+10 , 1.24446912e+10 , 7.25305409e+10, 100,-100 , -400])
+    semi_major = (peri + apo)/2
+    
+    gravparam = 5793939212817970.0
+
+    time_of_orbit = 2*np.pi*np.sqrt(semi_major**3/gravparam)
+
+    print ('Orbital period is',time_of_orbit/constants.JULIAN_DAY*24)
+
+    atmospheric_mission_time = constants.JULIAN_DAY*4
     
     desiredorbit = np.array([1,1,1,1,1,1])
 
