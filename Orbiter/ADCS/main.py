@@ -125,65 +125,36 @@ def mmoi(cyl_r, cyl_h, cyl_com, cyl_mass, tank_r, tanks_mass, ox_mass, ox_com, f
     return cyl_mmoi + ox_mmoi + fuel_mmoi + caps_mmoi + caps_mmoi, com, cop, area
 
 
-def grav_grad_torque(mmoi, a, grav_param, phase_angle=0, true_anomaly=0):
+def grav_grad_torque(mmoi, a, grav_param, period):
     """
     :param mmoi: a 3-large mass moment of inertia vector
     :param a: Semi major axis of the orbited body
     :param grav_param: Gravitational parameter of the orbited planet
-    :param phase_angle: Phase angle of the
-    :param true_anomaly:
-    :return:
+    :param period: Orbital period
+    :return: Maximum torque vector, reaction wheel minimum moment size
     """
     i_xx = mmoi[0]
     i_yy = mmoi[1]
     i_zz = mmoi[2]
     n2 = grav_param / (a ** 3)  # mean motion
-    torque_max = 3 / 2 * n2 * np.array([(i_yy - i_zz), (i_xx - i_zz), 0])
-    return torque_max
-
-
-def mag_torque_max(m, b):
-    """
-    :param m: Spacecraft residual dipole vector [A m^2]
-    :param b: Magnetic field vector in spacecraft coordinates [T]
-    :return:
-    """
-    return m * b * np.ones(3)
-
-
-def ad_budget(n_suns, n_gyr, n_sts, n_hors, n_magnet, m_suns, m_gyr, m_sts, m_hors, m_magnet, 
-            p_suns, p_gyr, p_sts, p_hors, p_magnet, acc_suns, acc_gyr, acc_sts, acc_hors, acc_magnet):    
-    m = n_suns * m_suns + n_gyr * m_gyr + n_sts * m_sts + n_hors * m_hors + n_magnet * m_magnet
-    p = n_suns * p_suns + n_gyr * p_gyr + n_sts * p_sts + n_hors * p_hors + n_magnet * p_magnet
-    return m, p
-
-
-def torque_cg_unknown(max_range, thrust):
-    thrust_torque = np.array([0, max_range*thrust, max_range*thrust])
-    return thrust_torque
-
-
-def torque_point(dipole, mag, moment_oi, a, grav_param):
-    return mag_torque_max(dipole, mag) + grav_grad_torque(moment_oi, a, grav_param)
-
-
-def slew_torque(theta, mmoi: np.array, t):
-    """
-    :param theta: Slew angle [deg]
-    :param mmoi: Mass moment of inertia vector containing I_xx, I_yy, I_zz
-    :param t: Time of slew manoeuvre
-    :return:
-    """
-    print(f"Slew torque")
-    return 4 * np.radians(theta) * mmoi / t ** 2
-
-
-def rw_sizing(torque_dist, period):
-    return torque_dist*0.707/4 * period
+    torque_max = 3 / 2 * n2 * np.array([0, abs(i_xx - i_zz), abs(i_xx - i_yy)])
+    return torque_max, max(torque_max) * 0.707 / 4 * period
 
 
 def momentum_storage_mw(torque_dist, theta_a, period):
     return torque_dist / theta_a * period / 4
+
+def mag_torque_max(d, b):
+    """
+    :param m: Spacecraft residual dipole vector [A m^2]
+    :param b: Magnetic field vector in spacecraft coordinates [T]
+    :return: Magnetic disturbance torque
+    """
+    return d * b
+
+
+def aerodyn_torque(rho, cd, v, mmoi):
+    return 0.5 * rho * cd * mmoi[3] * v ** 2 * max(mmoi[2] - mmoi[1])
 
 
 def torque_s(mmoi, q):
@@ -200,6 +171,26 @@ def torque_s(mmoi, q):
     return 4.1 / c * sun_surface * (1 + q) * (cp_s - cm)
 
 
+def torque_cg_unknown(max_range, thrust):
+    thrust_torque = np.array([0, max_range*thrust, max_range*thrust])
+    return thrust_torque
+
+
+def slew_torque(theta, mmoi: np.array, t):
+    """
+    :param theta: Slew angle [deg]
+    :param mmoi: Mass moment of inertia vector containing I_xx, I_yy, I_zz
+    :param t: Time of slew manoeuvre
+    :return:
+    """
+    print(f"Slew torque")
+    return 4 * np.radians(theta) * mmoi / t ** 2
+
+
+rho_uranus_max = 1.66e-9
+rho_uranus_min = 6.902e-13
+vel_per = 27000
+c_d = 2.5
 magnetic_dipole_uranus = 110e-6
 m_time = 3*365*24*3600
 orbital_period = 123*3600
@@ -222,9 +213,9 @@ fuelcom = np.array([tank_radius * 1.5, 0, 0])
 capsule_r = 1.5
 capsule_h = 1.5
 capsule_com = np.array([capsule_h * 3 / 4, 0, 0])  # com of the capsule wrt its tip
-capsule_mass = 563
+capsule_mass = 579.1
 
-mmoi_EOL = mmoi(cylinder_radius, cylinder_height, cylinder_com, cylinder_mass, tank_radius, tanks_mass,
+mmoi_empty = mmoi(cylinder_radius, cylinder_height, cylinder_com, cylinder_mass, tank_radius, tanks_mass,
                 oxidiser_mass, oxidiser_com, fuelmass, fuelcom, capsule_r, capsule_h, capsule_com, capsule_mass,
                 debug=True, tanks_full=False, caps_attached=False)
 
@@ -235,15 +226,24 @@ mmoi_detached_full = mmoi(cylinder_radius, cylinder_height, cylinder_com, cylind
 mmoi_launch = mmoi(cylinder_radius, cylinder_height, cylinder_com, cylinder_mass, tank_radius, tanks_mass,
                    oxidiser_mass, oxidiser_com, fuelmass, fuelcom, capsule_r, capsule_h, capsule_com, capsule_mass,
                    debug=True, tanks_full=True, caps_attached=True)
-# print(mag_torque_max(magnetic_dipole_uranus, 0.1))
-
-dist_t = torque_point(0.1, magnetic_dipole_uranus, mmoi_launch[0], semi_major, grav_parameter)
 if __name__ == "__main__":
+    # Report values disturbance torques at Uranus
+    print(grav_grad_torque(mmoi_empty[0], semi_major, grav_parameter, orbital_period))
+    print(mag_torque_max(10, magnetic_dipole_uranus))
+    print(aerodyn_torque(rho_uranus_min, c_d, vel_per, mmoi_empty))
+    print(torque_s(mmoi_empty, 1))
+
+
+
+
     # print(slew_torque(180, mmoi_EOL[0], 30))
     # print(slew_torque(180, mmoi_EOL[0], 120))
-    # print(F"CG unknown torque: {torque_cg_unknown(0.03, 635)}")
+    # print(f"CG unknown torque: {torque_cg_unknown(0.03, 400)}"
+    #       f"CG unknown momentum: {torque_cg_unknown(0.03, 400) * 2846}")
     # h_rw = rw_sizing(dist_t, orbital_period)
     # h_mw = momentum_storage_mw(dist_t, 0.02, orbital_period)
     # print(h_rw, h_mw)
-    sol_torque = torque_s(mmoi_EOL, 1)
-    print(sol_torque*m_time)
+    # sol_torque = torque_s(mmoi_EOL, 1)
+    # print(sol_torque * m_time)
+
+    # print(rcs_fuel(3.4, 218, 4140))
