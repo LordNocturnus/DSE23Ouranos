@@ -1,10 +1,11 @@
 from tudatpy.kernel.numerical_simulation import environment_setup, environment, propagation_setup
+from matplotlib import pyplot as plt
 import numpy as np
 import scipy as sp
 
 import atmospheric_model.Entry_model
 from atmospheric_model.GRAM import GRAM
-
+from atmospheric_vehicle.aeroshell.heatshield import volume
 
 _PICA_density = 0.352 * 100**3 / 1000  # 0.352 - 0.701 g/cm^3
 
@@ -44,6 +45,9 @@ class Aeroshell:
         self.glider_mass = glider_mass
         self.heatshield_mass = 0.0
         self.chute_weight = 0.0
+        self.line_weight = 0.0
+        self.struct_mass = 0.0
+        self.insulator_weight = 0.0
         self.diameter = diameter
         self.parachute_c_ds = parachute_c_ds
         self.shock_load_factors = shock_load_factors
@@ -87,12 +91,12 @@ class Aeroshell:
         self.load = 0.0
         self.chute_area = 0.0
         self.chute_cost = 0.0
-        self.line_weight = 0.0
         self.line_cost = 0.0
 
     @property
     def mass(self):
-        return self.glider_mass + self.heatshield_mass + self.chute_weight + self.line_weight
+        return self.glider_mass + self.heatshield_mass + self.chute_weight + self.line_weight + self.struct_mass + \
+            self.insulator_weight
 
     @property
     def cost(self):
@@ -100,7 +104,7 @@ class Aeroshell:
 
     @property
     def radius2(self):
-        return max(_radius2, self.PICA_thickness + self.insulator_thickness)
+        return max(_radius2, (self.PICA_thickness + self.insulator_thickness) * 1.01)
 
     def ballistic_entry(self, acc):
         drag = atmospheric_model.Entry_model.CapsuleDrag(self.diameter, 1.125, np.deg2rad(20), self.lat, self.lon, acc)
@@ -115,7 +119,7 @@ class Aeroshell:
 
         termination_mach_setting = propagation_setup.propagator.dependent_variable_termination(
             dependent_variable_settings=propagation_setup.dependent_variable.mach_number("Capsule", "Uranus"),
-            limit_value=2.7,
+            limit_value=2.5,
             use_as_lower_limit=True)
         self.ballistic_dep_vars = atmospheric_model.Entry_model.entry_sim(self.mass, capsule_aero_coefficient_setting,
                                                                           self.alt, self.lat, self.lon, self.speed,
@@ -196,11 +200,14 @@ class Aeroshell:
         k = 1 / (np.asarray(self.gram.data.H2mass_pct) / 0.0395 + np.asarray(self.gram.data.Hemass_pct) / 0.0797)
         self.heat_flux_convective = k * self.ballistic_dep_vars[:, 4] ** 3 * (np.asarray(self.gram.data.Density_kgm3) /
                                                                               (np.pi * (self.diameter / 2) ** 2)) ** 0.2
+        self.heat_flux_convective_2 = 2004.2526*1/np.sqrt(self.diameter / 0.6091) * (
+            np.asarray(self.gram.data.Density_kgm3) / 1.22522) ** 0.4334341 * (self.ballistic_dep_vars[:, 4] / 3048) ** \
+                                      2.9978868 * 1000
         self.heat_flux_radiative = 9.7632379 ** (-40) * self.diameter ** (-0.17905) * \
                                    np.asarray(self.gram.data.Density_kgm3) ** 1.763827469 * \
-                                   self.ballistic_dep_vars[:, 4] ** 10.993852
+                                   self.ballistic_dep_vars[:, 4] ** 10.993852 * 1000000
 
-        q_func = sp.interpolate.interp1d(self.ballistic_dep_vars[:, 0], self.heat_flux_convective +
+        q_func = sp.interpolate.interp1d(self.ballistic_dep_vars[:, 0], self.heat_flux_convective_2 +
                                          self.heat_flux_radiative)
         self.heat_load = sp.integrate.quad(lambda x: q_func(x), self.ballistic_dep_vars[0, 0],
                                            self.ballistic_dep_vars[-1, 0])[0]
@@ -213,22 +220,25 @@ class Aeroshell:
         heat_load = self.heat_load / 10000  # convert to J/cm**2
         interface_velocity = self.speed / 1000  # convert to km/s
 
-        self.PICA_thickness = 1.8686 * (heat_load / (interface_velocity ** 2)) ** 0.1879 / 100
+        self.PICA_thickness = 1.8686 * (heat_load / (interface_velocity ** 2)) ** 0.1879 / 100 * 1.117 * 1.5
+
+    def calculate_heatshield_weight(self):
+        self.heatshield_mass = volume(self.diameter, _radius1, self.radius2, 0.0, self.PICA_thickness) * _PICA_density
 
     def calculate_parachute(self):
         self.parachute_diameter *= self.target_time / (self.parachute_dep_vars[-1, 0] - self.parachute_dep_vars[
             self.parachute_dep_vars[:, 1] <= 0.0][0, 0])
 
-        self.load = self.ballistic_dep_vars[-1, -4] * np.pi * (self.parachute_diameter / 2) ** 2 * \
-                    self.parachute_c_ds[0] / (self.mass - self.heatshield_mass) * self.shock_load_factors
+        self.chute_area = np.pi * (self.parachute_diameter / 2) ** 2
+        self.chute_weight = self.chute_area * 2 * 35 / 1000
+        self.chute_cost = self.chute_area * 2 * 15 * 0.92
 
-        self.chute_area = 2 * np.pi * (self.parachute_diameter / 2) ** 2
-        self.chute_weight = self.chute_area * 35 / 1000
-        self.chute_cost = self.chute_area * 15 * 0.92
+        self.load = self.ballistic_dep_vars[-1, -4] * self.chute_area * self.parachute_c_ds[0] / \
+                    (self.mass - self.heatshield_mass) * self.shock_load_factors
 
         line_count = np.ceil(self.load * (self.mass - self.heatshield_mass) / _line_safe_strength)
 
-        distance = self.parachute_diameter * 1.5
+        distance = self.parachute_diameter * 2.5
         line_length = np.sqrt((self.parachute_diameter / 2) ** 2 + distance ** 2) + np.pi / 2 * (self.parachute_diameter
                                                                                                  / 2) ** 2
         self.line_weight = line_length * line_count * _line_weight_per_meter
@@ -246,12 +256,15 @@ class Aeroshell:
                                                                                              _sigma_y_insulator))
 
     def bending_pressure(self):
-        return np.sqrt((3 * self.pressure * self.diameter ** 2 / (2 * self.diameter * _sigma_y_insulator)))
+        return np.sqrt((3 * max(self.pressure) * self.diameter ** 2 / (2 * self.diameter * _sigma_y_insulator)))
 
     def calculate_insulator_shell_thickness(self):
         self.insulator_thickness = 0.8 * max(self.bending_bottom(), self.bending_pressure())
 
-    def backshell_geometry(self, peak_load, load_entry, p_load=p_load):
+    def calculate_insulator_weight(self):
+        self.insulator_weight = volume(self.diameter, _radius1, self.radius2, 0.0, self.PICA_thickness) * _rho_insulator
+
+    def backshell_geometry(self, peak_load, load_entry):
         """
         Function that determines all geometrical properties and mass of the backshell. Multiple things are computed,
         during integration, it should be decided what is the most useful return, if one is actually needed. As of now the
@@ -359,10 +372,110 @@ class Aeroshell:
             raise ValueError(f'The geometrical and material properties of the sheet should be a positive value')
         return abs(p_load) <= np.pi ** 2 * _E_backshell * I / (l ** 2)
 
+    def itterate(self, struct_mass, acc=1, steps=5):
+        self.struct_mass = struct_mass
+        for i in range(0, steps):
+            self.simulate_decent(acc)
+            self.calculate_entry_heating(acc)
+            self.calculate_heatshield_thickness()
+            self.calculate_insulator_shell_thickness()
+            self.calculate_parachute()
+
+            self.calculate_heatshield_weight()
+            self.calculate_insulator_weight()
+
+            print(f"Finished Itteration {i+1}")
+
 
 if __name__ == "__main__":
-    test = Aeroshell(2*10**6, 4 * 3600, 162.1, 3, [0.45, 0.4], 2.0, 3.03327727e+07, 5.45941114e-01, -2.33346601e-02,
+    test = Aeroshell(2*10**6, 4 * 3600, 162.1, 3, [0.45, 0.4], 1.3, 3.03327727e+07, 5.45941114e-01, -2.33346601e-02,
                      2.65992642e+04, -5.91036848e-01, -2.96367147e+00)
-    test.simulate_decent(1)
-    test.calculate_parachute()
-    print(test.chute_weight + test.line_weight)
+
+    test.itterate(46, 1, 1)
+
+    plt.plot(test.ballistic_dep_vars[:, 0] - 6000, test.ballistic_dep_vars[:, 1] / 1000, label="Ballistic")
+    plt.plot(test.sonic_dep_vars[:, 0] - 6000 + test.ballistic_dep_vars[-1, 0] - 6000,
+             test.sonic_dep_vars[:, 1] / 1000, label="Supersonic Parachute")
+    plt.plot(test.parachute_dep_vars[test.parachute_dep_vars[:, 1] >= 50000][:, 0] - 6000 +
+             test.sonic_dep_vars[-1, 0] - 6000 + test.ballistic_dep_vars[-1, 0] - 6000,
+             test.parachute_dep_vars[test.parachute_dep_vars[:, 1] >= 50000][:, 1] / 1000, label="Parachute")
+    plt.grid()
+    plt.legend()
+    plt.xlabel("Time [s]")
+    plt.ylabel("Altitude [km]")
+    plt.savefig("entry_alt.pdf", dpi='figure', format="pdf", metadata=None,
+        bbox_inches=None, pad_inches=0.0,
+        facecolor='auto', edgecolor='auto',
+        backend=None)
+    plt.show()
+
+    plt.semilogy(test.ballistic_dep_vars[:, 4], test.ballistic_dep_vars[:, 1] / 1000, label="Ballistic")
+    plt.semilogy(test.sonic_dep_vars[:, 4], test.sonic_dep_vars[:, 1] / 1000, label="Supersonic Parachute")
+    plt.semilogy(test.parachute_dep_vars[test.parachute_dep_vars[:, 1] >= 50000][:, 4],
+             test.parachute_dep_vars[test.parachute_dep_vars[:, 1] >= 50000][:, 1] / 1000, label="Parachute")
+    plt.grid()
+    plt.legend()
+    plt.ylabel("Logarithmic Altitude [km]")
+    plt.xlabel("Velocity [m/s]")
+    plt.savefig("entry_vel.pdf", dpi='figure', format="pdf", metadata=None,
+                bbox_inches=None, pad_inches=0.0,
+                facecolor='auto', edgecolor='auto',
+                backend=None)
+    plt.show()
+
+    plt.semilogy(test.ballistic_dep_vars[:, 5] / 9.80665, test.ballistic_dep_vars[:, 1] / 1000, label="Ballistic")
+    plt.semilogy(test.sonic_dep_vars[:, 5] / 9.80665, test.sonic_dep_vars[:, 1] / 1000, label="Supersonic Parachute")
+    plt.semilogy(test.parachute_dep_vars[test.parachute_dep_vars[:, 1] >= 50000][:, 5] / 9.80665,
+             test.parachute_dep_vars[test.parachute_dep_vars[:, 1] >= 50000][:, 1] / 1000, label="Parachute")
+    plt.grid()
+    plt.legend()
+    plt.ylabel("Logarithmic Altitude [km]")
+    plt.xlabel("Deceleration [g]")
+    plt.savefig("entry_dec.pdf", dpi='figure', format="pdf", metadata=None,
+                bbox_inches=None, pad_inches=0.0,
+                facecolor='auto', edgecolor='auto',
+                backend=None)
+    plt.show()
+
+    plt.semilogy(test.ballistic_dep_vars[:, 6], test.ballistic_dep_vars[:, 1] / 1000, label="Ballistic")
+    plt.semilogy(test.sonic_dep_vars[:, 6], test.sonic_dep_vars[:, 1] / 1000, label="Supersonic Parachute")
+    plt.semilogy(test.parachute_dep_vars[test.parachute_dep_vars[:, 1] >= 50000][:, 6],
+             test.parachute_dep_vars[test.parachute_dep_vars[:, 1] >= 50000][:, 1] / 1000, label="Parachute")
+    plt.grid()
+    plt.legend()
+    plt.ylabel("Logarithmic Altitude [km]")
+    plt.xlabel("Mach number [-]")
+    plt.savefig("entry_mach.pdf", dpi='figure', format="pdf", metadata=None,
+                bbox_inches=None, pad_inches=0.0,
+                facecolor='auto', edgecolor='auto',
+                backend=None)
+    plt.show()
+
+    #plt.semilogy(test.heat_flux_convective, test.ballistic_dep_vars[:, 1] / 1000, label="Convective heat flux")
+    plt.semilogy(test.heat_flux_convective_2 / 1000000, test.ballistic_dep_vars[:, 1] / 1000, label="Convective heat flux")
+    plt.semilogy(test.heat_flux_radiative / 1000000, test.ballistic_dep_vars[:, 1] / 1000, label="Radiative heat flux")
+    plt.grid()
+    plt.legend()
+    plt.xlabel("Heat flux [MW/m²]")
+    plt.ylabel("Logarithmic Altitude [km]")
+    plt.savefig("entry_heatflux.pdf", dpi='figure', format="pdf", metadata=None,
+                bbox_inches=None, pad_inches=0.0,
+                facecolor='auto', edgecolor='auto',
+                backend=None)
+    plt.show()
+
+    plt.plot(test.ballistic_dep_vars[:, 0] - 6000, test.ballistic_dep_vars[:, 3], label="Ballistic")
+    plt.plot(test.sonic_dep_vars[:, 0] - 6000 + test.ballistic_dep_vars[-1, 0] - 6000,
+             test.sonic_dep_vars[:, 3], label="Supersonic Parachute")
+    plt.plot(test.parachute_dep_vars[test.parachute_dep_vars[:, 1] >= 50000][:, 0] - 6000 +
+             test.sonic_dep_vars[-1, 0] - 6000 + test.ballistic_dep_vars[-1, 0] - 6000,
+             test.parachute_dep_vars[test.parachute_dep_vars[:, 1] >= 50000][:, 3], label="Parachute")
+    plt.grid()
+    plt.legend()
+    plt.xlabel("Time [s]")
+    plt.ylabel("Longitude [rad]")
+    plt.savefig("entry_mach.pdf", dpi='figure', format="pdf", metadata=None,
+                bbox_inches=None, pad_inches=0.0,
+                facecolor='auto', edgecolor='auto',
+                backend=None)
+    plt.show()#"""

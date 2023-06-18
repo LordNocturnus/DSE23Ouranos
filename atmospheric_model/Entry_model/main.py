@@ -256,7 +256,7 @@ class CapsuleDrag:
 
 
 if __name__ == "__main__":
-    drag = CapsuleDrag(4.5, 1.125, np.deg2rad(20), 5.45941114e-01, -2.33346601e-02)
+    drag = CapsuleDrag(3, 1.125, np.deg2rad(20), 5.45941114e-01, -2.33346601e-02)
 
     aero_coefficient_setting = environment_setup.aerodynamic_coefficients.custom_aerodynamic_force_coefficients(
         force_coefficient_function=drag.drag_coefficient,
@@ -271,14 +271,14 @@ if __name__ == "__main__":
 
     termination_mach_setting = propagation_setup.propagator.dependent_variable_termination(
         dependent_variable_settings=propagation_setup.dependent_variable.mach_number("Capsule", "Uranus"),
-        limit_value=2.0,
+        limit_value=2.5,
         use_as_lower_limit=True)
 
     dependent_variables_array = entry_sim(500, aero_coefficient_setting, 3.03327727e+07, 5.45941114e-01,
                                           -2.33346601e-02, 2.65992642e+04, -5.91036848e-01, -2.96367147e+00,
                                           [termination_altitude_setting, termination_mach_setting], acc=1)#"""
 
-    """plt.plot(dependent_variables_array[:, 0], dependent_variables_array[:, 1])
+    plt.plot(dependent_variables_array[:, 0] - 6000, dependent_variables_array[:, 1])
     plt.grid()
     plt.show()
 
