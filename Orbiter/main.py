@@ -71,7 +71,7 @@ class Orb:
         self.mass_AV = 1000  # Atmospheric vehicle mass (import from AV class)
         self.mass_combined = self.mass + self.mass_AV  # Mass of combined systems
         self.deltaV_transfer = 170  # Combined systems deltaV
-        self.deltaV_insertion = 1300 + 100  # Delta V after splitting up at Uranus, Moon discovery and ADCS
+        self.deltaV_insertion = 1600 + 500 + 100  # Delta V after splitting up at Uranus, Moon discovery and ADCS
         self.Isp = 317  # Isp of the orbiter thrusters
         self.T = 635 # Orbiter thrust
         self.m_engine = 4.5  # Main engine mass in kg
@@ -153,14 +153,17 @@ class Orb:
     def __str__(self):
         return f'Total dry mass: {self.total_dry_mass}\n' \
                f'Total wet mass: {self.total_wet_mass}\n' \
-               f'Total cost: {self.total_cost}\n' \
+               f'Prop mass: {self.prop_mass}\n' \
                f'Total Power: {self.P_req}\n' \
+               f'Number RTGs: {self.n_rtg}\n' \
+               f'mass power: {self.m_power}\n' \
                f'Burn time transfer: {self.burn_transfer}\n' \
                f'Burn orbit insertion: {self.burn_insertion}\n' \
                f'm_tanks: {self.m_tanks}\n' \
                f'Fuel mass: {self.m_fuel}\n' \
                f'Oxidizer mass: {self.m_ox}\n' \
-               f'r tanks: {self.r_tanks}'
+               # f'r tanks: {self.r_tanks}'
+               # f'Total cost: {self.total_cost}\n' \
 
     def mass_breakdwon(self):
         print(f'Orbiter Dry Mass: {self.mass}\n'
