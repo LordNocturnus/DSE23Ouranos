@@ -105,8 +105,9 @@ def calculate_tau_xz_shear(t_t): # gives already q_max for every cross section
     """
     q_max = np.zeros(len(c_w)-1)
     for i in range(len(c_w)-1):
-        S_shear = (c_w[i] + c_w[i+1]) * db / 2
-        Vy = L_distr * S_shear
+        #S_shear = (c_w[i] + c_w[i+1]) * db / 2
+        #Vy = L_distr * S_shear
+        Vy = L_distr * b_range[i + 1] * c_w[i + 1]
         A = np.array([[2 * (np.sqrt(2) + 1) / (t[i + 1] * G * t_t), -2 / (t[i + 1] * G * t_t), 0, -1],
                       [-1 / (2 * G * t_t * a_2[i + 1]), (a_2[i + 1] + t[i + 1]) / (G * t_t * a_2[i + 1] * t[i + 1]), -1 / (2 * G * t_t * a_2[i + 1]), -1],
                       [0, -1 / (a_3[i + 1] * G * t_t), (1 / (a_3[i + 1] * G * t_t) + np.sqrt(t[i + 1]**2 / 4 + a_3[i + 1]**2) / (t[i + 1] * a_3[i + 1] * G * t_t)), -1],
