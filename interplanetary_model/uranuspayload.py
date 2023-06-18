@@ -138,12 +138,14 @@ class Launcher:
         ax1.plot(m_pl_new, dv, color='lightblue', label="Delta V vs payload mass")
         ax1.set_xlabel("Payload mass [kg]")
         ax1.set_ylabel("Delta V budget from LEO [m/s]")
+        # ax1.legend()
 
         ax2 = ax1.twinx()
         ax2.plot(m_pl_new, v_inf, color='blue', label="C3 vs payload mass")
-        ax2.set_ylabel("C3 m2/s-2")
+        ax2.set_ylabel("C3 m2/s2")
         plt.title("Payload mass vs Delta V, C3")
-        plt.legend()
+        # plt.legend()
+        plt.figlegend(loc='right', bbox_to_anchor=(0.8, 0.8))
         plt.show()
 
 
@@ -152,7 +154,7 @@ class Launcher:
 #                               311, 282, 22200, 433100, 187,  # first stage data
 #                               2, 311, 282, 22200, 433100, 154)  # booster data
 
-falcon_heavy_mars = Launcher(3400, 1700, 16800,  # general data
+falcon_heavy_mars = Launcher(3600, 1700, 16800,  # general data
                              348, 4000, 111500,  # second stage data
                              311, 282, 22200, 433100, 187,  # first stage data
                              2, 311, 282, 22200, 433100, 154)  # booster data
@@ -176,7 +178,7 @@ falcon_heavy_gto = Launcher(2300, 1700, 26700,  # general data
 
 
 # falcon_heavy_pluto.dv_for_payload(5000)
-# falcon_heavy_mars.dv_for_payload(7000, 16800, "FH_Mars")
+falcon_heavy_mars.dv_for_payload(7000, 16800, "FH_Mars")
 # falcon_heavy_gto.dv_for_payload(7000, 16800, "FH_GTO")
-falcon_heavy_leo.dv_for_payload(7000, 16800, "FH_LEO")
+falcon_heavy_leo.dv_for_payload(7900, 16800, "FH_LEO")
 
