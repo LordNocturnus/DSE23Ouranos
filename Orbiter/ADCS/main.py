@@ -172,9 +172,11 @@ def torque_s(mmoi, q):
 
 
 def torque_cg_unknown(max_range, thrust):
-    thrust_torque = np.array([0, max_range*thrust, max_range*thrust])
-    return thrust_torque
+    return max_range * thrust
 
+
+def prop_mass(isp, force, r, t):
+    return t * force / r / isp / 9.80665
 
 def slew_torque(theta, mmoi: np.array, t):
     """
@@ -232,7 +234,9 @@ if __name__ == "__main__":
     print(mag_torque_max(10, magnetic_dipole_uranus))
     print(aerodyn_torque(rho_uranus_min, c_d, vel_per, mmoi_empty))
     print(torque_s(mmoi_empty, 1))
-
+    print(torque_cg_unknown(0.03, 425))
+    print(mmoi_empty[1])
+    print(prop_mass(232, 6.8, 0.94, 4400))
 
 
 
