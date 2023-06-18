@@ -93,7 +93,7 @@ class orbital_trajectory:
         state[1] = final_eccentricity"""
         self.initial_periapsis = desired_periapsis
 
-        semi_major_axis = - self.uranus_gravitational_parameter/(v_inf**2)
+        semi_major_axis = - self.uranus_gravitational_parameter/(self.v_inf**2)
         eccentricity = 1-desired_periapsis/semi_major_axis
         semi_latus_rectum = semi_major_axis*(eccentricity**2 -1)
         true_anomaly = np.arccos(semi_latus_rectum/(eccentricity*self.initial_radius)-1/eccentricity)
@@ -270,7 +270,7 @@ class orbital_trajectory:
         final_velocity_periapsis = np.sqrt(self.uranus_gravitational_parameter/final_semi_major_axis * (1+final_eccentricity)/(1-final_eccentricity))
         return initial_velocity_periapsis - final_velocity_periapsis, captured_orbital_period
     
-    def orbiter_initial_trajectory(self,duration_of_entry,glider_position,step_size=10):
+    def orbiter_initial_trajectory(self,duration_of_entry,glider_position,angleupperbound,distanceupperbound,step_size=10):
         if not hasattr(self,"initial_state_orbiter"):
             raise ValueError("The initial state of the orbiter has not been set. Call .orbiter_initial_manoeuvre before calling this function.")
         if duration_of_entry <= 0:
@@ -425,9 +425,9 @@ class orbital_trajectory:
 
         telemetry_angle_max = np.max(telemetry_angle)
 
-        maxangle = 80/180*np.pi
+        maxangle = angleupperbound
 
-        maxdistance = 1e20
+        maxdistance = distanceupperbound
         
         connectedinterval = 0
 
@@ -451,7 +451,8 @@ class orbital_trajectory:
             if (telemetry_angle[i] > maxangle or telemetry_distance[i] > maxdistance) and connected == True:
                 connected = False
                 connectedintervals.append((lastchange,i*step_size))
-                connectedinterval += i*step_size - lastchange
+                if lastchange != 0:
+                    connectedinterval += i*step_size - lastchange
                 lastchange = i*step_size
             if connected and (telemetry_distance[i] > highestcontactdistance):
                 highestcontactdistance = telemetry_distance[i]
@@ -462,13 +463,9 @@ class orbital_trajectory:
         else:
             nonconnectedintervals.append((lastchange,i*step_size))
 
-        print('The connected intervals are',connectedintervals)
-        print('The nonconnected intervals are',nonconnectedintervals)
-        print('The maximum telemetry distance is',highestcontactdistance)
-        print ('The percentage of time connected is',connectedinterval/(connectedinterval+nonconnectedinterval)*100)
 
 
-        return telemetry_distance, telemetry_distance_max, telemetry_angle, telemetry_angle_max
+        return connectedinterval/(connectedinterval+nonconnectedinterval)
     
     def plot_during_atmospheric_mission(self,plot_space_track=True,plot_distance_time=True,plot_angle_time=True):
         if not hasattr(self,"atmospheric_mission_orbiter_states_array"):
@@ -540,70 +537,99 @@ class orbital_trajectory:
         ax.set_aspect('equal', adjustable='box')
         plt.show()                
 
-#func for local testing, ignore
-if __name__ == "__main__":
-    print("Hello World")
-    initial_state_capsule_keplerian = np.array([-490000000,1.051,0,0,0,np.pi/2])
-    initial_state_orbiter_keplerian = np.array([-490000000,1.062,0,0,0,np.pi/2])
-
-
-    #initialstate = np.array([-1.08630339e+10 , 1.24446912e+10 , 7.25305409e+10, -6.57253947e+02 ,7.13997881e+02 , 4.13553122e+03])
-    initialstate = np.array([ 5.56602204e+10 ,-6.77611749e+09 , 4.14614543e+10 , 3.43624785e+02, 4.30808807e+02-100, -4.20999416e+03+1000])
-    #propervalues for first antenna, up to 11.5 hours of mission
+def simplification():
     v_inf = 4237
-    initial_radius = 6e9
+    radius = 6e9
     peri_capsule = 25380000-6e6
-    v_manoeuvre = -13.
-    peri = 30362000. + 10.1e6
-    apo = 5830000000.
-    atmospheric_mission_time = constants.JULIAN_DAY/24*97.2
-    #testing
-    initial_radius=6e9
-    v_manoeuvre = -10.5
-    duration_of_entry = 180
-    peri = 30362000. + 10.1e6
-    apo = 263000000.
-
-    semi_major = (peri + apo)/2
-    
-    gravparam = 5793939212817970.0
-
-    time_of_orbit = 2*np.pi*np.sqrt(semi_major**3/gravparam)
-
-    print ('Orbital period is',time_of_orbit/constants.JULIAN_DAY*24)
-
-    #atmospheric_mission_time = constants.JULIAN_DAY*4
-    
-    desiredorbit = np.array([1,1,1,1,1,1])
-
-    time=constants.JULIAN_DAY / 24 * 3
-
-    entry_time = constants.JULIAN_DAY / 24
-
-    trajectory = orbital_trajectory(v_inf=v_inf,r_initial=initial_radius)
-
-    trajectory.initial_manoeuvre_capsule(peri_capsule)
-
-    capsulestate = trajectory.capsule_trajectory(atmosphere_height=1e6,step_size=10)
-
-    #print ('capsule state is',capsulestate)
-    print('Entry angle is',capsulestate[4]*180/np.pi)
-
+    orbits = orbital_trajectory(v_inf,radius)
+    orbits.initial_manoeuvre_capsule(peri_capsule)
+    capsulestate = orbits.capsule_trajectory(1e4,10)
     capsulestatecartesian = astro.element_conversion.spherical_to_cartesian(capsulestate)
 
-    initialmanoeuvre = trajectory.initial_manoeuvre_orbiter(peri,v_manoeuvre)
-    #initialmanoeuvre = trajectory.initial_manoeuvre_orbiter(82664830)
+    
+    return orbits
+    
 
-    capturedeltav, orbital_period = trajectory.get_capture_delta_v(apo)
-    #capturedeltav, orbital_period = trajectory.get_capture_delta_v(82664830)
+class orbitproblem:
+    def __init__(self,distanceupperbound,angleupperbound,connectedtimelowerbound,dvbounds,timeofflight):
+        self.distancemax = distanceupperbound
+        
+        self.distanceupperbound = distanceupperbound
+        self.angleupperbound = angleupperbound
+        self.connectedtimemin = connectedtimelowerbound
+        self.dvbounds = dvbounds
+        self.timeofflight = timeofflight
 
-    #print(capturedeltav,orbital_period)
+        self.trajectory = lambda: simplification
+        self.orbits = self.trajectory()
 
-    telemetry_distance, telemetry_distance_max, telemetry_angle, telemetry_angle_max = trajectory.orbiter_initial_trajectory(duration_of_entry=entry_time,glider_position=capsulestatecartesian,step_size=10)
+    def get_bounds(self):
+        lower_bound = [-200,27000000,200000000]
+        upper_bound = [200,150000000,1000000000]
+        bounds=(lower_bound,upper_bound)
+        return bounds
 
-    trajectory.plot_during_atmospheric_mission()
+    def get_number_of_parameters(self):
+        return 3
 
-    trajectory.plot_orbital_trajectory()
+    def fitness(self,parameters):
+        self.orbits.initial_manoeuvre_orbiter(parameters[1],parameters[0])
+        connectedstate = self.orbits.orbiter_initial_trajectory(2e2,self.capsulestatecartesian,self.angleupperbound,self.distanceupperbound,10)
+        capturedv,orbitalperiod = self.orbits.get_capture_delta_v(parameters[2])
+        connectedstatecost = np.exp(-(connectedstate/0.4)*3)
+        dvcost= np.exp(capturedv/1500)
+        totalcost = connectedstatecost*dvcost
+        return [totalcost]
+    
 
-    print('break') 
+#func for local testing, ignore
+if __name__ == "__main__":
+    problemclass = orbitproblem(250000000,70,0.4,3000,constants.JULIAN_DAY/24*97.2)
+    prob = pg.problem(problemclass)
+    number_of_generations = 1
+    bestcost = 1e99
 
+
+
+    
+    # Fix seed
+    optimization_seed = np.random.randint(0,1000)
+
+    optimization_seed = int(optimization_seed)
+
+    # Create pygmo algorithm object
+    algo = pg.algorithm(pg.de(gen=number_of_generations, seed=optimization_seed, F=0.55,CR=0.7,variant=4))
+
+    # To print the algorithm's information: uncomment the next line
+    # print(algo)
+
+    # Set population size
+    population_size = 40
+
+    # Create population
+    pop = pg.population(prob, size=population_size, seed=optimization_seed)
+
+    ###########################################################################
+    # Run optimization
+    ###########################################################################
+
+    # Set number of evolutions
+    number_of_evolutions = 10
+
+    # Initialize empty containers
+    individuals_list = []
+    fitness_list = []
+
+    for i in range(number_of_evolutions):
+
+        pop = algo.evolve(pop)
+
+        # individuals save
+        individuals_list.append(pop.champion_x)
+        fitness_list.append(pop.champion_f)
+    if pop.champion_f < bestcost:
+        bestdv = pop.champion_f
+        bestpop = pop
+
+print('best fitness score',pop.champion_f)
+print('best parameters',pop.champion_x)
