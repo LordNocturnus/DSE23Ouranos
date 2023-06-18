@@ -204,7 +204,7 @@ class CapsuleDrag:
 
     def beta(self, y):
         if y <= np.sin(self.angle) * self.r1:
-            return np.sin(y / self.r1)
+            return np.arcsin(y / self.r1)
         else:
             return self.angle
 
@@ -215,7 +215,7 @@ class CapsuleDrag:
         upper = ((self.gamma + 1) / 2 * self.mach**2) ** (self.gamma / (self.gamma - 1))
         lower = (2*self.gamma / (self.gamma + 1) * self.mach**2 - (self.gamma - 1) /
                  (self.gamma + 1)) ** (1 / (self.gamma - 1))
-        return upper / lower
+        return upper / lower - 1
 
     def p_inf_bar(self):
         return 1 / (1 + self.p_0_stag())
@@ -240,7 +240,7 @@ class CapsuleDrag:
         if y <= np.sin(self.angle) * self.r1:
             return self.r1
         else:
-            return self.r1 #y / np.sin(self.angle)
+            return self.r1
 
     def R_max(self):
         return self.diameter / (2 * np.sin(self.angle))
