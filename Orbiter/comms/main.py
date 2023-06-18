@@ -6,21 +6,21 @@ c = 300000000 # speed of light in m/s
 earthRadius = 6371000. # radius Earth in m
 L_a = -0.5 # atmospheric attenuation in dB
 AU = 149597870691 # one AU in m
-d_EarthSC = 20.8 # max distance between SC and Earth in AU
+d_EarthSC = 19.31845678336 # max distance between SC and Earth in AU
 Tnoisedown = 424 # Noise temperature in K
 Tnoiseup = 763 # Noise temperature in K
 TurnAroundRatio = 3599 / 3344
-D = 4000000 #  Total data generated
-CF = 5 #  compression factor
-t_comm = 4 * 365 * 24 * 60 * 60 #  comms time in seconds
+# D = 4000000 #  Total data generated
+# CF = 5 #  compression factor
+# t_comm = 4 * 365 * 24 * 60 * 60 #  comms time in seconds
 
 # antenna spacecraft:
 d_antenna = 4.8 # antenna diameter in m
 eta_antenna = 0.55
-P = 100 # transmitting power in W
+P = 120 # transmitting power in W
 L_l = 0.9 # loss factor spacecraft
 PointingAccuracy = 0.0572958 # pointing accuracy in deg
-DR = 15000 # downlink data rate in bps
+DR = 20000 # downlink data rate in bps
 f = 32 # Downlink frequency in GHz
 wavelengthdown = c / (f * 10 ** 9)
 
