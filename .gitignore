@@ -168,3 +168,4 @@ atmos_OUTPUT.csv
 atmos_data.csv
 *.bsp
 *.tpc
+*.pdf
