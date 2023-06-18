@@ -61,7 +61,7 @@ def heatshield_sizing(diameter, heat_load, interface_velocity, peak_heat_flux):
         return CP_total_weight, CP_thickness + HT_424_thickness + ACC6_thickness
 
 
-def volume(diameter, radius1, radius2, depth, thickness):
+def volume(diameter, radius1, radius2, depth, thickness, plot=False):
     l0 = -(radius1 - depth)
     l1 = -(radius1 - depth) * np.cos(_bottom_angle)
     l2 = (diameter / 2 - radius2 + (radius2 - depth) * np.cos(np.pi / 2 - _bottom_angle) -
@@ -97,6 +97,45 @@ def volume(diameter, radius1, radius2, depth, thickness):
     edge = s3(l3, depth, radius1, radius2, _bottom_angle, _top_angle, diameter)
     edged = s3(l3d, depth + thickness, radius1, radius2, _bottom_angle, _top_angle, diameter)
     vneg += sp.integrate.quad(lambda x: np.pi * ((edge - edged) / (l3 - l3d) * (-l3 + x) + edge) ** 2, l3d, l3)[0]
+
+    if plot:
+        a1 = np.linspace(l0, l1, 100)
+        a2 = np.linspace(l1, l2, 100)
+        a3 = np.linspace(l2, l3, 100)
+        a1d = np.linspace(l0d, l1d, 100)
+        a2d = np.linspace(l1d, l2d, 100)
+        a3d = np.linspace(l2d, l3d, 100)
+        a4d = np.linspace(l3d, l3, 100)
+
+        h1 = s1(a1, depth, radius1, radius2, _bottom_angle, _top_angle, diameter)
+        h2 = s2(a2, depth, radius1, radius2, _bottom_angle, _top_angle, diameter)
+        h3 = s3(a3, depth, radius1, radius2, _bottom_angle, _top_angle, diameter)
+        h1d = s1(a1d, depth + thickness, radius1, radius2, _bottom_angle, _top_angle, diameter)
+        h2d = s2(a2d, depth + thickness, radius1, radius2, _bottom_angle, _top_angle, diameter)
+        h3d = s3(a3d, depth + thickness, radius1, radius2, _bottom_angle, _top_angle, diameter)
+        h4d = (edge - edged) / (l3 - l3d) * (-l3 + a4d) + edge
+
+        plt.plot(-h1, a1 + a3[0] - a2[-1], color="r")
+        plt.plot(h1, a1 + a3[0] - a2[-1], color="r")
+        plt.plot(-h2, a2 + a3[0] - a2[-1], color="r")
+        plt.plot(h2, a2 + a3[0] - a2[-1], color="r")
+        plt.plot(-h3, a3, color="r")
+        plt.plot(h3, a3, color="r")
+        plt.plot(-h1d, a1d + a3[0] - a2[-1], color="r")
+        plt.plot(h1d, a1d + a3[0] - a2[-1], color="r")
+        plt.plot(-h2d, a2d + a3[0] - a2[-1], color="r")
+        plt.plot(h2d, a2d + a3[0] - a2[-1], color="r")
+        plt.plot(-h3d, a3d, color="r")
+        plt.plot(h3d, a3d, color="r")
+        plt.plot(-h4d, a4d + a3[0] - a2[-1], color="r")
+        plt.plot(h4d, a4d + a3[0] - a2[-1], color="r")
+        plt.xlim(-1.6, 1.6)
+        plt.ylim(-2.1, 1.1)
+
+        plt.grid()
+        plt.savefig("heat_shield.pdf", dpi='figure', format="pdf", metadata=None, bbox_inches=None, pad_inches=0.0,
+                    facecolor='auto', edgecolor='auto', backend=None)
+        plt.show()
 
     return vpos - vneg
 
@@ -171,5 +210,7 @@ def itterate_heatshield(mass, diameter, alt, lat, lon, speed, flight_path_angle,
 
 
 if __name__ == "__main__":
-    print(itterate_heatshield(663.1 - 255, 3, 3.03327727e+07, 5.45941114e-01, -2.33346601e-02, 2.65992642e+04,
-                              -5.91036848e-01, -2.96367147e+00, 1, 3))
+    #print(itterate_heatshield(663.1 - 255, 3, 3.03327727e+07, 5.45941114e-01, -2.33346601e-02, 2.65992642e+04,
+    #                          -5.91036848e-01, -2.96367147e+00, 1, 3))
+
+    print(volume(3, _radius1, _radius2, 0.0, 0.0598, True) * 0.352 * 100**3 / 1000)
