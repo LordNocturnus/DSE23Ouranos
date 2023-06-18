@@ -51,8 +51,8 @@ class Orb:
         self.t_payload = 150  # Payload lifetime in months
         self.P_comms = 120
         self.P_prop = 35
-        self.P_adcs = 150
-        self.P_dh = 46
+        self.P_adcs = 65
+        self.P_dh = 49
         self.P_payload = 147.04
         self.P_thermal = 0
         self.P_pw = 25
@@ -72,9 +72,9 @@ class Orb:
         self.mass_combined = self.mass + self.mass_AV  # Mass of combined systems
         self.deltaV_transfer = 170  # Combined systems deltaV
         self.deltaV_insertion = 1600 + 500 + 100  # Delta V after splitting up at Uranus, Moon discovery and ADCS
-        self.Isp = 317  # Isp of the orbiter thrusters
-        self.T = 635 # Orbiter thrust
-        self.m_engine = 4.5  # Main engine mass in kg
+        self.Isp = 321  # Isp of the orbiter thrusters
+        self.T = 425 # Orbiter thrust
+        self.m_engine = 4.3  # Main engine mass in kg
         self.material = [4430, 880 * 10**6, 970 * 10**6, 113.8 * 10**9]
 
         # ADCS
