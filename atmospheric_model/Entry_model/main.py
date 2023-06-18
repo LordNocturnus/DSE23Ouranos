@@ -199,7 +199,7 @@ class CapsuleDrag:
         self.gamma = self.SpecificHeatRatio(var[1])
         self.p_inf = self.Pressure_Pa(var[1])
         drag = sp.integrate.quad(lambda y: self.p_bar(y) * 2 * np.pi * y * np.cos(self.beta(y)), 0.0, self.diameter / 2)[0]
-        return [drag / (1 / 2 * self.gamma * self.mach ** 2 * self.area) + 1 / (1 / 2 * self.gamma * self.mach ** 2),
+        return [drag / (1 / 2 * self.gamma * self.mach ** 2 * self.area) - 1 / (1 / 2 * self.gamma * self.mach ** 2),
                 0.0, 0.0]
 
     def beta(self, y):
@@ -215,7 +215,7 @@ class CapsuleDrag:
         upper = ((self.gamma + 1) / 2 * self.mach**2) ** (self.gamma / (self.gamma - 1))
         lower = (2*self.gamma / (self.gamma + 1) * self.mach**2 - (self.gamma - 1) /
                  (self.gamma + 1)) ** (1 / (self.gamma - 1))
-        return upper / lower - 1
+        return upper / lower
 
     def p_inf_bar(self):
         return 1 / (1 + self.p_0_stag())
@@ -224,10 +224,10 @@ class CapsuleDrag:
         if y <= np.sin(self.angle) * self.r1:
             return np.arcsin(y / self.r1) * self.r1
         else:
-            return self.angle * self.r1 + (y - self.r1 * np.sin(self.angle) / np.cos(self.angle))
+            return self.angle * self.r1 + (y - self.r1 * np.sin(self.angle)) / np.cos(self.angle)
 
     def s_star(self):
-        return self.angle * self.r1 + (self.diameter / 2 - self.r1 * np.sin(self.angle) / np.cos(self.angle))
+        return self.angle * self.r1 + (self.diameter / 2 - self.r1 * np.sin(self.angle)) / np.cos(self.angle)
 
     def p_fd_bar(self, y):
         return 1 - np.exp(-self.Lambda(y)) * (1 - self.p_star_bar()) + 1 / 16 * ((self.s(y) / self.s_star()) ** 2 -
@@ -240,7 +240,7 @@ class CapsuleDrag:
         if y <= np.sin(self.angle) * self.r1:
             return self.r1
         else:
-            return y / np.sin(self.angle)
+            return self.r1 #y / np.sin(self.angle)
 
     def R_max(self):
         return self.diameter / (2 * np.sin(self.angle))
@@ -276,7 +276,7 @@ if __name__ == "__main__":
 
     dependent_variables_array = entry_sim(500, aero_coefficient_setting, 3.03327727e+07, 5.45941114e-01,
                                           -2.33346601e-02, 2.65992642e+04, -5.91036848e-01, -2.96367147e+00,
-                                          [termination_altitude_setting, termination_mach_setting], acc=1)
+                                          [termination_altitude_setting, termination_mach_setting], acc=1)#"""
 
     """plt.plot(dependent_variables_array[:, 0], dependent_variables_array[:, 1])
     plt.grid()
