@@ -71,7 +71,7 @@ class Orb:
         self.mass_AV = 1000  # Atmospheric vehicle mass (import from AV class)
         self.mass_combined = self.mass + self.mass_AV  # Mass of combined systems
         self.deltaV_transfer = 170  # Combined systems deltaV
-        self.deltaV_insertion = 1600 + 500 + 100  # Delta V after splitting up at Uranus, Moon discovery and ADCS
+        self.deltaV_insertion = 2800 + 500 + 100  # Delta V after splitting up at Uranus, Moon discovery and ADCS
         self.Isp = 321  # Isp of the orbiter thrusters
         self.T = 425  # Orbiter thrust
         self.m_engine = 4.3  # Main engine mass in kg
