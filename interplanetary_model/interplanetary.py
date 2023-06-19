@@ -404,6 +404,28 @@ class interplanetary_trajectory:
         time_of_encounter = self.state_history[-1,0]
         time_of_separation = time_of_encounter-time_difference
         i = 0
+        position_Uranus = spice.get_body_cartesian_position_at_epoch("Uranus","Sun","ECLIPJ2000","None",time_of_separation)
+        helper_Uranus = spice.get_body_cartesian_position_at_epoch("Uranus","Sun","ECLIPJ2000","None",time_of_separation+1)
+        velocity_Uranus = helper_Uranus - position_Uranus
+        rotationmatrix = spice.compute_rotation_matrix_between_frames('ECLIPJ2000','IAU_URANUS',time_of_separation)
+        position_earth = spice.get_body_cartesian_position_at_epoch("Earth","Sun","ECLIPJ2000","None",time_of_separation)
+        distance_earth = np.linalg.norm(position_Uranus - position_earth)
+        print ('The distance to earth is',distance_earth)
+        print ('The vector from Uranus to Earth is:',(position_earth - position_Uranus)@ rotationmatrix)
+        max_distance_earth = distance_earth
+        currentdate = time_of_separation
+        for i in range(1000):
+            position_Uranus = spice.get_body_cartesian_position_at_epoch("Uranus","Sun","ECLIPJ2000","None",currentdate)
+            helper_Uranus = spice.get_body_cartesian_position_at_epoch("Uranus","Sun","ECLIPJ2000","None",currentdate+1)
+            velocity_Uranus = helper_Uranus - position_Uranus
+            rotationmatrix = spice.compute_rotation_matrix_between_frames('ECLIPJ2000','IAU_URANUS',currentdate)
+            position_earth = spice.get_body_cartesian_position_at_epoch("Earth","Sun","ECLIPJ2000","None",currentdate)
+            distance_earth = np.linalg.norm(position_Uranus - position_earth)
+            currentdate += constants.JULIAN_DAY
+            if distance_earth > max_distance_earth:
+                max_distance_earth = distance_earth
+
+        print ('The maximum distance to Earth during the extended mission is', max_distance_earth)
         notfound = True
         while notfound:
             if self.state_history[i,0] > time_of_separation:
@@ -411,12 +433,9 @@ class interplanetary_trajectory:
                 notfound = False
                 position = cartesianstate[:3]
                 velocity = cartesianstate[3:]
-                position_Uranus = spice.get_body_cartesian_position_at_epoch("Uranus","Sun","ECLIPJ2000","None",time_of_separation)
-                helper_Uranus = spice.get_body_cartesian_position_at_epoch("Uranus","Sun","ECLIPJ2000","None",time_of_separation+1)
-                velocity_Uranus = helper_Uranus - position_Uranus
+
                 print(position_Uranus,'\n',velocity_Uranus,'\n',velocity)
 
-                rotationmatrix = spice.compute_rotation_matrix_between_frames('ECLIPJ2000','IAU_URANUS',time_of_separation)
                 rotationvelocitymatrix =   spice.compute_rotation_matrix_derivative_between_frames('ECLIPJ2000','IAU_URANUS',time_of_separation)
                 position -= position_Uranus
                 velocity -= velocity_Uranus
