@@ -124,7 +124,7 @@ class Orb:
                               self.mass - self.m_propulsion, self.r_tanks, self.m_tanks, self.m_ox,
                               np.array([self.r_tanks, 0, 0]), self.m_fuel, np.array([3 * self.r_tanks, 0, 0]),
                               capsule_radius, capsule_height, capsule_com, capsule_mass, tanks_full=False)
-        self.m_adcs_fuel = adcs.prop_mass(232, 6.8, self.l_tanks / 2, self.mainengine_burntime)
+        self.m_adcs_fuel = adcs.prop_mass(229, 4.33, self.l_tanks / 2, self.mainengine_burntime) * 1.1
         self.m_adcs = self.m_adcs_fuel + 50.3
         self.mmoi_capsule = adcs.mmoi(self.r_tanks, self.l_tanks, np.array([self.l_tanks / 2, 0, 0]),
                                       self.mass - self.m_propulsion, self.r_tanks, self.m_tanks, self.m_ox,
@@ -202,5 +202,5 @@ class Orb:
 if __name__ == "__main__":
     orbiter = Orb()
     print(orbiter.mass_breakdwon())
-    print(orbiter.m_adcs_fuel)
+    print(orbiter.m_adcs_fuel, orbiter.l_tanks/2, orbiter.r_tanks)
 
