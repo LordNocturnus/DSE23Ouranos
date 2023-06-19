@@ -99,7 +99,7 @@ class aerodynamicproperties():
 
         self.x_w = np.arange(0, 1.775, 0.01)
         self.V_h_over_V = 1
-        self.SM = 0.05 #[%]
+        self.SM = 0.15 #[%]
         self.l_fuselage = 1.675
         self.x_ac = 0.25
         self.x_cg = np.arange(-0.1,2.1,0.1)
@@ -245,7 +245,7 @@ class aerodynamicproperties():
 delta_e = -(1/C_m_delta_e)*(C_m_0 + (W/(p_dynamic_low_bar*S_avg))*((x_cg-x_n_fixed)/c_avg))
 delta_e = -(1/C_m_delta_e)*(C_m_0 + (W/(p_dynamic_high_bar*S_avg))*((x_cg-x_n_fixed)/c_avg))
 '''''
-
+delta_e = -(1/C_m_delta_e)*(C_m_0 + (W/(p_dynamic_high_bar*S_avg))*((x_cg-x_n_fixed)/c_avg))
 
 if __name__ == "__main__":
     print("Hello World")
