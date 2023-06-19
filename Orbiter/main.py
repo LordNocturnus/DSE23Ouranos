@@ -7,6 +7,7 @@ import Orbiter.structure as strt
 import Orbiter.comms as comms
 import Orbiter.power as pwr
 import Orbiter.thermal as thm
+import Orbiter.ADCS as adcs
 
 g = 9.81
 R = 8.314
