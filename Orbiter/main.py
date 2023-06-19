@@ -9,7 +9,7 @@ import Orbiter.power as pwr
 import Orbiter.thermal as thm
 import Orbiter.ADCS as adcs
 
-g = 9.81
+g = 9.80665
 R = 8.314
 margin = 0.2
 boltzman = 5.67 * 10 ** (-8)  # Boltzamn constant for thermal
@@ -35,7 +35,11 @@ costRTG1 = 145699633.36  # cost of one GPHS-RTG in FY$2022, This is the highest 
 l_rtg = 1.14
 w_rtg = 0.422
 
-
+# --- ADCS --- #
+capsule_radius = 1.5
+capsule_height = 1.5
+capsule_com = np.array([capsule_height * 3 / 4, 0, 0])
+capsule_mass = 601.6
 
 class Orb:
 
@@ -113,17 +117,20 @@ class Orb:
         self.l_tanks, self.r_tanks, self.m_structure, self.t_cy_o, self.t_cy_f, self.t_caps_o, self.t_caps_f, self.m_tanks = strt.final_architecture(self.material, self.prop_properties,
                                                                               margin, self.mass_AV)
         self.m_propulsion = self.m_tanks + self.prop_mass
-
+        self.mainengine_burntime = self.prop_mass * self.Isp * 9.80665 / self.T
     def ADCS(self):
         cylinder_com = np.array([self.l_tanks / 2, 0, 0])
-
-
-
-        self.m_adcs = ...
-
-
-
-
+        self.mmoi = adcs.mmoi(self.r_tanks, self.l_tanks, np.array([self.l_tanks / 2, 0, 0]),
+                              self.mass - self.m_propulsion, self.r_tanks, self.m_tanks, self.m_ox,
+                              np.array([self.r_tanks, 0, 0]), self.m_fuel, np.array([3 * self.r_tanks, 0, 0]),
+                              capsule_radius, capsule_height, capsule_com, capsule_mass, tanks_full=False)
+        self.m_adcs_fuel = adcs.prop_mass(232, 6.8, self.l_tanks / 2, self.mainengine_burntime)
+        self.m_adcs = self.m_adcs_fuel + 50.3
+        self.mmoi_capsule = adcs.mmoi(self.r_tanks, self.l_tanks, np.array([self.l_tanks / 2, 0, 0]),
+                                      self.mass - self.m_propulsion, self.r_tanks, self.m_tanks, self.m_ox,
+                                      np.array([self.r_tanks, 0, 0]), self.m_fuel, np.array([3 * self.r_tanks, 0, 0]),
+                                      capsule_radius, capsule_height, capsule_com, capsule_mass, tanks_full=True,
+                                      caps_attached=True)[4]
     def power(self):
         self.n_rtg = pwr.numberRTG(self.P_req, self.t_mission)[1]
         self.m_power = 1.2 * (pwr.massRTG(self.P_req, self.t_mission) + 25)  # 25 kg is an estimate for PDU and regulators
@@ -138,7 +145,7 @@ class Orb:
 
     def iteration(self):
         diff = 1000
-        while diff > 1 * 10**-3:
+        while diff > 1 * 10 ** -3:
             self.mass_prop(self.mass)
             self.P_req = self.P_comms + self.P_pw + self.P_dh + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop
             self.ADCS()
@@ -195,3 +202,5 @@ class Orb:
 if __name__ == "__main__":
     orbiter = Orb()
     print(orbiter.mass_breakdwon())
+    print(orbiter.m_adcs_fuel)
+

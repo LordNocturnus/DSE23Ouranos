@@ -137,7 +137,7 @@ def mmoi(cyl_r, cyl_h, cyl_com, cyl_mass, tank_r, tanks_mass, ox_mass, ox_com, f
               # f"Fuel tank MMOI found to be: {fuel_mmoi}\n"
               f"Local capsule MMOI: {caps_mmoi_local}\n"
               f"Total MMOI found to be: {cyl_mmoi + ox_mmoi + fuel_mmoi + caps_mmoi}\n")
-    return cyl_mmoi + ox_mmoi + fuel_mmoi + caps_mmoi + caps_mmoi, com, cop, area
+    return cyl_mmoi + ox_mmoi + fuel_mmoi + caps_mmoi + caps_mmoi, com, cop, area, caps_mmoi_local
 
 
 def grav_grad_torque(mmoi, a, grav_param, period):
@@ -211,37 +211,38 @@ cylinder_height = 1.9
 cylinder_mass = 868
 
 
-tank_radius = 0.45
-tanks_mass = 19
-oxidiser_mass = 348
-oxidiser_com = np.array([tank_radius / 2, 0, 0])
-fuelmass = 211
-fuelcom = np.array([tank_radius * 1.5, 0, 0])
-capsule_r = 1.5
-capsule_h = 1.5
-capsule_com = np.array([capsule_h * 3 / 4, 0, 0])  # com of the capsule wrt its tip
-capsule_mass = 579.1
+# tank_radius = 0.45
+# tanks_mass = 19
+# oxidiser_mass = 348
+# oxidiser_com = np.array([tank_radius, 0, 0])
+# fuelmass = 211
+# fuelcom = np.array([tank_radius * 3, 0, 0])
+# capsule_r = 1.5
+# capsule_h = 1.5
+# capsule_com = np.array([capsule_h * 3 / 4, 0, 0])  # com of the capsule wrt its tip
+# capsule_mass = 579.1
 
-mmoi_empty = mmoi(cylinder_radius, cylinder_height, cylinder_com, cylinder_mass, tank_radius, tanks_mass,
-                oxidiser_mass, oxidiser_com, fuelmass, fuelcom, capsule_r, capsule_h, capsule_com, capsule_mass,
-                debug=True, tanks_full=False, caps_attached=False)
 
-mmoi_detached_full = mmoi(cylinder_radius, cylinder_height, cylinder_com, cylinder_mass, tank_radius, tanks_mass,
-                          oxidiser_mass, oxidiser_com, fuelmass, fuelcom, capsule_r, capsule_h, capsule_com,
-                          capsule_mass, debug=True, tanks_full=True, caps_attached=False)
-
-mmoi_launch = mmoi(cylinder_radius, cylinder_height, cylinder_com, cylinder_mass, tank_radius, tanks_mass,
-                   oxidiser_mass, oxidiser_com, fuelmass, fuelcom, capsule_r, capsule_h, capsule_com, capsule_mass,
-                   debug=True, tanks_full=True, caps_attached=True)
 if __name__ == "__main__":
+    # mmoi_empty = mmoi(cylinder_radius, cylinder_height, cylinder_com, cylinder_mass, tank_radius, tanks_mass,
+    #                   oxidiser_mass, oxidiser_com, fuelmass, fuelcom, capsule_r, capsule_h, capsule_com, capsule_mass,
+    #                   debug=True, tanks_full=False, caps_attached=False)
+    #
+    # mmoi_detached_full = mmoi(cylinder_radius, cylinder_height, cylinder_com, cylinder_mass, tank_radius, tanks_mass,
+    #                           oxidiser_mass, oxidiser_com, fuelmass, fuelcom, capsule_r, capsule_h, capsule_com,
+    #                           capsule_mass, debug=True, tanks_full=True, caps_attached=False)
+    #
+    # mmoi_launch = mmoi(cylinder_radius, cylinder_height, cylinder_com, cylinder_mass, tank_radius, tanks_mass,
+    #                    oxidiser_mass, oxidiser_com, fuelmass, fuelcom, capsule_r, capsule_h, capsule_com, capsule_mass,
+    #                    debug=True, tanks_full=True, caps_attached=True)
     # Report values disturbance torques at Uranus
-    print(grav_grad_torque(mmoi_empty[0], semi_major, grav_parameter, orbital_period))
-    print(mag_torque_max(10, magnetic_dipole_uranus))
-    print(aerodyn_torque(rho_uranus_min, c_d, vel_per, mmoi_empty))
-    print(torque_s(mmoi_empty, 1))
-    print(torque_cg_unknown(0.03, 425))
-    print(mmoi_empty[1])
-    print(prop_mass(232, 6.8, 0.94, 4400))
+    # print(grav_grad_torque(mmoi_empty[0], semi_major, grav_parameter, orbital_period))
+    # print(mag_torque_max(10, magnetic_dipole_uranus))
+    # print(aerodyn_torque(rho_uranus_min, c_d, vel_per, mmoi_empty))
+    # print(torque_s(mmoi_empty, 1))
+    # print(torque_cg_unknown(0.03, 425))
+    # print(mmoi_empty[1])
+    print(prop_mass(232, 6.8, 2.94/2, 15000))
 
 
 
