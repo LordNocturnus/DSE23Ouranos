@@ -512,6 +512,16 @@ class orbital_trajectory:
         print('The maximum telemetry distance is',highestcontactdistance)
         print ('The percentage of time connected is',connectedinterval/(connectedinterval+nonconnectedinterval)*100)
 
+        self.earth_position = np.array([1.11514099e+12, 1.48764955e+11 ,2.56010242e+12])
+        self.earthangle = np.zeros(len(telemetry_angle))
+        for i in range(len(telemetry_vector)):
+            self.earthangle[i] = np.arccos(np.inner(telemetry_vector[i],self.earth_position)/(np.linalg.norm(telemetry_vector[i])*np.linalg.norm(self.earth_position)))
+        
+        connectednodes = sum(float(num)*180/np.pi <= 70 for num in self.earthangle)
+        print ('The time connected with Earth is',connectednodes/360)
+        #for i in range(len(telemetry_angle)):
+
+
 
         return telemetry_distance, telemetry_distance_max, telemetry_angle, telemetry_angle_max
     
@@ -542,6 +552,7 @@ class orbital_trajectory:
         ax.set_ylabel('y [m]')
         ax.set_zlabel('z [m]')
         ax.set_aspect('equal', adjustable='box')
+        #ax.scatter(self.earth_position[0]/1e3,self.earth_position[1]/1e3,self.earth_position[2]/1e3,label='Earth',marker='o',color = 'Blue')
         plt.show()
 
         plt.plot(np.arange(stop=len(telemetry_distance )* 10, start = 0, step = 10)/3600, telemetry_distance)
@@ -550,7 +561,7 @@ class orbital_trajectory:
         plt.plot(np.arange(stop=len(telemetry_distance) * 10, start = 0, step = 10)/3600, telemetry_angle/np.pi * 180)
         plt.show()
 
-        plt.plot(np.arange(stop=len(telemetry_distance) * 10-10, start = 0, step = 10)/3600, self.telemetry_rate/np.pi * 180)
+        plt.plot(np.arange(stop=len(telemetry_distance) * 10, start = 0, step = 10)/3600, self.earthangle/np.pi * 180)
         plt.show()
 
 
@@ -606,10 +617,13 @@ if __name__ == "__main__":
     initial_radius=8e9
     v_manoeuvre = 0
     duration_of_entry = 180
-    peri = 25862000. - 1e6
+    peri = 25362000. + 1e6 + 5e5
     apo = 240000000.
+    print((apo-peri)/(apo+peri))
 
     semi_major = (peri + apo)/2
+
+    print(semi_major)
     
     gravparam = 5793939212817970.0
 
