@@ -155,8 +155,8 @@ def backshell_geometry(peak_load, load_entry, p_load=p_load, r_thermal=r_thermal
     a_bottom = angle_cone(r_bottom_big, r_bottom_small, h_folded_wings)
 
     # Calculate thickness based on pressure loads. Use personalised formula
-    t_top = max(t_pressure(p_load, r_top_big, a_top, sigma_y_backshell) * 1.2, 1 * 10**-3)
-    t_bottom = max(t_pressure(p_load, r_bottom_big, a_bottom, sigma_y_backshell) * 1.2, 1 * 10**-3)
+    t_top = max(t_pressure(0.1 * 10**5, r_top_big, a_top, sigma_y_backshell) * 1.2, 1 * 10**-3)
+    t_bottom = max(t_pressure(0.1 * 10**5, r_bottom_big, a_bottom, sigma_y_backshell) * 1.2, 1 * 10**-3)
 
     # Calculate thickness based on pressure loads. Use traditional formula for thin walled cylinders
     # t_top = t_hoop(p_load, r_top_big, sigma_y)
@@ -249,6 +249,4 @@ def bending_pressure(p_entry, l_thermal, sigma_y):
 
 
 if __name__ == "__main__":
-    mass_back, mass_insulator, t_insulator, t_top, t_bottom, t_bottom_shell = total_mass(load_peak_para, p_load, load_peak_entry, 250, r_thermal, h_folded_wings)
-    print(mass_back, mass_insulator, t_insulator, t_top, t_bottom, t_bottom_shell)
-    print(mass_back + mass_insulator)
+    mass_back, mass_insulator, t_insulator, t_top, t_bottom, t_bottom_shell = total_mass(load_peak_para, p_load, load_peak_entry, delta_T, r_thermal, h_folded_wings)
