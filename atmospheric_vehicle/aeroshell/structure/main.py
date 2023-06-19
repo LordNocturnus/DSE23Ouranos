@@ -228,11 +228,11 @@ def mass_insulator_shell(peak_T):
 def total_mass(peak_load_para, p_load, load_entry, peak_T, r_thermal, h_folded_wings):
     """
     Method to calculate the total mass of the aeroshell structure
-    :param peak_load_para: Peak parachute load during entry
-    :param p_load: Pressure loads during entry
-    :param load_entry: Entry loads on the bottom structure of aeroshell
-    :param r_thermal: Size of thermal shield
-    :param h_glider: height of the folded wings
+    :param peak_load_para: Peak parachute load during entry [m/s2]
+    :param p_load: Pressure loads during entry [Pa]
+    :param load_entry: Entry loads on the bottom structure of aeroshell [m/s2]
+    :param r_thermal: Size of thermal shield [m]
+    :param h_glider: height of the folded wings [m]
     :return: Total mass, insulator thickness, backshell top section thickness, backshell bottom section thickness
              bottom shell thickness
     """
