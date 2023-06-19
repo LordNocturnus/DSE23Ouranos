@@ -6,6 +6,8 @@ import scipy as sp
 import atmospheric_model.Entry_model
 from atmospheric_model.GRAM import GRAM
 from atmospheric_vehicle.aeroshell.heatshield import volume
+from atmospheric_vehicle.aeroshell.structure import angle_cone, buckling, volume_truncated, t_pressure
+
 
 _PICA_density = 0.352 * 100**3 / 1000  # 0.352 - 0.701 g/cm^3
 
@@ -47,7 +49,9 @@ class Aeroshell:
         self.chute_weight = 0.0
         self.line_weight = 0.0
         self.struct_mass = 0.0
-        self.insulator_weight = 0.0
+        self.insulator_mass = 0.0
+        self.bottom_shell_mass = 0.0
+        self.mass_backshell = 0.0
         self.diameter = diameter
         self.parachute_c_ds = parachute_c_ds
         self.shock_load_factors = shock_load_factors
@@ -87,6 +91,7 @@ class Aeroshell:
 
         self.PICA_thickness = 0.0
         self.insulator_thickness = 0.0
+        self.bottom_shell_thickness = 0.9
 
         self.load = 0.0
         self.chute_area = 0.0
@@ -96,7 +101,7 @@ class Aeroshell:
     @property
     def mass(self):
         return self.glider_mass + self.heatshield_mass + self.chute_weight + self.line_weight + self.struct_mass + \
-            self.insulator_weight
+               self.insulator_mass + self.bottom_shell_mass + self.mass_backshell
 
     @property
     def cost(self):
@@ -104,7 +109,7 @@ class Aeroshell:
 
     @property
     def radius2(self):
-        return max(_radius2, (self.PICA_thickness + self.insulator_thickness) * 1.01)
+        return max(_radius2, (self.PICA_thickness + self.insulator_thickness + self.bottom_shell_thickness) * 1.01)
 
     def ballistic_entry(self, acc):
         drag = atmospheric_model.Entry_model.CapsuleDrag(self.diameter, 1.125, np.deg2rad(20), self.lat, self.lon, acc)
@@ -262,9 +267,17 @@ class Aeroshell:
         self.insulator_thickness = 0.8 * max(self.bending_bottom(), self.bending_pressure())
 
     def calculate_insulator_weight(self):
-        self.insulator_weight = volume(self.diameter, _radius1, self.radius2, 0.0, self.PICA_thickness) * _rho_insulator
+        self.insulator_mass = volume(self.diameter, _radius1, self.radius2, self.PICA_thickness,
+                                     self.insulator_thickness) * _rho_insulator
 
-    def backshell_geometry(self, peak_load, load_entry):
+    def calculate_bottom_shell_thickness(self):
+        self.bottom_shell_thickness = max(self.bending_bottom(), 1 * 10 ** -3, self.bending_pressure())
+
+    def calculate_bottom_shell_weight(self):
+        self.bottom_shell_mass = volume(self.diameter, _radius1, self.radius2, self.PICA_thickness +
+                                        self.insulator_thickness, self.bottom_shell_thickness) * _rho_backshell
+
+    def backshell_geometry(self):
         """
         Function that determines all geometrical properties and mass of the backshell. Multiple things are computed,
         during integration, it should be decided what is the most useful return, if one is actually needed. As of now the
@@ -281,96 +294,51 @@ class Aeroshell:
         """
 
         # Calculate the big and small radius of the top truncated cone. Limit case is the parachute radius
-        r_top_small = np.sqrt(max(max(max(self.sonic_dep_vars[:, 5]), max(self.parachute_dep_vars[:, 5])) * 1.1 /
+        self.r_top_small = np.sqrt(max(self.load * (self.mass - self.heatshield_mass) * 1.1 /
                                   _sigma_y_backshell, np.pi * _r_parachute ** 2) / np.pi)
-        r_top_big = r_top_small / (1 - _taper_ratio_top)
+        self.r_top_big = self.r_top_small / (1 - _taper_ratio_top)
 
         # Calculate the small radius of the bottom truncated cone. Limit case is the radius of the thermal shield
-        r_bottom_small = (self.diameter / 2) * (1 - _taper_ratio_bottom)
+        self.r_bottom_small = (self.diameter / 2) * (1 - _taper_ratio_bottom)
 
         # Calculate the angle at the base of the truncated cones
-        a_top = self.angle_cone(r_top_big, r_top_small, _h_parachute)
-        a_bottom = self.angle_cone((self.diameter / 2), r_bottom_small, _h_folded_wings)
+        self.a_top = angle_cone(self.r_top_big, self.r_top_small, _h_parachute)
+        self.a_bottom = angle_cone((self.diameter / 2), self.r_bottom_small, _h_folded_wings)
 
         # Calculate thickness based on pressure loads. Use personalised formula
-        t_top = max(self.t_pressure(r_top_big, a_top) * 1.2, 1 * 10 ** -3)
-        t_bottom = max(self.t_pressure((self.diameter / 2), a_bottom) * 1.2, 1 * 10 ** -3)
+        self.t_top = max(t_pressure(0.1 * 10**5, self.r_top_big, self.a_top, _sigma_y_backshell) * 1.2, 1 * 10 ** -3)
+        self.t_bottom = max(t_pressure(0.1 * 10**5, (self.diameter / 2), self.a_bottom, _sigma_y_backshell) * 1.2,
+                            1 * 10 ** -3)
 
         # Calculate thickness based on pressure loads. Use traditional formula for thin walled cylinders
         # t_top = t_hoop(p_load, r_top_big, sigma_y)
         # t_bottom = t_hoop(p_load, (self.diameter / 2), sigma_y)
 
         # Check buckling
-        I_top = 1 / 12 * t_top * (_h_parachute / np.cos(a_top)) ** 3
-        A_top = np.pi * (r_top_big + r_top_small) * _h_parachute / np.cos(a_top)
-        buck_top = self.buckling(I_top, _h_parachute / np.cos(a_top), p_load * A_top)
-        I_bottom = 1 / 12 * t_bottom * _h_folded_wings / np.cos(a_bottom)
-        A_bottom = np.pi * ((self.diameter / 2) + r_bottom_small) * _h_folded_wings / np.cos(a_bottom)
-        buck_bottom = self.buckling(I_bottom, _h_folded_wings / np.cos(a_bottom), p_load * A_bottom)
+        self.I_top = 1 / 12 * self.t_top * (_h_parachute / np.cos(self.a_top)) ** 3
+        self.A_top = np.pi * (self.r_top_big + self.r_top_small) * _h_parachute / np.cos(self.a_top)
+        buck_top = buckling(_E_backshell, self.I_top, _h_parachute / np.cos(self.a_top), 0.1 * 10**5 * self.A_top)
+        self.I_bottom = 1 / 12 * self.t_bottom * _h_folded_wings / np.cos(self.a_bottom)
+        self.A_bottom = np.pi * ((self.diameter / 2) + self.r_bottom_small) * _h_folded_wings / np.cos(self.a_bottom)
+        buck_bottom = buckling(_E_backshell, self.I_bottom, _h_folded_wings / np.cos(self.a_bottom),
+                               0.1 * 10**5 * self.A_bottom)
+        # Calculate the volume of the thin walled structure by subtraction
+        volume_top = volume_truncated(self.r_top_big, self.r_top_small, _h_parachute) - \
+                     volume_truncated(self.r_top_big - self.t_top, self.r_top_small - self.t_top,
+                                      _h_parachute - 2 * self.t_top)
+        volume_bottom = volume_truncated((self.diameter / 2), self.r_bottom_small, _h_folded_wings) - \
+                        volume_truncated((self.diameter / 2) - self.t_bottom, self.r_bottom_small - self.t_bottom,
+                                         _h_folded_wings - 2 * self.t_bottom)
+        self.mass_backshell = (volume_top + volume_bottom) * _rho_backshell
+        I_backshell = np.pi * ((self.diameter / 2) * 2) ** 4 / 64
+        buckling_shield = buckling(_E_backshell, (self.diameter / 2) * 2, I_backshell,
+                 self.load * (self.mass - self.heatshield_mass) * np.pi * (self.diameter / 2) ** 2)
 
-        if buck_bottom and buck_top:
-            # Calculate the volume of the thin walled structure by subtraction
-            volume_top = volume_truncated(r_top_big, r_top_small, _h_parachute) - volume_truncated(r_top_big - t_top,
-                                                                                                  r_top_small - t_top,
-                                                                                                  _h_parachute - 2 * t_top)
-            volume_bottom = volume_truncated((self.diameter / 2), r_bottom_small, _h_folded_wings) - volume_truncated(
-                (self.diameter / 2) - t_bottom, r_bottom_small - t_bottom, _h_folded_wings - 2 * t_bottom)
-
-            # Calculate backshell mass
-            mass_backshell = (volume_top + volume_bottom) * _rho_backshell
-            t_bottom_shell = max(bending_bottom(load_entry, (self.diameter / 2) * 2, _sigma_y_backshell), 1 * 10 ** -3,
-                                 bending_pressure(p_load, (self.diameter / 2) * 2, _sigma_y_backshell))
-            I_backshell = np.pi * ((self.diameter / 2) * 2) ** 4 / 64
-            print(buckling(_E_backshell, (self.diameter / 2) * 2, I_backshell, peak_load * np.pi * (self.diameter / 2) ** 2))
-            mass_bottom_shell = volume(t_heatshield, t_bottom_shell, (self.diameter / 2) * 2) * _rho_backshell
-            return (mass_backshell + mass_bottom_shell) * 1.2, t_top, t_bottom, t_bottom_shell
-        else:
+        if not buck_bottom or not buck_top or not buckling_shield:
             print(f'Buckling requirements is not satisfied')
 
-    def angle_cone(self, r_big, r_small, height):
-        """
-        Function that determined the angle between the base and the hypotenuse of the cone
-        :param r_big: Bottom radius of the cone
-        :param r_small: Top radius of the cone
-        :param height: height of the cone
-        :return: angle between hypotenuse and base
-        """
-        if height == 0:
-            raise ZeroDivisionError(f'The height has to be a positive value')
-        if r_big <= 0 or r_small <= 0 or height < 0:
-            raise ValueError(f'The dimensions of the capsule should be positive values')
-        return np.arctan((r_big - r_small) / height)
-
-    def t_pressure(self, r_big, a):
-        """
-        Function to determine the thickness required to withstand pressure loads during entry. Formulas were derived from
-        the following website: https://123sanat.com/d/catalogue/ASME-VIII-_8_-div.1-2019.pdf
-        :param p: External pressure
-        :param r_big: Top radius of cone
-        :param a: angle between hypotenuse and base
-        :param sigma_y: Yield stress of selected material
-        :return: Required minimum thickness
-        """
-        if a == np.pi / 2:
-            raise ZeroDivisionError(f'Capsule side angle equals 90 degrees, change the idealised geometry')
-        elif _sigma_y_backshell == 0.6 * abs(self.pressure):
-            raise ZeroDivisionError(f'Formula no longer valid due to material properties')
-        return abs(self.pressure) * r_big * 2 / (2 * np.cos(a) * (_sigma_y_backshell - 0.6 * abs(self.pressure)))
-
-    def buckling(self, l, I, p_load):
-        """
-        Function to calculate the buckling limit load
-        :param E: Young's Modulus
-        :param l: Length of plate
-        :param I: Moment of inertia plate
-        :param p_load: Pressure loads during entry
-        :return: bool if buckling criteria is respected
-        """
-        if l == 0:
-            raise ZeroDivisionError(f'The length of the sheet should be higher than 0')
-        elif l < 0 or I <= 0 or _E_backshell <= 0:
-            raise ValueError(f'The geometrical and material properties of the sheet should be a positive value')
-        return abs(p_load) <= np.pi ** 2 * _E_backshell * I / (l ** 2)
+    def calculate_cg(self, glider_cg_x):
+        self.glider_cd_x = glider_cg_x
 
     def itterate(self, struct_mass, acc=1, steps=5):
         self.struct_mass = struct_mass
@@ -379,10 +347,13 @@ class Aeroshell:
             self.calculate_entry_heating(acc)
             self.calculate_heatshield_thickness()
             self.calculate_insulator_shell_thickness()
+            self.calculate_bottom_shell_thickness()
             self.calculate_parachute()
 
             self.calculate_heatshield_weight()
             self.calculate_insulator_weight()
+            self.calculate_bottom_shell_weight()
+            self.backshell_geometry()
 
             print(f"Finished Itteration {i+1}")
 
