@@ -99,7 +99,7 @@ class orbital_trajectory:
         true_anomaly = np.arccos(semi_latus_rectum/(eccentricity*self.initial_radius)-1/eccentricity)
         self.true_anomaly = true_anomaly
 
-        state = [semi_major_axis,eccentricity,1.42426867e+00,0,0,true_anomaly]
+        state = [semi_major_axis,eccentricity,1.42426867e+00,4.17040775,0,true_anomaly]
 
         self.initial_state_capsule = astro.element_conversion.keplerian_to_cartesian(state,self.uranus_gravitational_parameter)
         if np.inner(self.initial_state_capsule[:3],self.initial_state_capsule[3:]) > 0:
@@ -112,11 +112,12 @@ class orbital_trajectory:
         self.initial_state_capsule= self.initial_state
 
     def initial_manoeuvre_orbiter(self,desired_periapsis,velocity_increase):
-        if desired_periapsis < 25367000:
-            raise ValueError("Periapsis location is too low, radisus of Uranus is 25362000 meters. Orbiter would encounter the atmosphere.")
+        #if desired_periapsis < 25367000:
+        #    raise ValueError("Periapsis location is too low, radisus of Uranus is 25362000 meters. Orbiter would encounter the atmosphere.")
         v_inf = self.v_inf + velocity_increase
         semi_major_axis =- self.uranus_gravitational_parameter/((v_inf+velocity_increase)**2)
         eccentricity = 1-desired_periapsis/semi_major_axis
+        self.desperiapsis = desired_periapsis
         initial_state_capsule = self.initial_state_capsule[:3]
         def getorbithelper(input,semi_major,ecc,refpos):
             arg = input[0]
@@ -256,6 +257,7 @@ class orbital_trajectory:
         initial_state_keplerian = astro.element_conversion.cartesian_to_keplerian(self.initial_state_orbiter,self.uranus_gravitational_parameter)
         initial_velocity_periapsis = np.sqrt(self.uranus_gravitational_parameter/initial_state_keplerian[0] * (1+initial_state_keplerian[1])/(1-initial_state_keplerian[1]))
         periapsis = initial_state_keplerian[0]* (1-initial_state_keplerian[1])
+        self.desapo = desired_apoapsis
 
         final_semi_major_axis = (desired_apoapsis + periapsis) / 2
         final_eccentricity = 1 - periapsis/final_semi_major_axis
@@ -373,14 +375,21 @@ class orbital_trajectory:
             errory = cartesianstate[1]-refposy
             return errorx,errory
         
+        semi_major = (np.linalg.norm(capture_beforemanoeuvre[:3])+self.desapo)/2
+        
         #bounds = opt.Bounds(-np.pi,np.pi)
         initialguess = np.array([0.0,self.true_anomaly])
-        output = opt.fsolve(getorbithelper,initialguess,(self.semi_major,self.eccentricity,capture_beforemanoeuvre))#,bounds=bounds)
+        output = opt.fsolve(getorbithelper,initialguess,(semi_major,self.eccentricity,capture_beforemanoeuvre))#,bounds=bounds)
 
         print ('Error during capture',getorbithelper(output,self.semi_major,self.eccentricity,capture_beforemanoeuvre))
 
         capturedstate = np.array([self.semi_major,self.eccentricity,1.42426867 + np.pi,output[0],0,output[1]])
         capturedstate_cartesian = astro.element_conversion.keplerian_to_cartesian(capturedstate,self.uranus_gravitational_parameter)
+        if np.linalg.norm(capture_beforemanoeuvre[3:]-capturedstate_cartesian[3:]) > 1e4:
+            print('changing')
+            capturedstate_cartesian[3] = - capturedstate_cartesian[3]
+            capturedstate_cartesian[4] = - capturedstate_cartesian[4]
+            capturedstate_cartesian[5] = - capturedstate_cartesian[5]
         print('The capture delta v is',np.linalg.norm(capture_beforemanoeuvre[3:]-capturedstate_cartesian[3:]))
         print('the velocities are',capture_beforemanoeuvre[3:],capturedstate_cartesian[3:])
 
@@ -461,9 +470,9 @@ class orbital_trajectory:
 
         telemetry_angle_max = np.max(telemetry_angle)
 
-        maxangle = 80/180*np.pi
+        maxangle = 72/180*np.pi
 
-        maxdistance = 250000000
+        maxdistance = 300000000
         
         connectedinterval = 0
 
@@ -589,20 +598,22 @@ if __name__ == "__main__":
     v_inf = 4237
     initial_radius = 6e9
     peri_capsule = 25380000-6e6
-    v_manoeuvre = -13.
+    v_manoeuvre = -50.
     peri = 30362000. + 10.1e6
     apo = 5830000000.
     atmospheric_mission_time = constants.JULIAN_DAY/24*97.2
     #testing
-    initial_radius=6e9
-    v_manoeuvre = 50
+    initial_radius=8e9
+    v_manoeuvre = 0
     duration_of_entry = 180
-    peri = 30362000. #+ 10.1e6
-    apo = 280000000.
+    peri = 25862000. - 1e6
+    apo = 240000000.
 
     semi_major = (peri + apo)/2
     
     gravparam = 5793939212817970.0
+
+    timebefore = 0
 
     time_of_orbit = 2*np.pi*np.sqrt(semi_major**3/gravparam)
 
@@ -625,6 +636,8 @@ if __name__ == "__main__":
     #print ('capsule state is',capsulestate)
     print('Entry angle is',capsulestate[4]*180/np.pi)
 
+    capsulestate[0] -= 1e6 - 100000
+
     capsulestatecartesian = astro.element_conversion.spherical_to_cartesian(capsulestate)
 
     initialmanoeuvre = trajectory.initial_manoeuvre_orbiter(peri,v_manoeuvre)
@@ -635,7 +648,7 @@ if __name__ == "__main__":
 
     #print(capturedeltav,orbital_period)
 
-    telemetry_distance, telemetry_distance_max, telemetry_angle, telemetry_angle_max = trajectory.orbiter_initial_trajectory(duration_of_entry=entry_time,glider_position=capsulestatecartesian,timebeforeperiapsis=60,step_size=10)
+    telemetry_distance, telemetry_distance_max, telemetry_angle, telemetry_angle_max = trajectory.orbiter_initial_trajectory(duration_of_entry=entry_time,glider_position=capsulestatecartesian,timebeforeperiapsis=timebefore,step_size=10)
 
     trajectory.plot_during_atmospheric_mission()
 
