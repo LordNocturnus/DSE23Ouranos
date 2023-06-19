@@ -10,6 +10,7 @@ from tudatpy.kernel import constants
 from tudatpy.kernel.numerical_simulation import environment_setup
 from tudatpy.util import result2array
 from tudatpy.kernel.interface import spice
+from tudatpy.kernel import astro
 
 # Pygmo imports
 import pygmo as pg
@@ -423,6 +424,8 @@ class interplanetary_trajectory:
                 velocity_to_Uranus = velocity @ rotationmatrix #- rotationvelocitymatrix @ np.transpose(rotationmatrix) @ velocity   
                 print('The velocity magnitude is',np.linalg.norm(velocity),np.linalg.norm(velocity_to_Uranus))      
                 state = np.append(position_to_Uranus,velocity_to_Uranus)
+                statekeplerian = astro.element_conversion.cartesian_to_keplerian(state,5793939212817970.0)
+                print ('The state of the system in keplerian coordinates is',statekeplerian)
                 return state
 
             else:
