@@ -77,9 +77,6 @@ class Orb:
         self.m_engine = 4.3  # Main engine mass in kg
         self.material = [4430, 880 * 10**6, 970 * 10**6, 113.8 * 10**9]
 
-        # ADCS
-        self.m_adcs = 30
-
         # COST  page 297 SMAD
         self.launch_cost = 150000000
         self.cost_dh = 41400000  # Arnaud
@@ -116,6 +113,16 @@ class Orb:
                                                                               margin, self.mass_AV)
         self.m_propulsion = self.m_tanks + self.prop_mass
 
+    def ADCS(self):
+        cylinder_com = np.array([self.l_tanks / 2, 0, 0])
+
+
+
+        self.m_adcs = ...
+
+
+
+
     def power(self):
         self.n_rtg = pwr.numberRTG(self.P_req, self.t_mission)[1]
         self.m_power = 1.2 * (pwr.massRTG(self.P_req, self.t_mission) + 25)  # 25 kg is an estimate for PDU and regulators
@@ -133,6 +140,7 @@ class Orb:
         while diff > 1 * 10**-3:
             self.mass_prop(self.mass)
             self.P_req = self.P_comms + self.P_pw + self.P_dh + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop
+            self.ADCS()
             self.power()
             self.thermal()
             new_orbiter_mass = self.m_structure + self.m_tanks + self.m_power + self.m_thermal + self.m_payload + self.m_dh + self.m_comms + self.m_adcs + self.m_engine

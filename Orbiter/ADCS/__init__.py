@@ -1,1 +1,1 @@
-from main import *
+from Orbiter.ADCS.main import *

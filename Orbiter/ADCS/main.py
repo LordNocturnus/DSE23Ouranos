@@ -1,6 +1,21 @@
 import numpy as np
 
 
+rho_uranus_max = 1.66e-9
+rho_uranus_min = 6.902e-13
+vel_per = 27000
+c_d = 2.5
+magnetic_dipole_uranus = 110e-6
+m_time = 3*365*24*3600
+orbital_period = 123*3600
+
+grav_parameter = 5.79394e15
+semi_major = 309000000
+
+
+
+
+
 def mmoi(cyl_r, cyl_h, cyl_com, cyl_mass, tank_r, tanks_mass, ox_mass, ox_com, fuel_mass, fuel_com,
          caps_r, caps_h, caps_com, caps_mass, tanks_full=True, caps_attached=True, debug=False):
     """
@@ -189,20 +204,10 @@ def slew_torque(theta, mmoi: np.array, t):
     return 4 * np.radians(theta) * mmoi / t ** 2
 
 
-rho_uranus_max = 1.66e-9
-rho_uranus_min = 6.902e-13
-vel_per = 27000
-c_d = 2.5
-magnetic_dipole_uranus = 110e-6
-m_time = 3*365*24*3600
-orbital_period = 123*3600
 
-grav_parameter = 5.79394e15
-semi_major = 309000000
 
 cylinder_radius = 0.6
 cylinder_height = 1.9
-cylinder_com = np.array([cylinder_height/2, 0, 0])
 cylinder_mass = 868
 
 
