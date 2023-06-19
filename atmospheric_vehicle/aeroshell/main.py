@@ -357,82 +357,31 @@ class Aeroshell:
                                                                                np.cos(np.pi / 2 - _bottom_angle) -
                                                                                _radius1 * np.sin(_bottom_angle)) * \
                         np.tan(_bottom_angle) + self.radius2 * np.sin(np.pi / 2 - _bottom_angle)
-        volume_cone_1_pos = volume_truncated(self.r_top_big, self.r_top_small, _h_parachute)
-        dis_cone_1_pos = _h_folded_wings + _h_parachute / 4
-        volume_cone_1_neg = volume_truncated(self.r_top_big - self.t_top, self.r_top_small - self.t_top,
-                                             _h_parachute - 2 * self.t_top)
-        dis_cone_1_neg = _h_folded_wings + (_h_parachute - 2 * self.t_top) / 4
-        volume_cone_1 = volume_cone_1_pos - volume_cone_1_neg
-        dis_cone_1 = (volume_cone_1_pos * dis_cone_1_pos - volume_cone_1_neg * dis_cone_1_neg) / volume_cone_1
-        volume_cone_2_pos = volume_truncated((self.diameter / 2), self.r_bottom_small, _h_folded_wings)
-        dis_cone_2_pos = _h_folded_wings / 4
-        volume_cone_2_neg = volume_truncated((self.diameter / 2) - self.t_bottom, self.r_bottom_small - self.t_bottom,
-                                             _h_folded_wings - 2 * self.t_bottom)
-        dis_cone_2_neg = (_h_folded_wings - 2 * self.t_bottom) / 4
-        volume_cone_2 = volume_cone_2_pos - volume_cone_2_neg
-        dis_cone_2 = (volume_cone_2_pos * dis_cone_2_pos - volume_cone_2_neg * dis_cone_2_neg) / volume_cone_2
-
         dis_chute = _h_folded_wings + _h_parachute / 2
 
-        volume_PICA_pos = volume_truncated(self.diameter / 2, _radius1 * np.sin(_bottom_angle),
-                                           _radius1 + self.r_offset - _radius1 * (1 - np.cos(_bottom_angle)))
-        volume_PICA_neg = volume_truncated(self.diameter / 2 - self.PICA_thickness,
-                                           _radius1 * np.sin(_bottom_angle) - self.PICA_thickness,
-                                           _radius1 + self.r_offset - _radius1 * (1 - np.cos(_bottom_angle)) -
-                                           self.PICA_thickness)
-        dis_PICA_pos = -(_radius1 + self.r_offset - _radius1 * (1 - np.cos(_bottom_angle))) / 4
-        dis_PICA_neg = -(_radius1 + self.r_offset - _radius1 * (1 - np.cos(_bottom_angle)) - self.PICA_thickness) / 4
-        volume_PICA = volume_PICA_pos - volume_PICA_neg
-        dis_PICA = (volume_PICA_pos * dis_PICA_pos - volume_PICA_neg * dis_PICA_neg) / volume_PICA
 
-        volume_insulator_neg = volume_truncated(self.diameter / 2 - self.PICA_thickness - self.insulator_thickness,
-                                                _radius1 * np.sin(_bottom_angle) - self.PICA_thickness -
-                                                self.insulator_thickness,
-                                                _radius1 + self.r_offset - _radius1 * (1 - np.cos(_bottom_angle)) -
-                                                self.PICA_thickness - self.insulator_thickness)
-        dis_insulator_neg = -(_radius1 + self.r_offset - _radius1 * (1 - np.cos(_bottom_angle)) -
-                              self.PICA_thickness - self.insulator_thickness) / 4
-        volume_insulator = volume_PICA_neg - volume_insulator_neg
-        dis_insulator = (volume_PICA_neg * dis_PICA_neg - volume_insulator_neg *
-                         dis_insulator_neg) / volume_insulator
-
-        volume_back_shell_neg = volume_truncated(self.diameter / 2 - self.PICA_thickness - self.insulator_thickness -
-                                                 self.bottom_shell_thickness,
-                                                 _radius1 * np.sin(_bottom_angle) - self.PICA_thickness -
-                                                 self.insulator_thickness - self.bottom_shell_thickness,
-                                                 _radius1 + self.r_offset - _radius1 * (1 - np.cos(_bottom_angle)) -
-                                                 self.PICA_thickness - self.insulator_thickness -
-                                                 self.bottom_shell_thickness)
-        dis_back_shell_neg = -(_radius1 + self.r_offset - _radius1 * (1 - np.cos(_bottom_angle)) -
-                               self.PICA_thickness - self.insulator_thickness - self.bottom_shell_thickness) / 4
-        volume_back_shell = volume_insulator_neg - volume_back_shell_neg
-        dis_back_shell = (volume_insulator_neg * dis_insulator_neg - volume_back_shell_neg *
-                          dis_back_shell_neg) / volume_back_shell
-
-        bottom = (volume_cone_1 + volume_cone_2 + volume_back_shell) * _rho_backshell + self.chute_mass + \
-                 self.line_mass + volume_PICA * _PICA_density + volume_insulator * _rho_insulator + self.glider_mass + \
-                 self.glider_offset_mass
-        top = (volume_cone_1 * dis_cone_1 + volume_cone_2 * dis_cone_2 + volume_back_shell * dis_back_shell) * \
-              _rho_backshell + self.chute_mass * dis_chute + self.line_mass * dis_chute + volume_PICA * dis_PICA * \
-              _PICA_density + volume_insulator * dis_insulator * _rho_insulator + self.glider_mass * 0.0 + \
+        bottom = self.chute_mass + self.line_mass + self.glider_mass + self.glider_offset_mass
+        top = self.chute_mass * dis_chute + self.line_mass * dis_chute + self.glider_mass * 0.0 + \
               self.glider_offset_mass * 0.0
 
         self.cg_y = top / bottom
 
     def c_p_alt(self, mach, alt, p_inf):
         # lower plate
-        c_p_top = p_inf * np.sin(self.a_bottom) * (self.diameter / 4 * _h_folded_wings ** 2 - 1 /
+        print(np.sin(self.a_bottom), self.diameter / 4 * _h_folded_wings ** 2, 1 / (3 * np.tan(self.a_bottom)) *
+              _h_folded_wings ** 3)
+        c_p_top = p_inf * np.sin(self.a_bottom) * (-self.diameter / 4 * _h_folded_wings ** 2 + 1 /
                                                    (3 * np.tan(self.a_bottom)) * _h_folded_wings ** 3)
-        c_p_bot = p_inf * np.sin(self.a_bottom) * (self.diameter / 2 * _h_folded_wings - 1 /
+        c_p_bot = p_inf * np.sin(self.a_bottom) * (-self.diameter / 2 * _h_folded_wings + 1 /
                                                    (2 * np.tan(self.a_bottom)) * _h_folded_wings ** 2)
         # upper plate
-        c_p_top += p_inf * np.sin(self.a_bottom) * ((self.r_top_big / 2 + _h_folded_wings / (2 * np.tan(self.a_top))) *
-                                                    ((_h_folded_wings + _h_parachute) ** 2 - _h_folded_wings ** 2) -
+        c_p_top += p_inf * np.sin(self.a_bottom) * (-(self.r_top_big / 2 + _h_folded_wings / (2 * np.tan(self.a_top))) *
+                                                    ((_h_folded_wings + _h_parachute) ** 2 - _h_folded_wings ** 2) +
                                                     1 / (3 * np.tan(self.a_top)) * ((_h_folded_wings +
                                                                                      _h_parachute) ** 3 -
                                                                                     _h_folded_wings ** 3))
-        c_p_bot += p_inf * np.sin(self.a_bottom) * ((self.r_top_big + _h_folded_wings / np.tan(self.a_top)) *
-                                                    _h_parachute - 1 / (2 * np.tan(self.a_top)) *
+        c_p_bot += p_inf * np.sin(self.a_bottom) * (-(self.r_top_big + _h_folded_wings / np.tan(self.a_top)) *
+                                                    _h_parachute + 1 / (2 * np.tan(self.a_top)) *
                                                     ((_h_folded_wings + _h_parachute) ** 2 - _h_folded_wings ** 2))
         t_shield, b_shield = self.shield_pressure.c_p(mach, alt, p_inf)
         print(t_shield, b_shield, t_shield / b_shield)
