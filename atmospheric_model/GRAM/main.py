@@ -155,5 +155,6 @@ class GRAM(object):
 
 
 if __name__ == "__main__":
-    test = GRAM()
-    test.run()
+    gram = GRAM()
+    gram.run()
+    k = 1 / (np.asarray(gram.data.H2mass_pct) / 0.0395 + np.asarray(gram.data.Hemass_pct) / 0.0797)

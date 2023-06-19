@@ -4,7 +4,7 @@ buckling loads and aerodynamic loads on the entire structure, plus the peak axia
 the top surface of the backshell due to parachute deployment.
 """
 import numpy as np
-from Volume import *
+from atmospheric_vehicle.aeroshell.structure.Volume import *
 
 # Mass Budget
 m_thermal_para = 710  #330 + 30 + 68.98

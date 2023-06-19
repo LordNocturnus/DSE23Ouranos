@@ -5,6 +5,7 @@ import scipy as sp
 
 import atmospheric_model.Entry_model
 from atmospheric_model.GRAM import GRAM
+from atmospheric_model.Entry_model import CapsuleDrag
 from atmospheric_vehicle.aeroshell.heatshield import volume
 from atmospheric_vehicle.aeroshell.structure import angle_cone, buckling, volume_truncated, t_pressure
 
@@ -46,8 +47,8 @@ class Aeroshell:
         self.target_time = target_time
         self.glider_mass = glider_mass
         self.heatshield_mass = 0.0
-        self.chute_weight = 0.0
-        self.line_weight = 0.0
+        self.chute_mass = 4.0
+        self.line_mass = 15.0
         self.struct_mass = 0.0
         self.insulator_mass = 0.0
         self.bottom_shell_mass = 0.0
@@ -89,18 +90,29 @@ class Aeroshell:
         self.heat_load = np.zeros([1])
         self.pressure = np.zeros([1])
 
-        self.PICA_thickness = 0.0
-        self.insulator_thickness = 0.0
-        self.bottom_shell_thickness = 0.9
+        self.PICA_thickness = 0.10
+        self.insulator_thickness = 0.01
+        self.bottom_shell_thickness = 0.01
+
+        self.t_top = 0.01
+        self.t_bottom = 0.01
+        self.r_top_small = 0.001
+        self.r_top_big = self.diameter / 4
+        self.r_bottom_small = self.diameter / 4
+        self.a_top = np.pi / 2
+        self.a_bottom = np.pi / 2
 
         self.load = 0.0
         self.chute_area = 0.0
         self.chute_cost = 0.0
         self.line_cost = 0.0
 
+        self.cg_y = 0.0
+        self.shield_pressure = CapsuleDrag(self.diameter, _radius1, _bottom_angle, self.lat, self.lon)
+
     @property
     def mass(self):
-        return self.glider_mass + self.heatshield_mass + self.chute_weight + self.line_weight + self.struct_mass + \
+        return self.glider_mass + self.heatshield_mass + self.chute_mass + self.line_mass + self.struct_mass + \
                self.insulator_mass + self.bottom_shell_mass + self.mass_backshell
 
     @property
@@ -235,7 +247,7 @@ class Aeroshell:
             self.parachute_dep_vars[:, 1] <= 0.0][0, 0])
 
         self.chute_area = np.pi * (self.parachute_diameter / 2) ** 2
-        self.chute_weight = self.chute_area * 2 * 35 / 1000
+        self.chute_mass = self.chute_area * 2 * 35 / 1000
         self.chute_cost = self.chute_area * 2 * 15 * 0.92
 
         self.load = self.ballistic_dep_vars[-1, -4] * self.chute_area * self.parachute_c_ds[0] / \
@@ -246,7 +258,7 @@ class Aeroshell:
         distance = self.parachute_diameter * 2.5
         line_length = np.sqrt((self.parachute_diameter / 2) ** 2 + distance ** 2) + np.pi / 2 * (self.parachute_diameter
                                                                                                  / 2) ** 2
-        self.line_weight = line_length * line_count * _line_weight_per_meter
+        self.line_mass = line_length * line_count * _line_weight_per_meter
         self.line_cost = line_length * line_count * _line_cost_per_meter
 
     def bending_bottom(self):
@@ -315,13 +327,12 @@ class Aeroshell:
         # t_bottom = t_hoop(p_load, (self.diameter / 2), sigma_y)
 
         # Check buckling
-        self.I_top = 1 / 12 * self.t_top * (_h_parachute / np.cos(self.a_top)) ** 3
-        self.A_top = np.pi * (self.r_top_big + self.r_top_small) * _h_parachute / np.cos(self.a_top)
-        buck_top = buckling(_E_backshell, self.I_top, _h_parachute / np.cos(self.a_top), 0.1 * 10**5 * self.A_top)
-        self.I_bottom = 1 / 12 * self.t_bottom * _h_folded_wings / np.cos(self.a_bottom)
-        self.A_bottom = np.pi * ((self.diameter / 2) + self.r_bottom_small) * _h_folded_wings / np.cos(self.a_bottom)
-        buck_bottom = buckling(_E_backshell, self.I_bottom, _h_folded_wings / np.cos(self.a_bottom),
-                               0.1 * 10**5 * self.A_bottom)
+        I_top = 1 / 12 * self.t_top * (_h_parachute / np.cos(self.a_top)) ** 3
+        A_top = np.pi * (self.r_top_big + self.r_top_small) * _h_parachute / np.cos(self.a_top)
+        buck_top = buckling(_E_backshell, I_top, _h_parachute / np.cos(self.a_top), 0.1 * 10**5 * A_top)
+        I_bottom = 1 / 12 * self.t_bottom * _h_folded_wings / np.cos(self.a_bottom)
+        A_bottom = np.pi * ((self.diameter / 2) + self.r_bottom_small) * _h_folded_wings / np.cos(self.a_bottom)
+        buck_bottom = buckling(_E_backshell, I_bottom, _h_folded_wings / np.cos(self.a_bottom), 0.1 * 10**5 * A_bottom)
         # Calculate the volume of the thin walled structure by subtraction
         volume_top = volume_truncated(self.r_top_big, self.r_top_small, _h_parachute) - \
                      volume_truncated(self.r_top_big - self.t_top, self.r_top_small - self.t_top,
@@ -339,9 +350,71 @@ class Aeroshell:
 
     def calculate_cg(self, glider_cg_x):
         self.glider_cd_x = glider_cg_x
+        self.r_offset = - _radius1 + _radius1 * (1 - np.cos(_bottom_angle)) + (self.diameter / 2 - self.radius2 *
+                                                                               np.cos(np.pi / 2 - _bottom_angle) -
+                                                                               _radius1 * np.sin(_bottom_angle)) * \
+                        np.tan(_bottom_angle) + self.radius2 * np.sin(np.pi / 2 - _bottom_angle)
+        volume_cone_1_pos = volume_truncated(self.r_top_big, self.r_top_small, _h_parachute)
+        dis_cone_1_pos = _h_folded_wings + _h_parachute / 4
+        volume_cone_1_neg = volume_truncated(self.r_top_big - self.t_top, self.r_top_small - self.t_top,
+                                             _h_parachute - 2 * self.t_top)
+        dis_cone_1_neg = _h_folded_wings + (_h_parachute - 2 * self.t_top) / 4
+        volume_cone_1 = volume_cone_1_pos - volume_cone_1_neg
+        dis_cone_1 = (volume_cone_1_pos * dis_cone_1_pos - volume_cone_1_neg * dis_cone_1_neg) / volume_cone_1
+        volume_cone_2_pos = volume_truncated((self.diameter / 2), self.r_bottom_small, _h_folded_wings)
+        dis_cone_2_pos = _h_folded_wings / 4
+        volume_cone_2_neg = volume_truncated((self.diameter / 2) - self.t_bottom, self.r_bottom_small - self.t_bottom,
+                                             _h_folded_wings - 2 * self.t_bottom)
+        dis_cone_2_neg = (_h_folded_wings - 2 * self.t_bottom) / 4
+        volume_cone_2 = volume_cone_2_pos - volume_cone_2_neg
+        dis_cone_2 = (volume_cone_2_pos * dis_cone_2_pos - volume_cone_2_neg * dis_cone_2_neg) / volume_cone_2
 
-    def itterate(self, struct_mass, acc=1, steps=5):
-        self.struct_mass = struct_mass
+        dis_chute = _h_folded_wings + _h_parachute / 2
+
+        volume_PICA_pos = volume_truncated(self.diameter / 2, _radius1 * np.sin(_bottom_angle),
+                                           _radius1 + self.r_offset - _radius1 * (1 - np.cos(_bottom_angle)))
+        volume_PICA_neg = volume_truncated(self.diameter / 2 - self.PICA_thickness,
+                                           _radius1 * np.sin(_bottom_angle) - self.PICA_thickness,
+                                           _radius1 + self.r_offset - _radius1 * (1 - np.cos(_bottom_angle)) -
+                                           self.PICA_thickness)
+        dis_PICA_pos = -(_radius1 + self.r_offset - _radius1 * (1 - np.cos(_bottom_angle))) / 4
+        dis_PICA_neg = -(_radius1 + self.r_offset - _radius1 * (1 - np.cos(_bottom_angle)) - self.PICA_thickness) / 4
+        volume_PICA = volume_PICA_pos - volume_PICA_neg
+        dis_PICA = (volume_PICA_pos * dis_PICA_pos - volume_PICA_neg * dis_PICA_neg) / volume_PICA
+
+        volume_insulator_neg = volume_truncated(self.diameter / 2 - self.PICA_thickness - self.insulator_thickness,
+                                                _radius1 * np.sin(_bottom_angle) - self.PICA_thickness -
+                                                self.insulator_thickness,
+                                                _radius1 + self.r_offset - _radius1 * (1 - np.cos(_bottom_angle)) -
+                                                self.PICA_thickness - self.insulator_thickness)
+        dis_insulator_neg = -(_radius1 + self.r_offset - _radius1 * (1 - np.cos(_bottom_angle)) -
+                              self.PICA_thickness - self.insulator_thickness) / 4
+        volume_insulator = volume_PICA_neg - volume_insulator_neg
+        dis_insulator = (volume_PICA_neg * dis_PICA_neg - volume_insulator_neg *
+                         dis_insulator_neg) / volume_insulator
+
+        volume_back_shell_neg = volume_truncated(self.diameter / 2 - self.PICA_thickness - self.insulator_thickness -
+                                                 self.bottom_shell_thickness,
+                                                 _radius1 * np.sin(_bottom_angle) - self.PICA_thickness -
+                                                 self.insulator_thickness - self.bottom_shell_thickness,
+                                                 _radius1 + self.r_offset - _radius1 * (1 - np.cos(_bottom_angle)) -
+                                                 self.PICA_thickness - self.insulator_thickness -
+                                                 self.bottom_shell_thickness)
+        dis_back_shell_neg = -(_radius1 + self.r_offset - _radius1 * (1 - np.cos(_bottom_angle)) -
+                               self.PICA_thickness - self.insulator_thickness - self.bottom_shell_thickness) / 4
+        volume_back_shell = volume_insulator_neg - volume_back_shell_neg
+        dis_back_shell = (volume_insulator_neg * dis_insulator_neg - volume_back_shell_neg *
+                          dis_back_shell_neg) / volume_back_shell
+
+        bottom = (volume_cone_1 + volume_cone_2 + volume_back_shell) * _rho_backshell + self.chute_mass + \
+                 self.line_mass + volume_PICA * _PICA_density + volume_insulator * _rho_insulator + self.glider_mass
+        top = (volume_cone_1 * dis_cone_1 + volume_cone_2 * dis_cone_2 + volume_back_shell * dis_back_shell) * \
+              _rho_backshell + self.chute_mass * dis_chute + self.line_mass * dis_chute + volume_PICA * dis_PICA * \
+              _PICA_density + volume_insulator * dis_insulator * _rho_insulator + self.glider_mass * 0.0
+
+        self.cg_y = top / bottom
+
+    def itterate(self, acc=1, steps=5):
         for i in range(0, steps):
             self.simulate_decent(acc)
             self.calculate_entry_heating(acc)
@@ -362,7 +435,10 @@ if __name__ == "__main__":
     test = Aeroshell(2*10**6, 4 * 3600, 162.1, 3, [0.45, 0.4], 1.3, 3.03327727e+07, 5.45941114e-01, -2.33346601e-02,
                      2.65992642e+04, -5.91036848e-01, -2.96367147e+00)
 
-    test.itterate(46, 1, 1)
+    test.itterate(1, 1)
+
+    test.calculate_cg(0.36)
+    """test.itterate(46, 1, 1)
 
     plt.plot(test.ballistic_dep_vars[:, 0] - 6000, test.ballistic_dep_vars[:, 1] / 1000, label="Ballistic")
     plt.plot(test.sonic_dep_vars[:, 0] - 6000 + test.ballistic_dep_vars[-1, 0] - 6000,
