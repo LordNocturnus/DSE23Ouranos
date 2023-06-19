@@ -146,7 +146,7 @@ def thickness_tau_xz_shear(tau_yield): # calculates thickness necessary to resis
             q_max = calculate_tau_xz_shear(t_t0)[i]
             tau = q_max / t_t0
         t_t_shear[i] = t_t0
-    if 0.5 * 10**-3 > safe_thick * max(t_t_shear):
+    if 0.8 * 10**-3 > safe_thick * max(t_t_shear):
         return True
     else:
         print(f'False, required thickness is: {max(t_t_shear)}')
