@@ -202,6 +202,24 @@ class CapsuleDrag:
         return [drag / (1 / 2 * self.gamma * self.mach ** 2 * self.area) - 1 / (1 / 2 * self.gamma * self.mach ** 2),
                 0.0, 0.0]
 
+    def c_p(self, mach, alt, p_inf):
+        self.mach = mach
+        self.gamma = self.SpecificHeatRatio(alt)
+        self.p_inf = p_inf
+        x_lim = (self.diameter / 2 - self.r1 * np.sin(self.angle)) / np.tan(self.angle) + self.r1 * (1 -
+                                                                                                     np.cos(self.angle))
+        top = sp.integrate.quad(lambda x: self.p_bar(self.y(x)) * self.p_0_stag() * np.sin(self.beta(self.y(x))) *
+                                          self.y(x) * (x - x_lim), 0.0, x_lim)[0]
+        bot = sp.integrate.quad(lambda x: self.p_bar(self.y(x)) * self.p_0_stag() * np.sin(self.beta(self.y(x))) *
+                                          self.y(x), 0.0, x_lim)[0]
+        return top, bot
+
+    def y(self, x):
+        if x <= self.r1 * (1 - np.cos(self.angle)):
+            return self.r1 * np.sin(np.arccos((self.r1 - x) / self.r1))
+        else:
+            return self.r1 * np.sin(self.angle) + (x - self.r1 * (1 - np.cos(self.angle))) * np.tan(self.angle)
+
     def beta(self, y):
         if y <= np.sin(self.angle) * self.r1:
             return np.arcsin(y / self.r1)

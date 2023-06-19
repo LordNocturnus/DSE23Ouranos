@@ -53,6 +53,7 @@ class Aeroshell:
         self.insulator_mass = 0.0
         self.bottom_shell_mass = 0.0
         self.mass_backshell = 0.0
+        self.glider_offset_mass = 0.0
         self.diameter = diameter
         self.parachute_c_ds = parachute_c_ds
         self.shock_load_factors = shock_load_factors
@@ -108,12 +109,14 @@ class Aeroshell:
         self.line_cost = 0.0
 
         self.cg_y = 0.0
+        self.c_p = np.zeros(1)
+        self.gram = GRAM()
         self.shield_pressure = CapsuleDrag(self.diameter, _radius1, _bottom_angle, self.lat, self.lon)
 
     @property
     def mass(self):
         return self.glider_mass + self.heatshield_mass + self.chute_mass + self.line_mass + self.struct_mass + \
-               self.insulator_mass + self.bottom_shell_mass + self.mass_backshell
+               self.insulator_mass + self.bottom_shell_mass + self.mass_backshell + self.glider_offset_mass
 
     @property
     def cost(self):
@@ -349,7 +352,7 @@ class Aeroshell:
             print(f'Buckling requirements is not satisfied')
 
     def calculate_cg(self, glider_cg_x):
-        self.glider_cd_x = glider_cg_x
+        self.glider_offset_mass = self.glider_mass * glider_cg_x / self.diameter
         self.r_offset = - _radius1 + _radius1 * (1 - np.cos(_bottom_angle)) + (self.diameter / 2 - self.radius2 *
                                                                                np.cos(np.pi / 2 - _bottom_angle) -
                                                                                _radius1 * np.sin(_bottom_angle)) * \
@@ -407,12 +410,45 @@ class Aeroshell:
                           dis_back_shell_neg) / volume_back_shell
 
         bottom = (volume_cone_1 + volume_cone_2 + volume_back_shell) * _rho_backshell + self.chute_mass + \
-                 self.line_mass + volume_PICA * _PICA_density + volume_insulator * _rho_insulator + self.glider_mass
+                 self.line_mass + volume_PICA * _PICA_density + volume_insulator * _rho_insulator + self.glider_mass + \
+                 self.glider_offset_mass
         top = (volume_cone_1 * dis_cone_1 + volume_cone_2 * dis_cone_2 + volume_back_shell * dis_back_shell) * \
               _rho_backshell + self.chute_mass * dis_chute + self.line_mass * dis_chute + volume_PICA * dis_PICA * \
-              _PICA_density + volume_insulator * dis_insulator * _rho_insulator + self.glider_mass * 0.0
+              _PICA_density + volume_insulator * dis_insulator * _rho_insulator + self.glider_mass * 0.0 + \
+              self.glider_offset_mass * 0.0
 
         self.cg_y = top / bottom
+
+    def c_p_alt(self, mach, alt, p_inf):
+        # lower plate
+        c_p_top = p_inf * np.sin(self.a_bottom) * (self.diameter / 4 * _h_folded_wings ** 2 - 1 /
+                                                   (3 * np.tan(self.a_bottom)) * _h_folded_wings ** 3)
+        c_p_bot = p_inf * np.sin(self.a_bottom) * (self.diameter / 2 * _h_folded_wings - 1 /
+                                                   (2 * np.tan(self.a_bottom)) * _h_folded_wings ** 2)
+        # upper plate
+        c_p_top += p_inf * np.sin(self.a_bottom) * ((self.r_top_big / 2 + _h_folded_wings / (2 * np.tan(self.a_top))) *
+                                                    ((_h_folded_wings + _h_parachute) ** 2 - _h_folded_wings ** 2) -
+                                                    1 / (3 * np.tan(self.a_top)) * ((_h_folded_wings +
+                                                                                     _h_parachute) ** 3 -
+                                                                                    _h_folded_wings ** 3))
+        c_p_bot += p_inf * np.sin(self.a_bottom) * ((self.r_top_big + _h_folded_wings / np.tan(self.a_top)) *
+                                                    _h_parachute - 1 / (2 * np.tan(self.a_top)) *
+                                                    ((_h_folded_wings + _h_parachute) ** 2 - _h_folded_wings ** 2))
+        t_shield, b_shield = self.shield_pressure.c_p(mach, alt, p_inf)
+        print(t_shield, b_shield, t_shield / b_shield)
+        print(c_p_top, c_p_bot, c_p_top / c_p_bot)
+        return (c_p_top + t_shield) / (c_p_bot + b_shield)
+
+    def calculate_c_p(self):
+        self.gram.altitudes = self.ballistic_dep_vars[:, 1] / 1000
+        self.gram.time = np.zeros_like(self.ballistic_dep_vars[:, 1])
+        self.gram.lat = np.rad2deg(self.ballistic_dep_vars[:, 2])
+        self.gram.long = np.rad2deg((self.ballistic_dep_vars[:, 3] + 2 * np.pi) % (2 * np.pi))
+        self.gram.run()
+        self.c_p = np.zeros(len(self.ballistic_dep_vars))
+        for i, v in enumerate(self.ballistic_dep_vars):
+            print(v[0])
+            self.c_p[i] = self.c_p_alt(v[6], v[1], self.gram.data.Pressure_Pa[i])
 
     def itterate(self, acc=1, steps=5):
         for i in range(0, steps):
@@ -432,12 +468,18 @@ class Aeroshell:
 
 
 if __name__ == "__main__":
-    test = Aeroshell(2*10**6, 4 * 3600, 162.1, 3, [0.45, 0.4], 1.3, 3.03327727e+07, 5.45941114e-01, -2.33346601e-02,
-                     2.65992642e+04, -5.91036848e-01, -2.96367147e+00)
+    test = Aeroshell(2*10**6, 4 * 3600, 162.1, 3, [0.45, 0.4], 1.3, 3.03327727e+07 - 4000000, 5.45941114e-01,
+                     -2.33346601e-02, 2.65992642e+04, -5.91036848e-01, -2.96367147e+00)
 
     test.itterate(1, 1)
 
     test.calculate_cg(0.36)
+    test.calculate_c_p()
+
+    plt.plot(test.ballistic_dep_vars[:, 0], test.c_p)
+    plt.show()
+
+
     """test.itterate(46, 1, 1)
 
     plt.plot(test.ballistic_dep_vars[:, 0] - 6000, test.ballistic_dep_vars[:, 1] / 1000, label="Ballistic")
