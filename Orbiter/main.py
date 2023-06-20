@@ -140,8 +140,8 @@ class Orb:
                                adcs.mag_torque_max(magnetic_dipole_uranus, 1, orbital_period, debug=True)
         self.angular_momentum = abs(adcs.torque_s(self.mmoi, 1, debug=True)) * m_time + \
                                 adcs.aerodyn_torque(rho_uranus_min, c_d, vel_per, self.mmoi, debug=True) * 220 * 15 * 60
-        self.m_adcs_fuel = adcs.prop_mass(229, 4.33, self.l_tanks / 2, self.mainengine_burntime) + \
-                           adcs.prop_mass(229, 4.33, self.l_tanks / 2, self.angular_momentum / (4.33 * self.r_tanks))
+        self.m_adcs_fuel = adcs.prop_mass(229, 5.23, self.l_tanks / 2 + 0.15, self.mainengine_burntime) + \
+                           adcs.prop_mass(229, 5.23, self.l_tanks / 2 + 0.15, self.angular_momentum / (5.23 * self.r_tanks))
         self.m_adcs = self.m_adcs_fuel * 1.1 + 51.7
         self.mmoi_capsule = adcs.mmoi(self.r_tanks, self.l_tanks, np.array([self.l_tanks / 2, 0, 0]),
                                       self.mass - self.m_propulsion, self.r_tanks, self.m_tanks, self.m_ox,
@@ -223,5 +223,7 @@ class Orb:
 if __name__ == "__main__":
     orbiter = Orb()
     print(orbiter.mass_breakdwon())
-    print(orbiter.m_adcs_fuel)
-    print(orbiter.mmoi[2])
+    print(orbiter.m_adcs_fuel, orbiter.m_adcs_fuel * 1.1)
+    print(orbiter.mmoi)
+    print(orbiter.l_tanks, orbiter.r_tanks)
+    print(orbiter.angular_momentum)
