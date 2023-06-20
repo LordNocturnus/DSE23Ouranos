@@ -12,8 +12,8 @@ capacity = 51 # Watt hour
 dh_p_req = 0
 ttc_p_req = 156
 adcs_p_req = 0
-pl_p_req = 96.1
-tm_p_req = 0
+pl_p_req = 95.8
+tm_p_req = 6.1
 aero_p_req =1
 
 
@@ -34,7 +34,7 @@ def f_v_bat(tot_p_req, t, dod, n_bat, n_cab, vol_energy):
 
 
 def f_n_bat(tot_p_req, t, dod, n_bat, n_cab, capacity):
-    n_bat = m.ceil(tot_p_req * t / dod / n_bat / n_cab / capacity)
+    n_bat = m.ceil((tot_p_req * t +11*20.7*24) / dod / n_bat / n_cab / capacity)
     return n_bat
 
 if __name__ == "__main__":
