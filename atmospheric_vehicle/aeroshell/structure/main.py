@@ -7,17 +7,17 @@ import numpy as np
 from atmospheric_vehicle.aeroshell.structure.Volume import *
 
 # Mass Budget
-m_thermal_para = 710  #330 + 30 + 68.98
-m_glider = 300
+m_thermal_para = 302 + 30  #330 + 30 + 68.98
+m_glider = 266
 
 # Loads values
 load_peak_para = 924.23 * (m_thermal_para + m_glider)
-load_peak_entry = 1321.21
-p_load = 159641
+load_peak_entry = 1990
+p_load = 123000
 delta_T = 200
 
 # Size Constraints
-t_heatshield = 0.0226
+t_heatshield = 0.09896
 h_folded_wings = 2
 h_parachute = 0.5
 r_thermal = 1.5
@@ -38,7 +38,7 @@ taper_ratio_top = 0.44
 
 # Material Properties
 # -- Alluminum honeycomb with graphite eopxy -- Mars rover (https://spaceflight101.com/msl/msl-aeroshell-and-heat-shield/)
-rho_backshell = 49.7  # https://journals.sagepub.com/doi/pdf/10.1177/0021998313499949 (Q2 selected because strongest)
+rho_backshell = 45  # https://journals.sagepub.com/doi/pdf/10.1177/0021998313499949 (Q2 selected because strongest)
 sigma_y_backshell = 450 * 10 ** 6  # https://journals.sagepub.com/doi/pdf/10.1177/0021998313499949 (Q2 selected because strongest)
 E_backshell = 130 * 10 ** 9  # https://www.azom.com/article.aspx?ArticleID=6618
 alpha_backshell = 23.6 * 10 ** -6
@@ -254,3 +254,4 @@ def bending_pressure(p_entry, l_thermal, sigma_y):
 
 if __name__ == "__main__":
     mass_back, mass_insulator, t_insulator, t_top, t_bottom, t_bottom_shell = total_mass(load_peak_para, p_load, load_peak_entry, delta_T, r_thermal, h_folded_wings)
+    print(mass_back + mass_insulator, t_bottom_shell, t_insulator)
