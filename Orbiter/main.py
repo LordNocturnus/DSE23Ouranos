@@ -41,6 +41,16 @@ capsule_height = 1.5
 capsule_com = np.array([capsule_height * 3 / 4, 0, 0])
 capsule_mass = 548.0
 
+rho_uranus_max = 1.66e-9
+rho_uranus_min = 6.902e-13
+vel_per = 27000
+c_d = 2.5
+m_time = 3*365*24*3600
+
+magnetic_dipole_uranus = 110e-6
+orbital_period = 123*3600
+grav_parameter = 5.79394e15
+semi_major = 309000000
 class Orb:
 
     def __init__(self, optimisation=True):
@@ -124,9 +134,15 @@ class Orb:
                               self.wet_mass - self.m_propulsion, self.r_tanks, self.m_tanks, self.m_ox,
                               np.array([self.r_tanks, 0, 0]), self.m_fuel, np.array([3 * self.r_tanks, 0, 0]),
                               capsule_radius, capsule_height, capsule_com, capsule_mass, tanks_full=False,
-                              caps_attached=False, debug=True)
-        self.m_adcs_fuel = adcs.prop_mass(229, 4.33, self.l_tanks / 2, self.mainengine_burntime) * 1.1
-        self.m_adcs = self.m_adcs_fuel + 50.3
+                              caps_attached=False, debug=False)
+        self.reactionwheel_H = adcs.grav_grad_torque(self.mmoi, semi_major, grav_parameter, orbital_period,
+                                                     debug=True) + \
+                               adcs.mag_torque_max(magnetic_dipole_uranus, 1, orbital_period, debug=True)
+        self.angular_momentum = abs(adcs.torque_s(self.mmoi, 1, debug=True)) * m_time + \
+                                adcs.aerodyn_torque(rho_uranus_min, c_d, vel_per, self.mmoi, debug=True) * 220 * 15 * 60
+        self.m_adcs_fuel = adcs.prop_mass(229, 4.33, self.l_tanks / 2, self.mainengine_burntime) + \
+                           adcs.prop_mass(229, 4.33, self.l_tanks / 2, self.angular_momentum / (4.33 * self.r_tanks))
+        self.m_adcs = self.m_adcs_fuel * 1.1 + 51.7
         self.mmoi_capsule = adcs.mmoi(self.r_tanks, self.l_tanks, np.array([self.l_tanks / 2, 0, 0]),
                                       self.mass - self.m_propulsion, self.r_tanks, self.m_tanks, self.m_ox,
                                       np.array([self.r_tanks, 0, 0]), self.m_fuel, np.array([3 * self.r_tanks, 0, 0]),
@@ -205,6 +221,4 @@ class Orb:
 if __name__ == "__main__":
     orbiter = Orb()
     print(orbiter.mass_breakdwon())
-    print(orbiter.l_tanks, orbiter.r_tanks, orbiter.prop_mass,
-          orbiter.mass, orbiter.m_propulsion, orbiter.m_adcs_fuel, orbiter.mmoi[0])
-
+    print(orbiter.m_adcs_fuel)

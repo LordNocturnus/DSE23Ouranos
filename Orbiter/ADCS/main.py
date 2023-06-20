@@ -1,16 +1,8 @@
 import numpy as np
 
 
-rho_uranus_max = 1.66e-9
-rho_uranus_min = 6.902e-13
-vel_per = 27000
-c_d = 2.5
-magnetic_dipole_uranus = 110e-6
-m_time = 3*365*24*3600
-orbital_period = 123*3600
 
-grav_parameter = 5.79394e15
-semi_major = 309000000
+
 
 
 
@@ -140,7 +132,7 @@ def mmoi(cyl_r, cyl_h, cyl_com, cyl_mass, tank_r, tanks_mass, ox_mass, ox_com, f
     return cyl_mmoi + ox_mmoi + fuel_mmoi + caps_mmoi + caps_mmoi, com, cop, area, caps_mmoi_local
 
 
-def grav_grad_torque(mmoi, a, grav_param, period):
+def grav_grad_torque(mmoi, a, grav_param, period, debug=False):
     """
     :param mmoi: a 3-large mass moment of inertia vector
     :param a: Semi major axis of the orbited body
@@ -148,31 +140,37 @@ def grav_grad_torque(mmoi, a, grav_param, period):
     :param period: Orbital period
     :return: Maximum torque vector, reaction wheel minimum moment size
     """
-    i_xx = mmoi[0]
-    i_yy = mmoi[1]
-    i_zz = mmoi[2]
+    i_xx = mmoi[0][0]
+    i_yy = mmoi[0][1]
+    i_zz = mmoi[0][2]
     n2 = grav_param / (a ** 3)  # mean motion
     torque_max = 3 / 2 * n2 * np.array([0, abs(i_xx - i_zz), abs(i_xx - i_yy)])
-    return torque_max, max(torque_max) * 0.707 / 4 * period
+    if debug:
+        print(f"Gravity gradient torque: {torque_max}")
+    return max(torque_max) * 0.707 / 4 * period
 
 
 def momentum_storage_mw(torque_dist, theta_a, period):
     return torque_dist / theta_a * period / 4
 
-def mag_torque_max(d, b):
+def mag_torque_max(d, b, period, debug=False):
     """
-    :param m: Spacecraft residual dipole vector [A m^2]
+    :param d: Spacecraft residual dipole vector [A m^2]
     :param b: Magnetic field vector in spacecraft coordinates [T]
     :return: Magnetic disturbance torque
     """
-    return d * b
+    if debug:
+        print(f"magnetic torque: {d * b}")
+    return d * b * 0.707 / 4 * period
 
 
-def aerodyn_torque(rho, cd, v, mmoi):
+def aerodyn_torque(rho, cd, v, mmoi, debug=False):
+    if debug:
+        print(f"Aerodynamic torque: {0.5 * rho * cd * mmoi[3] * v ** 2 * max(mmoi[2] - mmoi[1])}")
     return 0.5 * rho * cd * mmoi[3] * v ** 2 * max(mmoi[2] - mmoi[1])
 
 
-def torque_s(mmoi, q):
+def torque_s(mmoi, q, debug=False):
     """
     Solar disturbance torque
     :param q: reflectance factor between 0 and 1
@@ -183,6 +181,8 @@ def torque_s(mmoi, q):
     cm = mmoi[0][0]
     sun_surface = mmoi[3]
     c = 3e8
+    if debug:
+        print(f"Solar torque: {4.1 / c * sun_surface * (1 + q) * (cp_s - cm)}")
     return 4.1 / c * sun_surface * (1 + q) * (cp_s - cm)
 
 
