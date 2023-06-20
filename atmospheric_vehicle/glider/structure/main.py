@@ -308,7 +308,9 @@ def fuselage_architecture(f_tail, l_tail, r_fuselage, l_fuselage, tau_y, delta_p
     """
     t_torque = thickness_torque(f_tail, l_tail, r_fuselage, tau_y)
     t_hoop = thickness_hoop(delta_p, r_fuselage, sigma_y)
-    t_fuselage = round(max(t_hoop, t_torque, 0.8 * 10**-3), 4)
+    print('t_hoop: ',t_hoop)
+    print('t_torque: ', t_torque)
+    t_fuselage = round(max(t_hoop, t_torque, 0.8 * 10**-3), 5)
     buckling_check(t_fuselage, r_fuselage, p_atmos, E_metal, l_fuselage)
     mass_fuselage = 2 * np.pi * r_fuselage * l_fuselage * t_fuselage * density_metal
     return mass_fuselage, t_fuselage
@@ -340,9 +342,9 @@ if __name__ == "__main__":
     alpha = 9.1 * 10 ** -6  # [1/K], coefficient of thermal expansion of material selected
 
     'Wing properties'
-    c_w_root = 0.3368  # [m], root chord, given from Luigi
-    c_w_tip = 0.1347  # [m], tip chord, given from Luigi
-    b_w = 6.1697  # [m], wing span, given from Luigi
+    c_w_root = 0.4066  # [m], root chord, given from Luigi
+    c_w_tip = 0.1626  # [m], tip chord, given from Luigi
+    b_w = 7.447  # [m], wing span, given from Luigi
     load_fac = 0.91
     L_distr = 788.832 * load_fac  # [N/m^2], found from MSc Thesis (given from Luigi)
 
