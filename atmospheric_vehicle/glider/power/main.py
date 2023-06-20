@@ -34,13 +34,13 @@ def f_v_bat(tot_p_req, t, dod, n_bat, n_cab, vol_energy):
 
 
 def f_n_bat(tot_p_req, t, dod, n_bat, n_cab, capacity):
-    n_bat = m.ceil((tot_p_req * t +11*20.7*24) / dod / n_bat / n_cab / capacity)
+    n_bat = m.ceil((tot_p_req * t +11*20.7*24)*1.2 / dod / n_bat / n_cab / capacity)
     return n_bat
 
 if __name__ == "__main__":
     tot_p_req = f_tot_p_req(dh_p_req, ttc_p_req, adcs_p_req, pl_p_req, tm_p_req, aero_p_req)
     t = hours
-    print("Required energy [kWh]:", tot_p_req * t / dod / n_bat / n_cab/1000)
+    print("Required energy [kWh]:", tot_p_req * t*1.2 / dod / n_bat / n_cab/1000)
     n_bat = f_n_bat(tot_p_req, t, dod, n_bat, n_cab, capacity)
     print("Battery number [n]:", n_bat)
     print("Battery volume [m3]:", n_bat * capacity / vol_energy)
