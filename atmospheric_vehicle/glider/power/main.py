@@ -5,12 +5,12 @@ n_cab = 0.98
 vol_energy = 1000e3
 spec_energy = 710 #https://www.eaglepicher.com/sites/default/files/LCF-514%200222.pdf
 margin = 0.2
-hours=97.23
+hours=97.25
 nom_watt = 0.5
 capacity = 51 # Watt hour
 
 dh_p_req = 0
-ttc_p_req = 160
+ttc_p_req = 181
 adcs_p_req = 0
 pl_p_req = 95.8
 tm_p_req = 6.1
