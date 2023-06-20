@@ -29,7 +29,7 @@ def p_rx(p_tx, g_tx, l_tx, l_fs, l_m, g_rx, l_rx):  # input in dB
 
 
 def e_b(p_rx, bit_rate):
-    e_b = p_rx / bit_rate * 5
+    e_b = p_rx / bit_rate
     return e_b
 
 
@@ -58,8 +58,8 @@ if __name__ == "__main__":
     print("g_rx:", g_rx_ao)
     l_rx = unit_to_db(1 / n_rx)  # dB
     print("l_rx:", -l_rx)
-    l_m =0 # dB
-    p_tx_ao = 43# W
+    l_m =0.12 # dB
+    p_tx_ao = 44# W
     p_tx_ao = unit_to_db(p_tx_ao)  # dB
     print("p_tx:", p_tx_ao)
     p_rx_ao = p_rx(p_tx_ao, g_tx_ao, l_tx, l_fs_ao, l_m, g_rx_ao, l_rx)
