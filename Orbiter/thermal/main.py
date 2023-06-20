@@ -9,13 +9,13 @@ boltzman = 5.67 * 10 ** (-8)
 # Planet list [Sun distance, radius, albedo factor, radiating temperature, *closest approach during gravity assist]
 # Radius and distance to sun https://www.jpl.nasa.gov/edu/pdfs/scaless_reference.pdf
 # Albedo and Temperature  ADSEE reader --> ECSS-S standards
-planets_list = {'Uranus': [2872500000, 51118 / 2, 0.51, 58.2, 20],
-                'Mars': [227900000, 6792 / 2, 0.15, 210.1, 200],
-                'Jupiter': [778600000, 142984 / 2, 0.52, 109.5, 30011]}
+planets_list = {'Uranus': [2872500000, 51118 / 2, 0.51, 58.2, 583000],
+                'Mars': [227900000, 6792 / 2, 0.15, 210.1, 200]}
+
 
 # Inputs
-alpha = 0.09  # Absorptivity (Aluminized Kapton foil from SMAD or ADSEE I reader)
-epsilon = 0.8  # Emissivity (Aluminized Kapton foil from SMAD or ADSEE I reader)
+alpha = 0.42  # Absorptivity (Aluminized Kapton foil from SMAD or ADSEE I reader)
+epsilon = 0.05  # Emissivity (Aluminized Kapton foil from SMAD or ADSEE I reader)
 T_operational = 283.15  # Operational temperature of payload instruments in K
 
 # RTG properties
@@ -176,16 +176,13 @@ def power_phases(A_rec, A_emit, n_rtg, planet_list=planets_list, alpha=alpha, ep
             p_diss_uranus = power_diss
         else:
             diff_power = abs(p_diss_uranus - power_diss)
-            print(diff_power)
             S_radiator = diff_power / 180
             m_radiator = S_radiator * 15
-            print(m_radiator, planet)
-            areas.append((f'{planet}', louvres_area(power_diss, A_rec, alpha, d_rtg, A_rtg, p_rtg_tot, n_rtg, A_single_l)))
-            #m_heater = - power_diss / (6 / 0.0001) * 2
-    return d_rtg, areas
+            m_louvres = S_radiator * 0.001 * 2700
+    return d_rtg, m_radiator, m_louvres
 
-def total_cost(m_louvres, m_shield):
-    return m_louvres * cost_kg_l + m_shield * cost_kg_shield + 1.70 * 50.6 * (m_louvres + m_shield)**0.707 * 1000 * 0.951 * 1.61
+def total_cost(m_louvres, m_tot):
+    return m_louvres * cost_kg_l + 1.70 * 50.6 * (m_tot)**0.707 * 1000 * 0.951 * 1.61
 
 
 if __name__ == "__main__":
