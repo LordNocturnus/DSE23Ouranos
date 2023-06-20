@@ -29,7 +29,7 @@ def p_rx(p_tx, g_tx, l_tx, l_fs, l_m, g_rx, l_rx):  # input in dB
 
 
 def e_b(p_rx, bit_rate):
-    e_b = p_rx / bit_rate
+    e_b = p_rx / bit_rate * 5
     return e_b
 
 
