@@ -39,7 +39,7 @@ w_rtg = 0.422
 capsule_radius = 1.5
 capsule_height = 1.5
 capsule_com = np.array([capsule_height * 3 / 4, 0, 0])
-capsule_mass = 601.6
+capsule_mass = 548.0
 
 class Orb:
 
@@ -123,7 +123,8 @@ class Orb:
         self.mmoi = adcs.mmoi(self.r_tanks, self.l_tanks, np.array([self.l_tanks / 2, 0, 0]),
                               self.mass - self.m_propulsion, self.r_tanks, self.m_tanks, self.m_ox,
                               np.array([self.r_tanks, 0, 0]), self.m_fuel, np.array([3 * self.r_tanks, 0, 0]),
-                              capsule_radius, capsule_height, capsule_com, capsule_mass, tanks_full=False)
+                              capsule_radius, capsule_height, capsule_com, capsule_mass, tanks_full=False,
+                              caps_attached=False, debug=True)
         self.m_adcs_fuel = adcs.prop_mass(229, 4.33, self.l_tanks / 2, self.mainengine_burntime) * 1.1
         self.m_adcs = self.m_adcs_fuel + 50.3
         self.mmoi_capsule = adcs.mmoi(self.r_tanks, self.l_tanks, np.array([self.l_tanks / 2, 0, 0]),
@@ -131,6 +132,7 @@ class Orb:
                                       np.array([self.r_tanks, 0, 0]), self.m_fuel, np.array([3 * self.r_tanks, 0, 0]),
                                       capsule_radius, capsule_height, capsule_com, capsule_mass, tanks_full=True,
                                       caps_attached=True)[4]
+
     def power(self):
         self.n_rtg = pwr.numberRTG(self.P_req, self.t_mission)[1]
         self.m_power = 1.2 * (pwr.massRTG(self.P_req, self.t_mission) + 25)  # 25 kg is an estimate for PDU and regulators
@@ -199,8 +201,11 @@ class Orb:
               f'Thermal cost: {self.cost_thermal / 10**6} M€\n'
               f'Structure cost: {self.cost_str / 10**6} M€\n')
 
+
 if __name__ == "__main__":
     orbiter = Orb()
     print(orbiter.mass_breakdwon())
-    print(orbiter.m_adcs_fuel, orbiter.l_tanks/2, orbiter.r_tanks)
+    print(orbiter.l_tanks, orbiter.r_tanks, orbiter.prop_mass,
+          orbiter.mass, orbiter.m_propulsion, orbiter.m_adcs_fuel, orbiter.mmoi[0])
+    print(orbiter.mass - orbiter.m_propulsion)
 

@@ -132,9 +132,9 @@ def mmoi(cyl_r, cyl_h, cyl_com, cyl_mass, tank_r, tanks_mass, ox_mass, ox_com, f
         print(f""
               f"Total assembly centre of mass at: {com}\n"
               f"Centre of pressure at {cop}\n"
-              # f"Cylinder MMOI found to be: {cyl_mmoi}\n"
-              # f"Oxidiser tank MMOI found to be: {ox_mmoi}\n"
-              # f"Fuel tank MMOI found to be: {fuel_mmoi}\n"
+              f"Cylinder MMOI found to be: {cyl_mmoi}\n"
+              f"Oxidiser tank MMOI found to be: {ox_mmoi}\n"
+              f"Fuel tank MMOI found to be: {fuel_mmoi}\n"
               f"Local capsule MMOI: {caps_mmoi_local}\n"
               f"Total MMOI found to be: {cyl_mmoi + ox_mmoi + fuel_mmoi + caps_mmoi}\n")
     return cyl_mmoi + ox_mmoi + fuel_mmoi + caps_mmoi + caps_mmoi, com, cop, area, caps_mmoi_local
@@ -206,9 +206,7 @@ def slew_torque(theta, mmoi: np.array, t):
 
 
 
-cylinder_radius = 0.6
-cylinder_height = 1.9
-cylinder_mass = 868
+
 
 
 # tank_radius = 0.45
