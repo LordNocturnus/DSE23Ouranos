@@ -10,7 +10,7 @@ nom_watt = 0.5
 capacity = 51 # Watt hour
 
 dh_p_req = 0
-ttc_p_req = 156
+ttc_p_req = 160
 adcs_p_req = 0
 pl_p_req = 95.8
 tm_p_req = 6.1
