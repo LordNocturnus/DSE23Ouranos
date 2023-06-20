@@ -98,7 +98,7 @@ class Orb:
         if optimisation:
             self.iteration()
             self.total_dry_mass = self.mass_combined
-            self.total_wet_mass = self.total_dry_mass + self.prop_mass
+            self.wet_mass = self.total_dry_mass + self.prop_mass
             self.burn_transfer = prop.burntimecombined(self.T, self.mass, self.deltaV_transfer, self.total_dry_mass, self.deltaV_insertion, self.Isp)
             self.burn_insertion = prop.burntimeorbiter(self.T, self.mass, self.deltaV_insertion, self.total_dry_mass, self.deltaV_transfer, self.Isp)
             self.f_lat, self.f_ax = strt.natural_frequency(self.l_tanks, self.r_tanks, max(self.t_cy_o, self.t_cy_f), self.material, self.mass, self.mass_AV)
@@ -121,7 +121,7 @@ class Orb:
     def ADCS(self):
         cylinder_com = np.array([self.l_tanks / 2, 0, 0])
         self.mmoi = adcs.mmoi(self.r_tanks, self.l_tanks, np.array([self.l_tanks / 2, 0, 0]),
-                              self.mass - self.m_propulsion, self.r_tanks, self.m_tanks, self.m_ox,
+                              self.wet_mass - self.m_propulsion, self.r_tanks, self.m_tanks, self.m_ox,
                               np.array([self.r_tanks, 0, 0]), self.m_fuel, np.array([3 * self.r_tanks, 0, 0]),
                               capsule_radius, capsule_height, capsule_com, capsule_mass, tanks_full=False,
                               caps_attached=False, debug=True)
@@ -165,7 +165,7 @@ class Orb:
 
     def __str__(self):
         return f'Total dry mass: {self.total_dry_mass}\n' \
-               f'Total wet mass: {self.total_wet_mass}\n' \
+               f'Total wet mass: {self.wet_mass}\n' \
                f'Total cost: {self.total_cost}\n' \
                f'Total Power: {self.P_req}\n' \
                f'Burn time transfer: {self.burn_transfer}\n' \
@@ -174,7 +174,7 @@ class Orb:
     def mass_breakdwon(self):
         print(f'Orbiter Dry Mass: {self.mass}\n'
                f'Total Dry Mass: {self.total_dry_mass}\n'
-               f'Orbiter Wet Mass: {self.total_wet_mass}\n'
+               f'Orbiter Wet Mass: {self.wet_mass}\n'
                f'Propellant Mass: {self.prop_mass}\n'
                f'Atmospheric Vehicle Mass: {self.mass_AV}\n'
                f'Structure Mass: {self.m_structure}\n'
@@ -207,5 +207,4 @@ if __name__ == "__main__":
     print(orbiter.mass_breakdwon())
     print(orbiter.l_tanks, orbiter.r_tanks, orbiter.prop_mass,
           orbiter.mass, orbiter.m_propulsion, orbiter.m_adcs_fuel, orbiter.mmoi[0])
-    print(orbiter.mass - orbiter.m_propulsion)
 
