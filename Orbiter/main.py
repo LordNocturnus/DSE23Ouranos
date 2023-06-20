@@ -222,3 +222,4 @@ if __name__ == "__main__":
     orbiter = Orb()
     print(orbiter.mass_breakdwon())
     print(orbiter.m_adcs_fuel)
+    print(orbiter.mmoi[2])
