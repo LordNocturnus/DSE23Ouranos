@@ -308,8 +308,6 @@ def fuselage_architecture(f_tail, l_tail, r_fuselage, l_fuselage, tau_y, delta_p
     """
     t_torque = thickness_torque(f_tail, l_tail, r_fuselage, tau_y)
     t_hoop = thickness_hoop(delta_p, r_fuselage, sigma_y)
-    print('t_hoop: ',t_hoop)
-    print('t_torque: ', t_torque)
     t_fuselage = round(max(t_hoop, t_torque, 0.8 * 10**-3), 5)
     buckling_check(t_fuselage, r_fuselage, p_atmos, E_metal, l_fuselage)
     mass_fuselage = 2 * np.pi * r_fuselage * l_fuselage * t_fuselage * density_metal
@@ -344,9 +342,9 @@ if __name__ == "__main__":
     'Wing properties'
     c_w_root = 0.4066  # [m], root chord, given from Luigi
     c_w_tip = 0.1626  # [m], tip chord, given from Luigi
-    b_w = 7.447  # [m], wing span, given from Luigi
+    b_w = 7.447  # [m], wing span, given from Luigi, HAS TO BE CHANGED FOR FINAL VERSION
     load_fac = 0.91
-    L_distr = 788.832 * load_fac  # [N/m^2], found from MSc Thesis (given from Luigi)
+    L_distr = 788.832 * load_fac  # [N/m^2], found from MSc Thesis (given from Luigi), HAS TO BE CHANGED FOR FINAL VERSION
 
     c_w = calculate_c_w(c_w_root, c_w_tip, b_w)[0]  # array of chord values that will be used for later estimations
     b_range = calculate_c_w(c_w_root, c_w_tip, b_w)[1]
