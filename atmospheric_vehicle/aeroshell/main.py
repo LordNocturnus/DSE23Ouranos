@@ -28,7 +28,7 @@ _radius1 = 1.125
 _radius2 = 0.126
 _bottom_angle = np.deg2rad(20)
 _top_angle = np.deg2rad(59.73)
-_h_folded_wings = 2
+_h_folded_wings = 1.4
 _h_parachute = 0.5
 _r_parachute = 0.3
 _taper_ratio_bottom = 0.44
@@ -109,7 +109,7 @@ class Aeroshell:
         self.chute_cost = 0.0
         self.line_cost = 0.0
 
-        self.cg_y = 0.0
+        self.cg = np.zeros(1)
         self.cg_offset_dis = 0.0
         self.offset_rho = 0.0
         self.glider_cg_x = glider_cg_x
@@ -232,9 +232,9 @@ class Aeroshell:
                                    np.asarray(self.gram.data.Density_kgm3) ** 1.763827469 * \
                                    self.ballistic_dep_vars[:, 4] ** 10.993852 * 1000000
 
-        q_func = sp.interpolate.interp1d(self.ballistic_dep_vars[:, 0], self.heat_flux_convective_2 +
+        self.q_func = sp.interpolate.interp1d(self.ballistic_dep_vars[:, 0], self.heat_flux_convective_2 +
                                          self.heat_flux_radiative)
-        self.heat_load = sp.integrate.quad(lambda x: q_func(x), self.ballistic_dep_vars[0, 0],
+        self.heat_load = sp.integrate.quad(lambda x: self.q_func(x), self.ballistic_dep_vars[0, 0],
                                            self.ballistic_dep_vars[-1, 0])[0]
 
         drag.gamma = np.asarray(self.gram.data.SpecificHeatRatio)
@@ -269,7 +269,7 @@ class Aeroshell:
         self.line_mass = line_length * line_count * _line_weight_per_meter
         self.line_cost = line_length * line_count * _line_cost_per_meter
 
-    def bending_bottom(self):
+    def bending_bottom(self, sigma):
         """
         Method to calculate the thickness necessary to withstand entry loads
         :param load_entry: Entry loads
@@ -277,21 +277,22 @@ class Aeroshell:
         :param sigma_y: Yield strength of the selected material
         :return: Required minimum thickness to withstand entry loads
         """
-        return np.sqrt(max(self.ballistic_dep_vars[:, 5]) * self.mass * self.diameter * 3 / (self.diameter *
-                                                                                             _sigma_y_insulator))
+        return np.sqrt(max(self.ballistic_dep_vars[:, 5]) * self.mass * self.diameter * 3 / (self.diameter * sigma))
 
-    def bending_pressure(self):
-        return np.sqrt((3 * max(self.pressure) * self.diameter ** 2 / (2 * self.diameter * _sigma_y_insulator)))
+    def bending_pressure(self, sigma):
+        return np.sqrt((3 * max(self.pressure) * self.diameter ** 2 / (2 * self.diameter * sigma)))
 
     def calculate_insulator_shell_thickness(self):
-        self.insulator_thickness = 0.8 * max(self.bending_bottom(), self.bending_pressure())
+        self.insulator_thickness = 0.8 * max(self.bending_bottom(_sigma_y_insulator),
+                                             self.bending_pressure(_sigma_y_insulator))
 
     def calculate_insulator_weight(self):
         self.insulator_mass = volume(self.diameter, _radius1, self.radius2, self.PICA_thickness,
                                      self.insulator_thickness) * _rho_insulator
 
     def calculate_bottom_shell_thickness(self):
-        self.bottom_shell_thickness = max(self.bending_bottom(), 1 * 10 ** -3, self.bending_pressure())
+        self.bottom_shell_thickness = max(self.bending_bottom(_sigma_y_backshell), 1 * 10 ** -3,
+                                          self.bending_pressure(_sigma_y_backshell))
 
     def calculate_bottom_shell_weight(self):
         self.bottom_shell_mass = volume(self.diameter, _radius1, self.radius2, self.PICA_thickness +
@@ -356,7 +357,7 @@ class Aeroshell:
         if not buck_bottom or not buck_top or not buckling_shield:
             print(f'Buckling requirements is not satisfied')
 
-    def calculate_cg(self, cg):
+    def calculate_cg(self, cg): #, idx
         self.glider_offset_mass = self.glider_mass * self.glider_cg_x / self.diameter
         dis_chute = _h_folded_wings + _h_parachute / 2
         v1, h1 = truncated_cone_shell(self.diameter / 2, self.r_bottom_small, _h_folded_wings, self.t_bottom)
@@ -373,6 +374,11 @@ class Aeroshell:
                             self.bottom_shell_thickness)
         v4 *= _rho_backshell
         h4 *= -1
+
+        #h_t = sp.integrate.quad(lambda x: self.q_func(x), self.ballistic_dep_vars[0, 0],
+        #                        self.ballistic_dep_vars[idx, 0])[0]
+
+        #t_shield = self.PICA_thickness / self.heat_load * h_t
 
         bottom = self.chute_mass + self.line_mass + self.glider_mass + self.glider_offset_mass + v1 + v2 + v3 + v4
         top = self.chute_mass * dis_chute + self.line_mass * dis_chute + self.glider_mass * 0.0 + \
@@ -391,6 +397,12 @@ class Aeroshell:
             self.cg_offset_dis = -(h_max + lim) / 4 + lim
             top += self.cg_offset_mass * self.cg_offset_dis
             self.cg_y = top / bottom
+
+    def fix_cg(self, cg):
+        self.cg = np.zeros_like(self.ballistic_dep_vars[:, 0])
+        for i, v in enumerate(self.ballistic_dep_vars):
+            pass
+
 
     def c_p_alt(self, mach, alt, p_inf):
         # lower plate
@@ -433,8 +445,9 @@ class Aeroshell:
             self.calculate_insulator_weight()
             self.calculate_bottom_shell_weight()
             self.backshell_geometry()
-            self.calculate_c_p()
-            self.calculate_cg(cg)
+            #self.calculate_c_p()
+            #if i == 0:
+            #    self.calculate_cg(cg)
 
             print(f"Finished Itteration {i+1}")
 
@@ -454,15 +467,27 @@ def truncated_cone_shell(r1, r2, h, t):
     h = ((h - t/2) * t * r2 + h * t * np.sqrt(h**2 + (r1 - r2) ** 2)) / v
     return v, h
 
+
+def plot_cone_shell(r1, r2, h1, h2, t):
+    x = np.asarray([-r1, -r2, r2, r1, r1 - t, r2 - t, -r2 + t, -r1 + t, -r1])
+    y = np.asarray([0.0, h2, h2, 0.0, 0.0, h2 - t, h2 - t, 0.0, 0.0]) + h1
+    return x, y
+
+
+def plot_cone_shell_2(r1, h1, h2, t):
+    x = np.asarray([-r1, 0.0, r1, r1 - t, 0.0, -r1 + t, -r1])
+    y = np.asarray([0.0, h2, 0.0, 0.0, h2 + t, 0.0, 0.0]) + h1
+    return x, y
+
 if __name__ == "__main__":
-    test = Aeroshell(2*10**6, 4 * 3600, 162.1, 3, [0.45, 0.4], 1.3, 0.36, 3.03327727e+07 - 4000000, 5.45941114e-01,
-                     -2.33346601e-02, 2.65992642e+04, -5.91036848e-01, -2.96367147e+00)
+    test = Aeroshell(2*10**6, 4 * 3600, 162.1, 3, [0.45, 0.4], 1.3, 1.5 - 0.98, 3.03327727e+07,
+                     5.45941114e-01, -2.33346601e-02, 2.65992642e+04, -5.91036848e-01, -2.96367147e+00)
 
-    test.itterate(0.1, acc=1, steps=1)
+    test.itterate(0.1, acc=1, steps=5)
 
-    plt.plot(test.ballistic_dep_vars[:, 0] - 6000, test.c_p, label="Center of Pressure")
-    plt.plot(test.ballistic_dep_vars[:, 0] - 6000, np.full_like(test.c_p, test.cg_y), label="Center of Gravity")
-    plt.text([0.0, 1.0], f"required density: {np.around(test.offset_rho, decimals=-1)}")
+    plt.plot(test.ballistic_dep_vars[:, 0] - 6000, test.c_p, label="Centre of Pressure")
+    plt.plot(test.ballistic_dep_vars[:, 0] - 6000, np.full_like(test.c_p, test.cg_y), label="Centre of Gravity")
+    plt.text(0.0, 1.0, f"required density: {np.around(test.offset_rho, decimals=-1)}")
     plt.grid()
     plt.legend()
     plt.xlabel("Time [s]")
@@ -471,10 +496,38 @@ if __name__ == "__main__":
                 bbox_inches=None, pad_inches=0.0,
                 facecolor='auto', edgecolor='auto',
                 backend=None)
-    plt.show()
+    plt.show()#"""
 
-
-    """test.itterate(46, 1, 1)
+    plt.plot([-_r_parachute, _r_parachute, _r_parachute, -_r_parachute, -_r_parachute],
+             [_h_folded_wings, _h_folded_wings, _h_folded_wings + _h_parachute - test.t_top,
+              _h_folded_wings + _h_parachute - test.t_top, _h_folded_wings], label="Parachute")
+    x, y = plot_cone_shell(test.r_top_big, test.r_top_small, _h_folded_wings, _h_parachute, test.t_top)
+    plt.plot(x, y, label="Top shell cone")
+    x, y = plot_cone_shell(test.diameter / 2, test.r_bottom_small, 0.0, _h_folded_wings, test.t_bottom)
+    plt.plot(x, y, label="Bottom shell cone")
+    x, y = plot_cone_shell_2(test.diameter / 2 - test.PICA_thickness, 0.0,
+                             -test.diameter / 2 * np.tan(_bottom_angle) + test.PICA_thickness,
+                             test.insulator_thickness + test.bottom_shell_thickness)
+    plt.plot(x, y, label="Heatshield support")
+    #plt.plot([-test.diameter / 2 + test.PICA_thickness + test.insulator_thickness + test.bottom_shell_thickness -
+    #          min(test.cg_y, 0.0) / np.tan(_bottom_angle), 0.0, test.diameter / 2 - test.PICA_thickness -
+    #          test.insulator_thickness - test.bottom_shell_thickness + min(test.cg_y, 0.0) / np.tan(_bottom_angle),
+    #          -test.diameter / 2 + test.PICA_thickness + test.insulator_thickness + test.bottom_shell_thickness -
+    #          min(test.cg_y, 0.0) / np.tan(_bottom_angle)],
+    #         [min(test.cg_y, 0.0), -test.diameter / 2 * np.tan(_bottom_angle) + test.PICA_thickness +
+    #                     test.insulator_thickness + test.bottom_shell_thickness, min(test.cg_y, 0.0),
+    #          min(test.cg_y, 0.0)], label="CG correction mass")
+    plt.grid()
+    plt.legend()
+    plt.xlabel("Horizontal position [m]")
+    plt.xlim(-2, 2)
+    plt.ylabel("Vertical [m]")
+    plt.ylim(-1, 3)
+    plt.savefig("entry_capsule.pdf", dpi='figure', format="pdf", metadata=None,
+                bbox_inches=None, pad_inches=0.0,
+                facecolor='auto', edgecolor='auto',
+                backend=None)
+    plt.show()#"""
 
     plt.plot(test.ballistic_dep_vars[:, 0] - 6000, test.ballistic_dep_vars[:, 1] / 1000, label="Ballistic")
     plt.plot(test.sonic_dep_vars[:, 0] - 6000 + test.ballistic_dep_vars[-1, 0] - 6000,
