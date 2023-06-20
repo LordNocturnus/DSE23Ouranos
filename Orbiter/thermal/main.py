@@ -9,7 +9,7 @@ boltzman = 5.67 * 10 ** (-8)
 # Planet list [Sun distance, radius, albedo factor, radiating temperature, *closest approach during gravity assist]
 # Radius and distance to sun https://www.jpl.nasa.gov/edu/pdfs/scaless_reference.pdf
 # Albedo and Temperature  ADSEE reader --> ECSS-S standards
-planets_list = {'Uranus': [2872500000, 51118 / 2, 0.51, 58.2, 583000],
+planets_list = {'Uranus': [2872500000, 51118 / 2, 0.51, 58.2, 214000],
                 'Mars': [227900000, 6792 / 2, 0.15, 210.1, 200]}
 
 

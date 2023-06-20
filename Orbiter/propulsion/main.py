@@ -30,7 +30,7 @@ def mass_prop(m_orbiter, dV_orbiter, m_combined, dV_combined, Isp):
 def burntimecombined(T, dV_combined, m_orbiter, m_combined, dV_orbiter, Isp):
     a = T / (m_combined + mass_prop(m_orbiter, dV_orbiter, m_combined, dV_combined, Isp)[2])
     t_b = dV_combined / a
-    # t_b = t_b / 60 / 60
+    t_b = t_b / 60
     return t_b
 
 
@@ -38,7 +38,7 @@ def burntimecombined(T, dV_combined, m_orbiter, m_combined, dV_orbiter, Isp):
 def burntimeorbiter(T, m_orbiter, dV_orbiter, m_combined, dV_combined, Isp):
     a = T / (m_orbiter + mass_prop(m_orbiter, dV_orbiter, m_combined, dV_combined, Isp)[0])
     t_b = dV_orbiter / a
-    # t_b = t_b / 60 / 60
+    t_b = t_b / 60
     return t_b
 
 

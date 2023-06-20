@@ -64,21 +64,21 @@ class Orb:
         # Power
         self.t_mission = 23.6  # Mission Timeline Tool
         self.t_payload = 150  # Payload lifetime in months
-        self.P_comms = 120
+        self.P_comms = 195.5
         self.P_prop = 35
-        self.P_adcs = 150
-        self.P_dh = 46
+        self.P_adcs = 87
+        self.P_dh = 61
         self.P_payload = 147.04
-        self.P_thermal = 0
-        self.P_pw = 25
+        self.P_thermal = 11
+        self.P_pw = 23.05
 
         # Comms
         self.f_dl = 32
         self.f_ul = self.f_dl * TurnAroundRatio
-        self.DR = 8000
+        self.DR = 34000
         self.EbN0_dl = comms.downlink(self.P_comms, L_l, L_r, L_a, self.DR, Tnoisedown, k)
         self.EBN0_ul = comms.uplink(self.f_ul, P_gs, L_l, L_r, L_a, DR_ul, Tnoiseup, k)
-        self.m_comms = 120
+        self.m_comms = 121.1
 
         # Structure and Prop
         self.mass = 2427  # Orbiter dry mass
@@ -86,7 +86,7 @@ class Orb:
         self.mass_AV = 1000  # Atmospheric vehicle mass (import from AV class)
         self.mass_combined = self.mass + self.mass_AV  # Mass of combined systems
         self.deltaV_transfer = 170  # Combined systems deltaV
-        self.deltaV_insertion = 2800 + 500 + 100  # Delta V after splitting up at Uranus, Moon discovery and ADCS
+        self.deltaV_insertion = 1398 + 500 + 100  # Delta V after splitting up at Uranus, Moon discovery and ADCS
         self.Isp = 321  # Isp of the orbiter thrusters
         self.T = 425  # Orbiter thrust
         self.m_engine = 4.3  # Main engine mass in kg
@@ -96,7 +96,7 @@ class Orb:
         self.launch_cost = 150000000
         self.cost_dh = 41400000  # Arnaud
         self.cost_comms = comms.total_cost(self.m_comms)
-        self.cost_ADCS = ...
+        self.cost_ADCS = 32000000
         self.cost_payload = 0  # (328 * self.m_payload**0.426 * self.P_payload**0.414 * self.t_payload**0.375 * 1000) * 1.34 * 0.951 * 1.39
             #1000000 + 31000000  # Magnetometer (https://gi.copernicus.org/preprints/gi-2017-53/gi-2017-53-AC1-supplement.pdf,
                                                 # Camera (https://www.bhphotovideo.com/explora/photography/features/cameras-on-37-interplanetary-spacecraft)
@@ -113,7 +113,7 @@ class Orb:
             self.burn_insertion = prop.burntimeorbiter(self.T, self.mass, self.deltaV_insertion, self.total_dry_mass, self.deltaV_transfer, self.Isp)
             self.f_lat, self.f_ax = strt.natural_frequency(self.l_tanks, self.r_tanks, max(self.t_cy_o, self.t_cy_f), self.material, self.mass, self.mass_AV)
             self.cost_orbiter = self.cost_str + self.cost_thermal + self.cost_rtg + self.cost_comms + self.cost_prop + \
-                                self.cost_dh + self.cost_payload + self.cost_test_assembly
+                                self.cost_dh + self.cost_payload + self.cost_test_assembly + self.cost_ADCS
             self.total_cost = (self.cost_orbiter + self.cost_test_assembly + self.cost_ops + self.launch_cost)\
                                * 1.2 / (10**6)  # Nasa Green Book
 
@@ -148,10 +148,11 @@ class Orb:
                                       np.array([self.r_tanks, 0, 0]), self.m_fuel, np.array([3 * self.r_tanks, 0, 0]),
                                       capsule_radius, capsule_height, capsule_com, capsule_mass, tanks_full=True,
                                       caps_attached=True)[4]
+        self.cost_ADCS = 1.34 * 0.951 * 795 * self.m_adcs ** 0.593 * 1.36 * 1000
 
     def power(self):
         self.n_rtg = pwr.numberRTG(self.P_req, self.t_mission)[1]
-        self.m_power = 1.2 * (pwr.massRTG(self.P_req, self.t_mission) + 25)  # 25 kg is an estimate for PDU and regulators
+        self.m_power = 1.2 * (pwr.massRTG(self.P_req, self.t_mission) + 13.23)  # 25 kg is an estimate for PDU and regulators
         self.cost_rtg = pwr.costRTG(self.P_req, self.t_mission)
 
     def thermal(self):
@@ -185,7 +186,8 @@ class Orb:
                f'Total cost: {self.total_cost}\n' \
                f'Total Power: {self.P_req}\n' \
                f'Burn time transfer: {self.burn_transfer}\n' \
-               f'Burn orbit insertion: {self.burn_insertion}'
+               f'Burn orbit insertion: {self.burn_insertion}\n' \
+               f'ADCS cost: {self.cost_ADCS}'
 
     def mass_breakdwon(self):
         print(f'Orbiter Dry Mass: {self.mass}\n'

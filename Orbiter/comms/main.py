@@ -6,26 +6,26 @@ c = 300000000  # speed of light in m/s
 earthRadius = 6371000.  # radius Earth in m
 L_a = -0.5  # atmospheric attenuation in dB
 AU = 149597870691  # one AU in m
-d_EarthSC = 20.8  # max distance between SC and Earth in AU
-Tnoisedown = 424  # Noise temperature in K
-Tnoiseup = 763  # Noise temperature in K
-TurnAroundRatio = 3599 / 3344
+d_EarthSC = 19.318457  # max distance between SC and Earth in AU
+Tnoisedown = 46.97  # Noise temperature in K
+Tnoiseup = 344.76  # Noise temperature in K
+TurnAroundRatio = 749 / 3344
 
 # antenna spacecraft:
-d_antenna = 5  # antenna diameter in m
+d_antenna = 4  # antenna diameter in m
 eta_antenna = 0.55
-P = 60  # transmitting power in W
-L_l = 0.9  # loss factor spacecraft
-PointingAccuracy = 0.0572958  # pointing accuracy in deg
-DR = 8000  # downlink data rate in bps
+P = 50  # transmitting power in W
+L_l = 0.75  # loss factor spacecraft
+PointingAccuracy = 0.044  # pointing accuracy in deg
+DR = 34000  # downlink data rate in bps
 f = 32  # Downlink frequency in GHz
 wavelengthdown = c / (f * 10 ** 9)
 
 # antenna ground station:
-P_gs = 800  # power ground station in W
-d_gs = 70  # antenna diameter in m
+P_gs = 20000  # power ground station in W
+d_gs = 34  # antenna diameter in m
 L_r = 0.75  # loss factor ground station
-uplinkDR = 25000  # uplink data rate in bps
+uplinkDR = 500  # uplink data rate in bps
 f_gs = f * TurnAroundRatio  # uplink frequency in Ghz
 wavelenghtup = c / (f_gs * 10 ** 9)
 
