@@ -67,7 +67,6 @@ class Orb:
         self.P_comms = 116.6
         self.P_prop = 35
         self.P_adcs = 87
-        self.P_dh = 51
         self.P_payload = 147.04
         self.P_thermal = 11
         self.P_pw = 23.05
@@ -83,7 +82,7 @@ class Orb:
         # Structure and Prop
         self.mass = 2427  # Orbiter dry mass
         self.mixture_ratio = 1.65
-        self.mass_AV = 551  # Atmospheric vehicle mass (import from AV class)
+        self.mass_AV = 704.4  # Atmospheric vehicle mass (import from AV class)
         self.mass_combined = self.mass + self.mass_AV  # Mass of combined systems
         self.deltaV_transfer = 170  # Combined systems deltaV
         self.deltaV_insertion = 1398 + 500 + 100  # Delta V after splitting up at Uranus, Moon discovery and ADCS
@@ -166,7 +165,8 @@ class Orb:
         diff = 1000
         while diff > 1 * 10 ** -3:
             self.mass_prop(self.mass)
-            self.P_req = self.P_comms + self.P_pw + self.P_dh + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop
+            self.P_req = (self.P_comms + self.P_pw + self.P_adcs + self.P_payload + self.P_thermal + self.P_prop) / 0.9
+            self.P_dh = 0.1 * self.P_req
             self.ADCS()
             self.power()
             self.thermal()
@@ -220,5 +220,6 @@ class Orb:
 
 if __name__ == "__main__":
     orbiter = Orb()
+    print(orbiter.P_dh)
     print(orbiter.mass_breakdwon())
     print(orbiter.cost_breakdown())
