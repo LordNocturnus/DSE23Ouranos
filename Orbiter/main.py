@@ -193,7 +193,7 @@ class Orb:
         print(f'Orbiter Dry Mass: {self.mass}\n'
                f'Total Dry Mass: {self.total_dry_mass}\n'
                f'Orbiter Wet Mass: {self.wet_mass}\n'
-               f'Propellant Mass: {self.prop_mass}\n'
+               f'Propellant Mass: {self.prop_mass+self.m_adcs_fuel}\n'
                f'Atmospheric Vehicle Mass: {self.mass_AV}\n'
                f'Structure Mass: {self.m_structure+self.m_tanks}\n'
                f'Comms Mass: {self.m_comms}\n'
