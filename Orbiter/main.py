@@ -64,10 +64,10 @@ class Orb:
         # Power
         self.t_mission = 23.6  # Mission Timeline Tool
         self.t_payload = 150  # Payload lifetime in months
-        self.P_comms = 195.5
+        self.P_comms = 116.6
         self.P_prop = 35
         self.P_adcs = 87
-        self.P_dh = 61
+        self.P_dh = 51
         self.P_payload = 147.04
         self.P_thermal = 11
         self.P_pw = 23.05
@@ -83,7 +83,7 @@ class Orb:
         # Structure and Prop
         self.mass = 2427  # Orbiter dry mass
         self.mixture_ratio = 1.65
-        self.mass_AV = 1000  # Atmospheric vehicle mass (import from AV class)
+        self.mass_AV = 551  # Atmospheric vehicle mass (import from AV class)
         self.mass_combined = self.mass + self.mass_AV  # Mass of combined systems
         self.deltaV_transfer = 170  # Combined systems deltaV
         self.deltaV_insertion = 1398 + 500 + 100  # Delta V after splitting up at Uranus, Moon discovery and ADCS
