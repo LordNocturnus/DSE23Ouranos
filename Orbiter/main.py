@@ -108,7 +108,7 @@ class Orb:
         if optimisation:
             self.iteration()
             self.total_dry_mass = self.mass_combined
-            self.wet_mass = self.total_dry_mass + self.prop_mass
+            self.wet_mass = self.total_dry_mass + self.prop_mass + self.m_adcs_fuel
             self.burn_transfer = prop.burntimecombined(self.T, self.mass, self.deltaV_transfer, self.total_dry_mass, self.deltaV_insertion, self.Isp)
             self.burn_insertion = prop.burntimeorbiter(self.T, self.mass, self.deltaV_insertion, self.total_dry_mass, self.deltaV_transfer, self.Isp)
             self.f_lat, self.f_ax = strt.natural_frequency(self.l_tanks, self.r_tanks, max(self.t_cy_o, self.t_cy_f), self.material, self.mass, self.mass_AV)
@@ -141,8 +141,8 @@ class Orb:
         self.angular_momentum = abs(adcs.torque_s(self.mmoi, 1, debug=False)) * m_time + \
                                 adcs.aerodyn_torque(rho_uranus_min, c_d, vel_per, self.mmoi, debug=False) * 220 * 15 * 60
         self.m_adcs_fuel = adcs.prop_mass(229, 5.23, self.l_tanks / 2 + 0.15, self.mainengine_burntime) + \
-                           adcs.prop_mass(229, 5.23, self.l_tanks / 2 + 0.15, self.angular_momentum / (5.23 * self.r_tanks))
-        self.m_adcs = self.m_adcs_fuel * 1.1 + 51.7
+                           adcs.prop_mass(229, 5.23, self.l_tanks / 2 + 0.15, self.angular_momentum / (5.23 * self.r_tanks)) * 1.1
+        self.m_adcs = 51.7
         self.mmoi_capsule = adcs.mmoi(self.r_tanks, self.l_tanks, np.array([self.l_tanks / 2, 0, 0]),
                                       self.mass - self.m_propulsion, self.r_tanks, self.m_tanks, self.m_ox,
                                       np.array([self.r_tanks, 0, 0]), self.m_fuel, np.array([3 * self.r_tanks, 0, 0]),
@@ -173,7 +173,7 @@ class Orb:
             new_orbiter_mass = self.m_structure + self.m_tanks + self.m_power + self.m_thermal + self.m_payload + self.m_dh + self.m_comms + self.m_adcs + self.m_engine
             diff = abs(new_orbiter_mass - self.mass)
             self.mass = new_orbiter_mass
-        self.mass *= 1.25  # Nasa Green Book
+        self.mass *= 1.25
         self.mass_combined = self.mass + self.mass_AV
         self.cost_prop = prop.total_cost(self.m_ox, self.m_fuel)
         self.cost_str = strt.total_cost(self.m_structure + self.m_tanks)
@@ -195,15 +195,13 @@ class Orb:
                f'Orbiter Wet Mass: {self.wet_mass}\n'
                f'Propellant Mass: {self.prop_mass}\n'
                f'Atmospheric Vehicle Mass: {self.mass_AV}\n'
-               f'Structure Mass: {self.m_structure}\n'
+               f'Structure Mass: {self.m_structure+self.m_tanks}\n'
                f'Comms Mass: {self.m_comms}\n'
                f'Payload Mass: {self.m_payload}\n'
                f'DH Mass: {self.m_dh}\n'
                f'ADCS Mass: {self.m_adcs}\n'
                f'Power Mass: {self.m_power}\n'
-               f'Thermal Mass: {self.m_thermal}\n'
-               f'Tanks Mass: {self.m_tanks}')
-
+               f'Thermal Mass: {self.m_thermal}')
     def cost_breakdown(self):
         print(f'Total cost: {self.total_cost} M€\n'
               f'Orbiter Cost: {self.cost_orbiter / 10**6} M€ \n'
