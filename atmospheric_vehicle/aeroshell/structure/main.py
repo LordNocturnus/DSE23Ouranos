@@ -11,14 +11,14 @@ m_thermal_para = 302 + 30  #330 + 30 + 68.98
 m_glider = 266
 
 # Loads values
-load_peak_para = 924.23 * (m_thermal_para + m_glider)
-load_peak_entry = 1990
-p_load = 123000
+load_peak_para = 782 * (m_thermal_para + m_glider)
+load_peak_entry = 1300
+p_load = 11900
 delta_T = 200
 
 # Size Constraints
 t_heatshield = 0.09896
-h_folded_wings = 2
+h_folded_wings = 1.7
 h_parachute = 0.5
 r_thermal = 1.5
 r_parachute = 0.3
@@ -153,6 +153,7 @@ def backshell_geometry(peak_load, load_entry, p_load=p_load, r_thermal=r_thermal
     # Calculate the big and small radius of the bottom truncated cone. Limit case is the radius of the thermal shield
     r_bottom_big = r_thermal
     r_bottom_small = r_bottom_big * (1 - taper_ratio_bottom)
+    print(h)
 
     # Calculate the angle at the base of the truncated cones
     a_top = angle_cone(r_top_big, r_top_small, h_parachute)
@@ -254,4 +255,4 @@ def bending_pressure(p_entry, l_thermal, sigma_y):
 
 if __name__ == "__main__":
     mass_back, mass_insulator, t_insulator, t_top, t_bottom, t_bottom_shell = total_mass(load_peak_para, p_load, load_peak_entry, delta_T, r_thermal, h_folded_wings)
-    print(mass_back + mass_insulator, t_bottom_shell, t_insulator)
+    print(mass_back + mass_insulator)
