@@ -221,6 +221,4 @@ class Orb:
 
 if __name__ == "__main__":
     orbiter = Orb()
-    print(orbiter.P_dh)
-    print(orbiter.mass_breakdwon())
-    print(orbiter.cost_breakdown())
+    print(orbiter.f_lat, orbiter.f_ax)

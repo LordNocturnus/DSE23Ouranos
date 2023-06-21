@@ -233,7 +233,7 @@ def final_architecture(material, propellant, margin, m_AV):
     else:
         raise TypeError(f'The variable "propellant" should be a list[tuple, ...] and the variable "material" should be a list[float, ...]')
 
-def natural_frequency(l_tot, r, t, material, m_orb, m_AV):
+def natural_frequency(l_tot, r, t, material, m_orb, m_AV, I_rect=None):
     """
     Mathod to calculate the axial and lateral frequency of the idealised structure
     :param l_tot: Total length of the orbiter
@@ -248,7 +248,11 @@ def natural_frequency(l_tot, r, t, material, m_orb, m_AV):
         raise ValueError(f'The mass cannot have a negative value')
     elif r <= 0 or t <= 0:
         raise ValueError(f'The dimensions of the orbiter need to have positive values')
-    I = np.pi * t * (2 * r) ** 3 / 8
+
+    if I_rect is not None:
+        I = I_rect
+    else:
+        I = np.pi * t * (2 * r) ** 3 / 8
     f_lat = 0.276 * np.sqrt((material[3] * I) / (m_AV * l_tot**3 + 0.236 * m_orb * l_tot**3))
     f_ax = 0.160 * np.sqrt((np.pi * r**2 * material[3]) / (m_AV * l_tot + 0.333 * m_orb * l_tot))
     if f_ax > f_ax_min and f_lat > f_lat_min:
@@ -271,9 +275,11 @@ def total_cost(mass_tot):
 
 
 if __name__ == '__main__':
-    prop_properties = [(3 * 10 ** 6, 318.1, 1431), (3 * 10 ** 6, 188.2, 874)]
-    material = [2810, 505*10**6, 505*10**6, 72*10**9]
-    print(geometry_mass(material, prop_properties[1], 0.3, False))
+    # prop_properties = [(3 * 10 ** 6, 318.1, 1431), (3 * 10 ** 6, 188.2, 874)]
+    # material = [2810, 505*10**6, 505*10**6, 72*10**9]
+    # print(geometry_mass(material, prop_properties[1], 0.3, False))
+    I_rect = 1/12 * 1.675 * 0.56**3
+    print(natural_frequency(0.56, 1.675/2, ))
 
     # Material Properties: https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MTP641
 
