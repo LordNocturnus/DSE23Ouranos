@@ -215,6 +215,7 @@ class Orb:
               f'Communication cost: {self.cost_comms / 10**6} M€\n'
               f'Power cost: {self.cost_rtg / 10**6} M€\n'
               f'Thermal cost: {self.cost_thermal / 10**6} M€\n'
+              f'ADCS cost: {self.cost_ADCS}\n'
               f'Structure cost: {self.cost_str / 10**6} M€\n')
 
 
