@@ -136,10 +136,10 @@ class Orb:
                               capsule_radius, capsule_height, capsule_com, capsule_mass, tanks_full=False,
                               caps_attached=False, debug=False)
         self.reactionwheel_H = adcs.grav_grad_torque(self.mmoi, semi_major, grav_parameter, orbital_period,
-                                                     debug=True) + \
-                               adcs.mag_torque_max(magnetic_dipole_uranus, 1, orbital_period, debug=True)
-        self.angular_momentum = abs(adcs.torque_s(self.mmoi, 1, debug=True)) * m_time + \
-                                adcs.aerodyn_torque(rho_uranus_min, c_d, vel_per, self.mmoi, debug=True) * 220 * 15 * 60
+                                                     debug=False) + \
+                               adcs.mag_torque_max(magnetic_dipole_uranus, 1, orbital_period, debug=False)
+        self.angular_momentum = abs(adcs.torque_s(self.mmoi, 1, debug=False)) * m_time + \
+                                adcs.aerodyn_torque(rho_uranus_min, c_d, vel_per, self.mmoi, debug=False) * 220 * 15 * 60
         self.m_adcs_fuel = adcs.prop_mass(229, 5.23, self.l_tanks / 2 + 0.15, self.mainengine_burntime) + \
                            adcs.prop_mass(229, 5.23, self.l_tanks / 2 + 0.15, self.angular_momentum / (5.23 * self.r_tanks))
         self.m_adcs = self.m_adcs_fuel * 1.1 + 51.7
@@ -223,7 +223,4 @@ class Orb:
 if __name__ == "__main__":
     orbiter = Orb()
     print(orbiter.mass_breakdwon())
-    print(orbiter.m_adcs_fuel, orbiter.m_adcs_fuel * 1.1)
-    print(orbiter.mmoi)
-    print(orbiter.l_tanks, orbiter.r_tanks)
-    print(orbiter.angular_momentum)
+    print(orbiter.cost_breakdown())
