@@ -160,8 +160,8 @@ class interplanetary_trajectory:
         arrival_apoapsis = 583000000
         arrival_periapsis = 25380000+10e6
 
-        arrival_apoapsis = 82664830
-        arrival_periapsis = 82664830
+        #arrival_apoapsis = 82664830
+        #arrival_periapsis = 82664830
 
         arrival_semi_major_axis = (arrival_apoapsis + arrival_periapsis) / 1
         arrival_eccentricity = 1-arrival_periapsis/arrival_semi_major_axis
@@ -427,9 +427,10 @@ class interplanetary_trajectory:
 
         print ('The maximum distance to Earth during the extended mission is', max_distance_earth)
         notfound = True
+        print('state',self.state_history[-1])
         while notfound:
-            if self.state_history[i,0] > time_of_separation:
-                cartesianstate = self.state_history[i,1:]
+            #if self.state_history[i,0] > time_of_separation:
+                cartesianstate = self.state_history[-1,1:]
                 notfound = False
                 position = cartesianstate[:3]
                 velocity = cartesianstate[3:]
@@ -447,8 +448,8 @@ class interplanetary_trajectory:
                 print ('The state of the system in keplerian coordinates is',statekeplerian)
                 return state
 
-            else:
-                i += 1
+            #else:
+                #i += 1
 
 
 
@@ -466,5 +467,5 @@ if __name__ == "__main__":
     trajectory = interplanetary_trajectory(planets,earthorbit,periapsis,launching)
     trajectory.optimize(25)
     trajectory.plot()
-    state = trajectory.output(constants.JULIAN_DAY * 4)
+    state = trajectory.output(constants.JULIAN_DAY * 8)
     print(state)
