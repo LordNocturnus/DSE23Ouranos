@@ -583,12 +583,13 @@ class orbital_trajectory:
         x = np.cos(u)*np.sin(v)*self.radiusUranus
         y = np.sin(u)*np.sin(v)*self.radiusUranus
         z = np.cos(v)*self.radiusUranus
-        ax.plot_wireframe(x, y, z, label="Uranus", color="blue")
+        
 
         ax.plot(self.states_capsule_array[:, 1], self.states_capsule_array[:, 2], self.states_capsule_array[:, 3], label="Capsule", linestyle='-.')
         #ax.scatter(0.0, 0.0, 0.0, label="Earth", marker='o', color='red')
         ax.plot(self.position_glider[:,0],self.position_glider[:,1],self.position_glider[:,2], label="Glider", linestyle='-.', color='red')
         # Add the legend and labels, then show the plot
+        ax.plot_wireframe(x, y, z, label="Uranus", color="blue")
         ax.legend()
         ax.set_xlabel('x [m]')
         ax.set_ylabel('y [m]')
