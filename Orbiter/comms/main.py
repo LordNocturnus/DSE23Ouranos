@@ -10,6 +10,9 @@ d_EarthSC = 19.31845678336 # max distance between SC and Earth in AU 19.31845678
 Tnoisedown = 46.97 # Noise temperature in K
 Tnoiseup = 344.76 # Noise temperature in K
 TurnAroundRatio = 749 / 3328
+L_l = -1.1
+L_r = -0.8
+L_rup = -2.2
 # D = 4000000 #  Total data generated
 # CF = 5 #  compression factor
 # t_comm = 4 * 365 * 24 * 60 * 60 #  comms time in seconds
@@ -17,8 +20,8 @@ TurnAroundRatio = 749 / 3328
 # antenna spacecraft:
 d_antenna = 4 # antenna diameter in m
 eta_antenna = 0.55
-P = 40 # transmitting power in W
-L_l = 0.75 # loss factor spacecraft
+P = 50 # transmitting power in W
+# L_l = 0.75 # loss factor spacecraft
 PointingAccuracy = 0.044 # pointing accuracy in deg
 DR = 34000 # downlink data rate in bps
 f = 32 # Downlink frequency in GHz
@@ -28,7 +31,7 @@ wavelengthdown = c / (f * 10 ** 9)
 P_gs = 20000 # power ground station in W
 d_gs = 34 # antenna diameter in m
 eta_gs = 0.76
-L_r = 0.75 # loss factor ground station
+# L_r = 0.75 # loss factor ground station
 uplinkDR = 500 # uplink data rate in bps
 f_gs = f * TurnAroundRatio # uplink frequency in Ghz
 print(f_gs)
@@ -71,8 +74,8 @@ def downlink(P, L_l, L_r, L_a, DR, Tnoise, k):
     P = 10 * np.log10(P)
     G_t = gain(d_antenna, wavelengthdown, eta_antenna)
     G_r = gain(d_gs, wavelengthdown, eta_gs)
-    L_l = 10 * np.log10(L_l)
-    L_r = 10 * np.log10(L_r)
+    # L_l = 10 * np.log10(L_l)
+    # L_r = 10 * np.log10(L_r)
     L_s = SpaceLoss(wavelengthdown, d_EarthSC, AU)
     alphaSC = halfpowerbeamwidth(d_antenna, f)
     alphaGS = halfpowerbeamwidth(d_gs, f)
@@ -88,12 +91,12 @@ def downlink(P, L_l, L_r, L_a, DR, Tnoise, k):
     Eb = 10 ** (Eb / 10)
     return P, G_t, G_r, L_l, L_r, L_s, L_pr, DR, Tnoise, k, EbN0, Eb
 
-def uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoise, k):
+def uplink(f_gs, P_gs, L_rup, L_a, uplinkDR, Tnoise, k):
     P = 10 * np.log10(P_gs)  # in [dB]
     G_t = gain(d_gs, wavelenghtup, eta_antenna)  # in [dB]
     G_r = gain(d_antenna, wavelenghtup, eta_gs)  # in [dB]
-    L_l = 10 * np.log10(L_l)  # in [dB]
-    L_r = 10 * np.log10(L_r)  # in [dB]
+    # L_l = 10 * np.log10(L_l)  # in [dB]
+    # L_r = 10 * np.log10(L_r)  # in [dB]
     L_s = SpaceLoss(wavelenghtup, d_EarthSC, AU)
     alphaSC = halfpowerbeamwidth(d_antenna, f_gs)
     alphaGS = halfpowerbeamwidth(d_gs, f_gs)
@@ -104,7 +107,7 @@ def uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoise, k):
     DR = 10 * np.log10(1 / uplinkDR)  # [dB]
     Tnoise = 10 * np.log10(1 / Tnoise)  # [dB]
     k = 10 * np.log10(1 / k)
-    EbN0 = P + G_t + G_r + L_l + L_r + L_s + L_pr + L_a + DR + Tnoise + k
+    EbN0 = P + G_t + G_r + L_rup + L_s + L_pr + L_a + DR + Tnoise + k
     Eb = EbN0 - Tnoise - k
     Eb = 10 ** (Eb / 10)
     return P, G_t, G_r, L_l, L_r, L_s, L_pr, DR, Tnoise, k, EbN0, Eb
@@ -126,15 +129,15 @@ if __name__ == "__main__":
     print('Eb:', downlink(P, L_l, L_r, L_a, DR, Tnoisedown, k)[11])
     print()
     print('**** UPLINK ****')
-    print('P:', uplink(f_gs, P_gs, L_l, L_r, L_a,uplinkDR, Tnoiseup, k)[0])
-    print('G_t:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[1])
-    print('G_r:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[2])
-    print('L_l:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[3])
-    print('L_r:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[4])
-    print('L_s:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[5])
-    print('L_pr:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[6])
-    print('DR:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[7])
-    print('Tnoise:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[8])
-    print('k:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[9])
-    print('EbN0:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[10])
-    print('Eb:', uplink(f_gs, P_gs, L_l, L_r, L_a, uplinkDR, Tnoiseup, k)[11])
+    print('P:', uplink(f_gs, P_gs,L_rup, L_a,uplinkDR, Tnoiseup, k)[0])
+    print('G_t:', uplink(f_gs, P_gs, L_rup, L_a, uplinkDR, Tnoiseup, k)[1])
+    print('G_r:', uplink(f_gs, P_gs, L_rup, L_a, uplinkDR, Tnoiseup, k)[2])
+    print('L_l:', uplink(f_gs, P_gs, L_rup, L_a, uplinkDR, Tnoiseup, k)[3])
+    print('L_r:', uplink(f_gs, P_gs, L_rup, L_a, uplinkDR, Tnoiseup, k)[4])
+    print('L_s:', uplink(f_gs, P_gs, L_rup, L_a, uplinkDR, Tnoiseup, k)[5])
+    print('L_pr:', uplink(f_gs, P_gs, L_rup, L_a, uplinkDR, Tnoiseup, k)[6])
+    print('DR:', uplink(f_gs, P_gs, L_rup, L_a, uplinkDR, Tnoiseup, k)[7])
+    print('Tnoise:', uplink(f_gs, P_gs, L_rup, L_a, uplinkDR, Tnoiseup, k)[8])
+    print('k:', uplink(f_gs, P_gs, L_rup, L_a, uplinkDR, Tnoiseup, k)[9])
+    print('EbN0:', uplink(f_gs, P_gs, L_rup, L_a, uplinkDR, Tnoiseup, k)[10])
+    print('Eb:', uplink(f_gs, P_gs, L_rup, L_a, uplinkDR, Tnoiseup, k)[11])
