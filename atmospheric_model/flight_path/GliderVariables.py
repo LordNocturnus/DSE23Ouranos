@@ -5,19 +5,19 @@ g_u = 8.69  # m/s^2
 p_max = 20 * 10 ** 5  # Pa
 
 # Glider Variables
-m_glider = 274.9  # kg
-S = 4.49   # m^2
-W_S = 279.3
-b = 9.2  # m
-chord = 0.9  # m
+m_glider = 269.3  # kg
+S = 2.82  # m^2
+W_S = 845.85
+b = 8.63  # m
+chord = 0.3266  # m
 A = b * b / S
 e = 0.8
 
 # Gliding Variables
 # gamma_glide = np.radians(-1.5)
-C_L_C_D = 76.8
-C_D_0 = 0.0083
-C_L_opt = 0.45
+C_L_C_D = 43.2
+C_D_0 = 0.0089
+C_L_opt = 0.769
 C_D_opt = 2 * C_D_0
 
 # Deployment Variables
@@ -35,7 +35,7 @@ def calc_glider_parameters(time, altitudedistance, speed, mass, rho, g, cl_0, cl
     cl = cl_cd * 2 * cd_0
     cd = 2 * cd_0
     alpha = (cl - cl_0) / cl_alpha
-    wing_loading = 1/2 * rho * speed ** 2 * cl
+    wing_loading = 1 / 2 * rho * speed ** 2 * cl
     surface = mass * g / wing_loading
     AR = cl ** 2 / (cd_0 * np.pi * e)
     b = np.sqrt(surface * AR)
@@ -46,4 +46,4 @@ def calc_glider_parameters(time, altitudedistance, speed, mass, rho, g, cl_0, cl
 
 
 if __name__ == "__main__":
-    print(calc_glider_parameters(12 * 3600, 200000, 200, 187, 0.055, 8.7, 0.771, 0.096, 0.0083, 0.8, 0.4))
+    print(calc_glider_parameters(12 * 3600, 200000, 200, 269.3, 0.055, 8.7, 0.771, 0.0909, 0.0089, 0.8, 0.4))
