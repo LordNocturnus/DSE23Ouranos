@@ -385,11 +385,11 @@ class orbital_trajectory:
 
         capturedstate = np.array([self.semi_major,self.eccentricity,1.42426867 + np.pi,output[0],0,output[1]])
         capturedstate_cartesian = astro.element_conversion.keplerian_to_cartesian(capturedstate,self.uranus_gravitational_parameter)
-        if np.linalg.norm(capture_beforemanoeuvre[3:]-capturedstate_cartesian[3:]) > 1e4:
-            print('changing')
-            capturedstate_cartesian[3] = - capturedstate_cartesian[3]
-            capturedstate_cartesian[4] = - capturedstate_cartesian[4]
-            capturedstate_cartesian[5] = - capturedstate_cartesian[5]
+        #if np.linalg.norm(capture_beforemanoeuvre[3:]-capturedstate_cartesian[3:]) > 7e4:
+        #    print('changing')
+        #    capturedstate_cartesian[3] = - capturedstate_cartesian[3]
+        #    capturedstate_cartesian[4] = - capturedstate_cartesian[4]
+        #    capturedstate_cartesian[5] = - capturedstate_cartesian[5]
         print('The capture delta v is',np.linalg.norm(capture_beforemanoeuvre[3:]-capturedstate_cartesian[3:]))
         print('the velocities are',capture_beforemanoeuvre[3:],capturedstate_cartesian[3:])
 
@@ -470,7 +470,7 @@ class orbital_trajectory:
 
         telemetry_angle_max = np.max(telemetry_angle)
 
-        maxangle = 72/180*np.pi
+        maxangle = 70/180*np.pi
 
         maxdistance = 300000000
         
@@ -510,13 +510,31 @@ class orbital_trajectory:
         print('The connected intervals are',connectedintervals)
         print('The nonconnected intervals are',nonconnectedintervals)
         print('The maximum telemetry distance is',highestcontactdistance)
-        print ('The percentage of time connected is',connectedinterval/(connectedinterval+nonconnectedinterval)*100)
+        #print ('The percentage of time connected is',connectedinterval/(connectedinterval+nonconnectedinterval)*100)
+
+        connectedintervalsearth = []
+        nonconnectedintervalsearth = []
+
+        lastchangeearth = 0
+
+        connectedearth = True
 
         self.earth_position = np.array([1.11514099e+12, 1.48764955e+11 ,2.56010242e+12])
         self.earthangle = np.zeros(len(telemetry_angle))
         for i in range(len(telemetry_vector)):
             self.earthangle[i] = np.arccos(np.inner(telemetry_vector[i],self.earth_position)/(np.linalg.norm(telemetry_vector[i])*np.linalg.norm(self.earth_position)))
-        
+            if self.earthangle[i] < maxangle and connectedearth == False:
+                connectedearth = True
+                nonconnectedintervalsearth.append((lastchangeearth,i*step_size))
+                lastchangeearth = i * step_size
+            if self.earthangle[i] > maxangle and connectedearth == True:
+                connectedearth = False
+                connectedintervalsearth.append((lastchangeearth,i*step_size))
+                lastchangeearth = i*step_size
+
+        print('The connected intervals to Earth are',connectedintervalsearth)
+        print('The nonconnected intervals to Earth are',nonconnectedintervalsearth)
+
         connectednodes = sum(float(num)*180/np.pi <= 70 for num in self.earthangle)
         print ('The time connected with Earth is',connectednodes/360)
         #for i in range(len(telemetry_angle)):
@@ -556,9 +574,15 @@ class orbital_trajectory:
         plt.show()
 
         plt.plot(np.arange(stop=len(telemetry_distance )* 10, start = 0, step = 10)/3600, telemetry_distance)
+        plt.xlabel('Atmospheric mission time [Hours]')
+        plt.ylabel('Distance [km]')
+        plt.grid()
         plt.show()
 
         plt.plot(np.arange(stop=len(telemetry_distance) * 10, start = 0, step = 10)/3600, telemetry_angle/np.pi * 180)
+        plt.xlabel('Atmospheric mission time [Hours]')
+        plt.ylabel('Angle [deg]')
+        plt.grid()
         plt.show()
 
         plt.plot(np.arange(stop=len(telemetry_distance) * 10, start = 0, step = 10)/3600, self.earthangle/np.pi * 180)
@@ -600,6 +624,7 @@ class orbital_trajectory:
 #func for local testing, ignore
 if __name__ == "__main__":
     print("Hello World")
+    uranostationary = 82685857.65
     initial_state_capsule_keplerian = np.array([-490000000,1.051,0,0,0,np.pi/2])
     initial_state_orbiter_keplerian = np.array([-490000000,1.062,0,0,0,np.pi/2])
 
