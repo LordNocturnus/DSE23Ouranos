@@ -150,7 +150,7 @@ initial_state = element_conversion.keplerian_to_cartesian_elementwise(
     semi_major_axis=1.33515294e+08,
     eccentricity=7.97546882e-01,
     inclination=0,
-    argument_of_periapsis=0,
+    argument_of_periapsis= 1.42426867,
     longitude_of_ascending_node=0,
     true_anomaly=0,
 )
@@ -240,13 +240,14 @@ ax = fig.add_subplot(111)
 ax.set_title(f'Orbiter trajectory around Uranus')
 
 # Plot the positional state history
-ax.plot(states_array[:, 1], states_array[:, 2], label=bodies_to_propagate[0], linestyle='-.')
-ax.plot(x_circle, y_circle, label='Uranus', linestyle='-')
+ax.plot(states_array[:, 2]/1000000, states_array[:, 1]/1000000, label=bodies_to_propagate[0], linestyle='-.')
+ax.plot(x_circle/1000000, y_circle/1000000, label='Uranus', linestyle='-')
 
 # Add the legend and labels, then show the plot
-ax.legend()
-ax.set_xlabel('x [m]')
-ax.set_ylabel('y [m]')
+ax.set_aspect('equal', adjustable='box')
+ax.legend(loc=2)
+ax.set_xlabel('x [1000 km]')
+ax.set_ylabel('y [1000 km]')
 plt.show()
 
 

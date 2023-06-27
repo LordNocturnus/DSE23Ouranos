@@ -270,6 +270,8 @@ class orbital_trajectory:
 
         self.captured_state = astro.element_conversion.keplerian_to_cartesian(captured_state_keplerian,self.uranus_gravitational_parameter)
 
+        print('captured state in keplerian coordinates',captured_state_keplerian)
+
         self.semi_major = captured_state_keplerian[0]
         self.eccentricity = captured_state_keplerian[1]
 
